@@ -1,0 +1,207 @@
+{
+ "nbHits": 55,
+ "page": 0,
+ "nbPages": 2,
+ "hitsPerPage": 36,
+ "facets": {
+  "facets.Brands": {
+   "Pokemon TCG": 13
+  },
+  "facets.Expansion": {
+   "Mega Evolutions 4: Chaos Rising": 2,
+   "Mega Evolutions": 1,
+   "Mega Evolutions: Perfect Order": 1,
+   "Mega Evolutions: Pitch Black": 1
+  }
+ },
+ "hits": [
+  {
+   "objectID": "880545",
+   "sku": "880545",
+   "title": "Pokemon TCG - Mega Evolutions 4: Chaos Rising Display Box",
+   "handle": "pokemon-tcg-mega-evolutions-4-chaos-rising-display-box-card-game",
+   "price": 306,
+   "compare_at_price": "",
+   "vendor": "POKEMON TCG",
+   "isMarketplace": false,
+   "availability": {
+    "displayProduct": true,
+    "canBuyOnline": true,
+    "canPreOrder": false,
+    "fulfilment": "Physical",
+    "deliveryFromOnlineWarehouseOnly": false,
+    "deliveryConstraint": "CountryWide",
+    "deliveryStatus": "InStock",
+    "clickNCollectStatus": "NotAvailable",
+    "cashNCarryStatus": "NotAvailable",
+    "overallStatus": "InStock",
+    "availabilityStatement": "In stock online",
+    "deliveryOnly": true,
+    "availableNow": "Available Now",
+    "productLifecycle": "NonReplenishable",
+    "isHiddenByFamily": false
+   },
+   "release_date": 1785420000,
+   "tags": "Brand:Pokemon Tcg,InStock",
+   "banner_tags": {},
+   "button": "Buy",
+   "category_hierarchy": [
+    "Collectibles & Merchandise",
+    "Trading card games",
+    "Packs"
+   ],
+   "facets": {
+    "Game type": [
+     "Trading card games"
+    ],
+    "Expansion": [
+     "Mega Evolutions 4: Chaos Rising"
+    ],
+    "Brands": [
+     "Pokemon TCG"
+    ],
+    "Primary franchise": [
+     "Pokemon"
+    ],
+    "Sold by": [
+     "JB Hi-Fi"
+    ]
+   },
+   "in_stock_store_ids": [
+    115
+   ],
+   "product_published": true,
+   "published_at": "2026-07-22T23:46:09+00:00",
+   "updated_at": "2026-09-24T06:15:45+00:00",
+   "onPromotion": false
+  },
+  {
+   "objectID": "909462",
+   "sku": "909462",
+   "title": "Pokemon TCG: Mini Portfolio",
+   "handle": "pokemon-tcg-mini-portfolio-card-game-1",
+   "price": 11,
+   "compare_at_price": "",
+   "vendor": "POKEMON TCG",
+   "isMarketplace": false,
+   "availability": {
+    "displayProduct": true,
+    "canBuyOnline": true,
+    "canPreOrder": true,
+    "fulfilment": "Physical",
+    "deliveryFromOnlineWarehouseOnly": false,
+    "deliveryConstraint": "CountryWide",
+    "deliveryStatus": "LimitedStock",
+    "clickNCollectStatus": "NotAvailable",
+    "cashNCarryStatus": "NotAvailable",
+    "overallStatus": "InStock",
+    "availabilityStatement": "Pre-order online",
+    "deliveryOnly": true,
+    "availableNow": "Coming Soon",
+    "productLifecycle": "PreOrder",
+    "isHiddenByFamily": false
+   },
+   "release_date": 1793883600,
+   "tags": "Brand:Pokemon Tcg,InStock",
+   "banner_tags": {
+    "label": "Pre-Order"
+   },
+   "button": "PreOrder",
+   "category_hierarchy": [
+    "Collectibles & Merchandise",
+    "Trading card games",
+    "TCG accessories"
+   ],
+   "facets": {
+    "Game type": [
+     "Trading card games"
+    ],
+    "Expansion": [],
+    "Brands": [
+     "Pokemon TCG"
+    ],
+    "Primary franchise": [
+     "Pokemon"
+    ],
+    "Sold by": [
+     "JB Hi-Fi"
+    ]
+   },
+   "in_stock_store_ids": [
+    2,
+    16,
+    18,
+    31,
+    33
+   ],
+   "product_published": true,
+   "published_at": "2026-09-01T00:00:09+00:00",
+   "updated_at": "2026-09-27T07:06:33+00:00",
+   "onPromotion": false
+  },
+  {
+   "objectID": "880062",
+   "sku": "880062",
+   "title": "Pokemon TCG - Mega Evolutions 3: Perfect Order Booster",
+   "handle": "pokemon-tcg-mega-evolutions-3-perfect-order-booster-card-game",
+   "price": 8.5,
+   "compare_at_price": "",
+   "vendor": "POKEMON TCG",
+   "isMarketplace": false,
+   "availability": {
+    "displayProduct": true,
+    "canBuyOnline": true,
+    "canPreOrder": false,
+    "fulfilment": "Physical",
+    "deliveryFromOnlineWarehouseOnly": false,
+    "deliveryConstraint": "CountryWide",
+    "deliveryStatus": "LimitedStock",
+    "clickNCollectStatus": "NotAvailable",
+    "cashNCarryStatus": "LimitedStock",
+    "overallStatus": "LimitedStock",
+    "availabilityStatement": "Limited stock",
+    "deliveryOnly": false,
+    "availableNow": "Available Now",
+    "productLifecycle": "NonReplenishable",
+    "isHiddenByFamily": false
+   },
+   "release_date": 1774530000,
+   "tags": "Brand:Pokemon Tcg,LimitedStock",
+   "banner_tags": {},
+   "button": "Buy",
+   "category_hierarchy": [
+    "Collectibles & Merchandise",
+    "Trading card games",
+    "Packs"
+   ],
+   "facets": {
+    "Game type": [
+     "Trading card games"
+    ],
+    "Expansion": [
+     "Mega Evolutions: Perfect Order"
+    ],
+    "Brands": [
+     "Pokemon TCG"
+    ],
+    "Primary franchise": [
+     "Pokemon"
+    ],
+    "Sold by": [
+     "JB Hi-Fi"
+    ]
+   },
+   "in_stock_store_ids": [
+    2,
+    4,
+    6,
+    8,
+    9
+   ],
+   "product_published": true,
+   "published_at": "2026-09-09T22:01:08+00:00",
+   "updated_at": "2026-09-27T08:08:33+00:00",
+   "onPromotion": false
+  }
+ ]
+}

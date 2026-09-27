@@ -1,0 +1,105 @@
+{
+ "nbHits": 122,
+ "facets": {
+  "isMarketplace": {
+   "true": 122
+  },
+  "facets.Primary franchise": {
+   "One Piece": 1
+  }
+ },
+ "hits": [
+  {
+   "objectID": "10080726",
+   "sku": "10080726",
+   "title": "Bandai One Piece Card Game OP-16 The Time Of Battle Booster Box Japanese",
+   "handle": "bandai-one-piece-card-game-op-16-the-time-of-battle-booster-box-japanese",
+   "price": 155.34,
+   "compare_at_price": "",
+   "vendor": "BANDAI",
+   "isMarketplace": true,
+   "availability": {
+    "displayProduct": true,
+    "canBuyOnline": true,
+    "canPreOrder": false,
+    "fulfilment": "Physical",
+    "deliveryFromOnlineWarehouseOnly": false,
+    "deliveryConstraint": "CountryWide",
+    "deliveryStatus": "InStock",
+    "clickNCollectStatus": "NotAvailable",
+    "cashNCarryStatus": "NotAvailable",
+    "overallStatus": "InStock",
+    "availabilityStatement": "In stock",
+    "deliveryOnly": true,
+    "availableNow": "Available Now",
+    "productLifecycle": "NonReplenishable",
+    "isHiddenByFamily": false
+   },
+   "release_date": 1784102471,
+   "tags": "Brand:Bandai,InStock",
+   "banner_tags": {},
+   "button": "Buy",
+   "category_hierarchy": [
+    "Collectibles & Merchandise",
+    "Trading card games",
+    "Packs"
+   ],
+   "facets": {
+    "Sold by": [
+     "Gameology"
+    ]
+   },
+   "in_stock_store_ids": [],
+   "product_published": true,
+   "published_at": "2026-07-22T09:00:43+00:00",
+   "updated_at": "2026-09-25T04:22:05+00:00",
+   "onPromotion": false
+  },
+  {
+   "objectID": "10080087",
+   "sku": "10080087",
+   "title": "Bandai One Piece Card Game Carrying On His Will OP-13 Booster Box Japanese",
+   "handle": "bandai-one-piece-card-game-carrying-on-his-will-op-13-booster-box-japanese",
+   "price": 210.84,
+   "compare_at_price": "",
+   "vendor": "BANDAI",
+   "isMarketplace": true,
+   "availability": {
+    "displayProduct": true,
+    "canBuyOnline": true,
+    "canPreOrder": false,
+    "fulfilment": "Physical",
+    "deliveryFromOnlineWarehouseOnly": false,
+    "deliveryConstraint": "CountryWide",
+    "deliveryStatus": "InStock",
+    "clickNCollectStatus": "NotAvailable",
+    "cashNCarryStatus": "NotAvailable",
+    "overallStatus": "InStock",
+    "availabilityStatement": "In stock",
+    "deliveryOnly": true,
+    "availableNow": "Available Now",
+    "productLifecycle": "NonReplenishable",
+    "isHiddenByFamily": false
+   },
+   "release_date": 1784102471,
+   "tags": "Brand:Bandai,InStock",
+   "banner_tags": {},
+   "button": "Buy",
+   "category_hierarchy": [
+    "Collectibles & Merchandise",
+    "Trading card games",
+    "Packs"
+   ],
+   "facets": {
+    "Sold by": [
+     "Gameology"
+    ]
+   },
+   "in_stock_store_ids": [],
+   "product_published": true,
+   "published_at": "2026-07-30T00:00:52+00:00",
+   "updated_at": "2026-09-25T04:21:57+00:00",
+   "onPromotion": false
+  }
+ ]
+}

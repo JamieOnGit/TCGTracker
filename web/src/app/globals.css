@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+/*
+ * Skeleton styles only. The design system (tokens, table, card tile, badge,
+ * button, price-change chip) is built from the approved wireframes and the
+ * design review (docs/research/05-design-review.md) — pending Jamie's sign-off.
+ */
+:root {
+  --bg: #ffffff;
+  --fg: #111418;
+  --muted: #5b6470;
+  --border: #d9dde3;
+  --up: #0a7a3d;
+  --down: #b3261e;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e1116; --fg: #e8ebef; --muted: #9aa4b1; --border: #2a313b; --up: #4ade80; --down: #f87171; }
+}
+body { background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; margin: 0; padding: 0 16px; }
+a { color: inherit; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.site-header, .site-footer { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.site-footer { border-top: 1px solid var(--border); border-bottom: 0; margin-top: 48px; font-size: 14px; color: var(--muted); }
+.site-header ul, .site-footer ul, .crumbs ol { display: flex; flex-wrap: wrap; gap: 12px; list-style: none; margin: 0; padding: 0; }
+.crumbs ol li + li::before { content: '›'; margin-right: 8px; color: var(--muted); }
+.toggles { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0; }
+.toggles nav { display: flex; gap: 8px; }
+[aria-current='page'] { font-weight: 700; }
+.table-scroll { overflow-x: auto; position: relative; } /* contains .sr-only children */
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; white-space: nowrap; }
+.chip-up { color: var(--up); }
+.chip-down { color: var(--down); }
+.badge { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 12px; text-decoration: none; }
+.data-notice, .demo-banner { font-size: 13px; color: var(--muted); }
+.demo-banner { border: 1px dashed var(--border); padding: 8px; }
+.pagination { display: flex; gap: 12px; margin: 12px 0; }

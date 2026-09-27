@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF · Drops · live feed (Premium) — /drops/ (Premium, logged-in state)</title>
+<meta name="robots" content="noindex, nofollow"><!-- wireframe only; see SEO annotation for production rule -->
+<link rel="stylesheet" href="assets/wireframe.css">
+<script src="assets/wf.js" defer></script>
+</head>
+<body class="pb-16 lg:pb-0">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-2">Skip to content</a>
+<header class="sticky top-0 z-30 border-b border-gray-300 bg-white">
+  <div class="wrap flex h-14 items-center gap-2 lg:gap-4">
+    <details data-menu class="relative lg:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open menu"><svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary>
+      <nav aria-label="Mobile menu" class="absolute left-0 top-11 z-40 w-64 border border-gray-400 bg-white py-2 shadow-lg">
+        <ul><li><a class="block px-4 py-2 hover:bg-gray-100 " href="home.html">Home <span class="text-gray-500">(Market Cap)</span></a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="marketplace.html">Marketplace</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 font-bold" href="drops.html" aria-current="page">Drops</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="news.html">News</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="games.html">Cards</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="premium.html">Premium</a></li></ul>
+        <p class="border-t border-gray-200 px-4 pt-2 font-mono text-[10px] text-gray-500">Mobile: hamburger holds all 6 primary tabs; bottom tab bar holds the top 5 destinations.</p>
+      </nav>
+    </details>
+    <a href="home.html" class="flex shrink-0 items-center gap-2" aria-label="BRAND home">
+      <span class="grid h-8 w-8 place-items-center border-2 border-gray-900 font-mono text-[9px] font-bold" aria-hidden="true">LOGO</span>
+      <span class="font-mono text-lg font-black tracking-widest">BRAND</span>
+    </a>
+    <nav aria-label="Primary" class="hidden lg:flex"><a class="tab" href="home.html">Home <span class="hidden xl:inline text-gray-500 font-normal">(Market Cap)</span></a><a class="tab" href="marketplace.html">Marketplace</a><a class="tab" href="drops.html" aria-current="page">Drops</a><a class="tab" href="news.html">News</a><a class="tab" href="games.html">Cards</a><a class="tab" href="premium.html">Premium</a></nav>
+    <form role="search" action="games.html" class="ml-auto hidden min-w-0 flex-1 md:flex md:max-w-xs xl:max-w-sm">
+      <label for="site-q" class="sr-only">Search cards, sets, listings</label>
+      <input id="site-q" name="q" type="search" class="field rounded-r-none" placeholder="Search cards, sets, listings…">
+      <button class="btn rounded-l-none border-l-0" aria-label="Search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    </form>
+    <details data-menu class="relative ml-auto md:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></summary>
+      <form role="search" action="games.html" class="fixed inset-x-0 top-14 z-40 flex gap-2 border-b border-gray-400 bg-white p-3 shadow">
+        <label for="site-q-m" class="sr-only">Search cards, sets, listings</label>
+        <input id="site-q-m" name="q" type="search" class="field" placeholder="Search cards, sets, listings…">
+        <button class="btn btn-primary">Search</button>
+      </form>
+    </details>
+    <a href="dashboard.html#notifications" class="relative rounded p-1 hover:bg-gray-100" aria-label="Notifications, 3 unread"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white" aria-hidden="true">3</span></a>
+    <details data-menu class="relative">
+      <summary class="flex items-center gap-1 rounded p-1 hover:bg-gray-100" aria-label="Account menu">
+        <span class="grid h-7 w-7 place-items-center rounded-full border border-gray-700 bg-gray-200 text-[10px] font-bold" aria-hidden="true">JH</span>
+        <span class="hidden text-sm sm:inline">cardmate_syd ▾</span>
+      </summary>
+      <div class="absolute right-0 top-11 z-40 w-60 border border-gray-400 bg-white py-2 shadow-lg">
+        <p class="px-4 pb-2 text-xs text-gray-600">Signed in · <span class="chip">Free tier</span></p>
+        <ul class="border-t border-gray-200 pt-1 text-sm"><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html">Dashboard</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#listings">My Listings</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="messages.html">Messages<span class="chip chip-on">2</span></a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#alerts">Alerts</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#notifications">Settings</a></li>
+          <li class="border-t border-gray-200"><a class="block px-4 py-2 hover:bg-gray-100" href="admin.html">Admin console <span class="font-mono text-[10px]">(role-gated)</span></a></li>
+          <li><a class="block px-4 py-2 hover:bg-gray-100" href="home.html">Sign out</a></li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</header>
+<main id="main" class="wrap  min-w-0 py-2">
+<details class="seo" open>
+  <summary>▸ SEO annotation · <span class="font-normal">/drops/ (Premium, logged-in state)</span> · NOINDEX</summary>
+  <dl class="grid gap-x-4 gap-y-1 border-t border-dashed border-gray-500 px-3 py-3 sm:grid-cols-[11rem_1fr]"><dt>URL path</dt><dd><code>/drops/ (Premium, logged-in state)</code></dd><dt>H1</dt><dd>Drops — live</dd><dt>&lt;title&gt;</dt><dd>Live Pokémon &amp; One Piece Drops in Australia | BRAND</dd><dt>Meta description</dt><dd>(same URL as public view; Premium state served to logged-in subscribers)</dd><dt>JSON-LD</dt><dd>none for live state</dd><dt>Indexability</dt><dd>noindex for this Premium state (X-Robots-Tag noindex, Vary on auth cookie); crawlers always get the public delayed view (index)</dd><dt>Canonical</dt><dd>/drops/</dd><dt>Key internal links</dt><dd>/drops/{retailer}/ · /releases/{game}/ · /account/ alert settings</dd></dl>
+</details>
+
+<div class="flex flex-wrap items-end justify-between gap-2">
+  <div><h1 class="text-2xl font-black md:text-3xl">Drops — live</h1>
+  <p class="text-sm text-gray-700">Real-time Pokémon &amp; One Piece stock events from Australian retailers. <span class="chip chip-on">★ PREMIUM</span></p></div>
+  <p class="flex items-center gap-2 text-xs"><span class="inline-block h-2 w-2 animate-pulse rounded-full bg-gray-900" aria-hidden="true"></span>Live · 5 of 5 monitors healthy · <a class="underline" href="dashboard.html#notifications">Alert settings</a></p>
+</div>
+<div class="mt-3 flex flex-col gap-2 md:flex-row md:items-center">
+  <nav aria-label="Retailer filter" class="scroll-x"><ul class="flex gap-1 py-1"><li><a class="chip chip-on" href="drops.html">All retailers</a></li><li><a class="chip " href="drops-retailer.html">Premium Bandai AU</a></li><li><a class="chip " href="drops-retailer.html">JB Hi-Fi</a></li><li><a class="chip " href="drops-retailer.html">EB Games</a></li><li><a class="chip " href="drops-retailer.html">BIG W</a></li><li><a class="chip " href="drops-retailer.html">Kmart</a></li></ul></nav>
+  <div class="flex flex-wrap gap-1 md:ml-auto">
+    <label class="sr-only" for="g">Game</label><select id="g" class="field w-auto"><option>All games</option><option>Pokémon</option><option>One Piece</option></select>
+    <label class="sr-only" for="et">Event type</label><select id="et" class="field w-auto"><option>All events</option><option>NEW_LISTING</option><option>PREORDER_OPEN</option><option>IN_STOCK</option><option>PRICE_CHANGE</option><option>QUEUE_LIVE</option></select>
+    <label class="sr-only" for="rrp">RRP</label><select id="rrp" class="field w-auto"><option>Any price</option><option>AT or BELOW RRP only</option></select>
+  </div>
+</div>
+<aside class="annot " aria-label="Wireframe annotation">Premium-only view (auth + tier check server-side). Feed updates via SSE; new items slide in at top with on-site toast + sound (opt-in). Filters mirror the user’s alert watchlist.</aside>
+<ol class="mt-3 divide-y divide-gray-200 border-y border-gray-300" aria-label="Live drop events, newest first"><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="Pokémon TCG: Mega Evolution Elite Trainer Box product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">IN_STOCK</span><span class="text-gray-600">Buyable now</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">Pokémon TCG: Mega Evolution Elite Trainer Box</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">JB Hi-Fi</a> · Pokémon · <time>09:14:32 AEST · 2 min ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">A$79.98</span>
+    <span class="text-[10px] text-gray-600">RRP A$79.99</span>
+    <span class="chip  font-bold">AT RRP</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to JB Hi-Fi ↗</a>
+  </div>
+</li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="One Piece Card Game OP-13 Booster Box (EN) product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">QUEUE_LIVE</span><span class="text-gray-600">Virtual queue opened</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">One Piece Card Game OP-13 Booster Box (EN)</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">Premium Bandai AU</a> · One Piece · <time>09:11:05 AEST · 5 min ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">price TBC</span>
+    <span class="text-[10px] text-gray-600">RRP A$219.00</span>
+    <span class="chip">RRP n/a</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to Premium Bandai AU ↗</a>
+  </div>
+</li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="Pokémon TCG: Phantasmal Flames Booster Bundle product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">PREORDER_OPEN</span><span class="text-gray-600">Pre-orders opened</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">Pokémon TCG: Phantasmal Flames Booster Bundle</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">EB Games</a> · Pokémon · <time>09:02:47 AEST · 14 min ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">A$59.95</span>
+    <span class="text-[10px] text-gray-600">RRP A$59.95</span>
+    <span class="chip  font-bold">AT RRP</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to EB Games ↗</a>
+  </div>
+</li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="Pokémon TCG: Prismatic Evolutions Super-Premium Collection product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">PRICE_CHANGE</span><span class="text-gray-600">Price changed vs last seen</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">Pokémon TCG: Prismatic Evolutions Super-Premium Collection</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">BIG W</a> · Pokémon · <time>08:55:10 AEST · 21 min ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">A$159.00</span>
+    <span class="text-[10px] text-gray-600">RRP A$189.00</span>
+    <span class="chip chip-on font-bold">BELOW RRP</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to BIG W ↗</a>
+  </div>
+</li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="Pokémon TCG: Scarlet & Violet 3-Pack Blister (Mew ex) product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">NEW_LISTING</span><span class="text-gray-600">Product page appeared (not yet buyable)</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">Pokémon TCG: Scarlet & Violet 3-Pack Blister (Mew ex)</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">Kmart</a> · Pokémon · <time>08:40:19 AEST · 36 min ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">A$32.00</span>
+    <span class="text-[10px] text-gray-600">RRP A$24.00</span>
+    <span class="chip chip-down font-bold">ABOVE RRP (+33%)</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to Kmart ↗</a>
+  </div>
+</li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="One Piece Card Game Starter Deck ST-21 (EN) product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">IN_STOCK</span><span class="text-gray-600">Buyable now</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">One Piece Card Game Starter Deck ST-21 (EN)</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">EB Games</a> · One Piece · <time>08:31:55 AEST · 45 min ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">A$24.95</span>
+    <span class="text-[10px] text-gray-600">RRP A$24.95</span>
+    <span class="chip  font-bold">AT RRP</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to EB Games ↗</a>
+  </div>
+</li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3.5rem_1fr_auto]">
+  <span class="ph-wrap aspect-[1/1] w-12 sm:w-14"><img src="assets/ph.svg" alt="Pokémon TCG: Destined Rivals Elite Trainer Box product image" loading="lazy"></span>
+  <div class="min-w-0">
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="rounded-sm bg-gray-900 px-1 font-mono font-bold text-white">PRICE_CHANGE</span><span class="text-gray-600">Price changed vs last seen</span></p>
+    <p class="mt-0.5 font-semibold leading-snug">Pokémon TCG: Destined Rivals Elite Trainer Box</p>
+    <p class="text-xs text-gray-600"><a class="underline" href="drops-retailer.html">JB Hi-Fi</a> · Pokémon · <time>08:12:03 AEST · 1 h ago</time></p>
+  </div>
+  <div class="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+    <span class="font-mono font-bold">A$94.00</span>
+    <span class="text-[10px] text-gray-600">RRP A$79.99</span>
+    <span class="chip chip-down font-bold">ABOVE RRP (+18%)</span>
+    <a class="btn btn-primary btn-sm" href="drops-retailer.html" rel="nofollow sponsored">Go to JB Hi-Fi ↗</a>
+  </div>
+</li></ol>
+<dl class="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
+  <div><dt class="inline font-mono font-bold">NEW_LISTING</dt> <dd class="inline">— Product page appeared (not yet buyable)</dd></div><div><dt class="inline font-mono font-bold">PREORDER_OPEN</dt> <dd class="inline">— Pre-orders opened</dd></div><div><dt class="inline font-mono font-bold">IN_STOCK</dt> <dd class="inline">— Buyable now</dd></div><div><dt class="inline font-mono font-bold">PRICE_CHANGE</dt> <dd class="inline">— Price changed vs last seen</dd></div><div><dt class="inline font-mono font-bold">QUEUE_LIVE</dt> <dd class="inline">— Virtual queue opened</dd></div>
+  <div><dt class="inline font-bold">AT / BELOW / ABOVE RRP (+x%)</dt> <dd class="inline">— vs our RRP table (<a class="underline" href="methodology.html#rrp">how RRP is set</a>)</dd></div>
+</dl>
+<aside class="annot " aria-label="Wireframe annotation">Retailer links: rel="nofollow sponsored" if affiliate. Page is noindex; the public, indexable version is /drops/ with delayed history (drops-public.html).</aside>
+</main>
+<footer class="mt-12 border-t-2 border-gray-900 bg-gray-100 pb-20 pt-8 lg:pb-8">
+  <div class="wrap grid gap-6 md:grid-cols-[1fr_2fr]">
+    <div>
+      <a href="home.html" class="font-mono text-lg font-black tracking-widest">BRAND</a>
+      <p class="mt-2 text-sm text-gray-700">Market cap, prices &amp; population data for Pokémon TCG and One Piece Card Game collectors in Australia. Prices in AUD.</p>
+    </div>
+    <nav aria-label="Footer">
+      <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4"><li><a class="underline" href="methodology.html">Methodology</a> <span class="font-mono text-[10px] text-gray-500">/methodology/</span></li><li><a class="underline" href="data.html">Data</a> <span class="font-mono text-[10px] text-gray-500">/data/</span></li><li><a class="underline" href="data.html#api">API</a> <span class="font-mono text-[10px] text-gray-500">/api/</span></li><li><a class="underline" href="about.html">About</a> <span class="font-mono text-[10px] text-gray-500">/about/</span></li><li><a class="underline" href="contact.html">Contact</a> <span class="font-mono text-[10px] text-gray-500">/contact/</span></li><li><a class="underline" href="terms.html">Terms</a> <span class="font-mono text-[10px] text-gray-500">/terms/</span></li><li><a class="underline" href="privacy.html">Privacy</a> <span class="font-mono text-[10px] text-gray-500">/privacy/</span></li>
+        <li><a class="underline" href="index.html">Wireframe index</a></li>
+      </ul>
+    </nav>
+    <p class="border-t border-gray-300 pt-4 text-xs text-gray-600 md:col-span-2">Pokémon and One Piece are trademarks of their respective owners; BRAND is not affiliated with, endorsed or sponsored by The Pokémon Company, Nintendo, Game Freak, Creatures, Bandai, Eiichiro Oda/Shueisha, Toei Animation or PSA. Card images © their respective owners. Population data sourced from PSA; prices are indicative, in AUD incl. GST where applicable. © 2026 BRAND · ABN 00 000 000 000</p>
+  </div>
+</footer>
+<nav aria-label="Mobile tab bar" class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-gray-400 bg-white lg:hidden"><a href="home.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7v9H3z"/></svg>Home</a><a href="marketplace.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Market</a><a href="drops.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold" aria-current="page"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Drops</a><a href="messages.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages</a><a href="dashboard.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Account</a></nav>
+</body>
+</html>

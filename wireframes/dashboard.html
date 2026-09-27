@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF · User dashboard — /account/</title>
+<meta name="robots" content="noindex, nofollow"><!-- wireframe only; see SEO annotation for production rule -->
+<link rel="stylesheet" href="assets/wireframe.css">
+<script src="assets/wf.js" defer></script>
+</head>
+<body class="pb-16 lg:pb-0">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-2">Skip to content</a>
+<header class="sticky top-0 z-30 border-b border-gray-300 bg-white">
+  <div class="wrap flex h-14 items-center gap-2 lg:gap-4">
+    <details data-menu class="relative lg:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open menu"><svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary>
+      <nav aria-label="Mobile menu" class="absolute left-0 top-11 z-40 w-64 border border-gray-400 bg-white py-2 shadow-lg">
+        <ul><li><a class="block px-4 py-2 hover:bg-gray-100 " href="home.html">Home <span class="text-gray-500">(Market Cap)</span></a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="marketplace.html">Marketplace</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="drops.html">Drops</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="news.html">News</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="games.html">Cards</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="premium.html">Premium</a></li></ul>
+        <p class="border-t border-gray-200 px-4 pt-2 font-mono text-[10px] text-gray-500">Mobile: hamburger holds all 6 primary tabs; bottom tab bar holds the top 5 destinations.</p>
+      </nav>
+    </details>
+    <a href="home.html" class="flex shrink-0 items-center gap-2" aria-label="BRAND home">
+      <span class="grid h-8 w-8 place-items-center border-2 border-gray-900 font-mono text-[9px] font-bold" aria-hidden="true">LOGO</span>
+      <span class="font-mono text-lg font-black tracking-widest">BRAND</span>
+    </a>
+    <nav aria-label="Primary" class="hidden lg:flex"><a class="tab" href="home.html">Home <span class="hidden xl:inline text-gray-500 font-normal">(Market Cap)</span></a><a class="tab" href="marketplace.html">Marketplace</a><a class="tab" href="drops.html">Drops</a><a class="tab" href="news.html">News</a><a class="tab" href="games.html">Cards</a><a class="tab" href="premium.html">Premium</a></nav>
+    <form role="search" action="games.html" class="ml-auto hidden min-w-0 flex-1 md:flex md:max-w-xs xl:max-w-sm">
+      <label for="site-q" class="sr-only">Search cards, sets, listings</label>
+      <input id="site-q" name="q" type="search" class="field rounded-r-none" placeholder="Search cards, sets, listings…">
+      <button class="btn rounded-l-none border-l-0" aria-label="Search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    </form>
+    <details data-menu class="relative ml-auto md:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></summary>
+      <form role="search" action="games.html" class="fixed inset-x-0 top-14 z-40 flex gap-2 border-b border-gray-400 bg-white p-3 shadow">
+        <label for="site-q-m" class="sr-only">Search cards, sets, listings</label>
+        <input id="site-q-m" name="q" type="search" class="field" placeholder="Search cards, sets, listings…">
+        <button class="btn btn-primary">Search</button>
+      </form>
+    </details>
+    <a href="dashboard.html#notifications" class="relative rounded p-1 hover:bg-gray-100" aria-label="Notifications, 3 unread"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white" aria-hidden="true">3</span></a>
+    <details data-menu class="relative">
+      <summary class="flex items-center gap-1 rounded p-1 hover:bg-gray-100" aria-label="Account menu">
+        <span class="grid h-7 w-7 place-items-center rounded-full border border-gray-700 bg-gray-200 text-[10px] font-bold" aria-hidden="true">JH</span>
+        <span class="hidden text-sm sm:inline">cardmate_syd ▾</span>
+      </summary>
+      <div class="absolute right-0 top-11 z-40 w-60 border border-gray-400 bg-white py-2 shadow-lg">
+        <p class="px-4 pb-2 text-xs text-gray-600">Signed in · <span class="chip">Free tier</span></p>
+        <ul class="border-t border-gray-200 pt-1 text-sm"><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html">Dashboard</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#listings">My Listings</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="messages.html">Messages<span class="chip chip-on">2</span></a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#alerts">Alerts</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#notifications">Settings</a></li>
+          <li class="border-t border-gray-200"><a class="block px-4 py-2 hover:bg-gray-100" href="admin.html">Admin console <span class="font-mono text-[10px]">(role-gated)</span></a></li>
+          <li><a class="block px-4 py-2 hover:bg-gray-100" href="home.html">Sign out</a></li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</header>
+<main id="main" class="wrap  min-w-0 py-2">
+<details class="seo" open>
+  <summary>▸ SEO annotation · <span class="font-normal">/account/</span> · NOINDEX</summary>
+  <dl class="grid gap-x-4 gap-y-1 border-t border-dashed border-gray-500 px-3 py-3 sm:grid-cols-[11rem_1fr]"><dt>URL path</dt><dd><code>/account/</code></dd><dt>H1</dt><dd>Dashboard</dd><dt>&lt;title&gt;</dt><dd>Dashboard | BRAND</dd><dt>Meta description</dt><dd>— (not indexed)</dd><dt>JSON-LD</dt><dd>none</dd><dt>Indexability</dt><dd>noindex, nofollow (auth required; X-Robots-Tag noindex; robots.txt Disallow)</dd><dt>Canonical</dt><dd>n/a</dd><dt>Key internal links</dt><dd>Account nav only</dd></dl>
+</details>
+
+<h1 class="text-2xl font-black md:text-3xl">Dashboard</h1>
+<p class="text-sm text-gray-600">Hi cardmate_syd · <span class="chip">Free tier</span> · <a class="underline" href="premium.html">Upgrade</a></p>
+<nav aria-label="Dashboard sections" class="scroll-x mt-3 border-b border-gray-300"><ul class="flex"><li><a class="tab" href="#listings" aria-current="true">My listings</a></li><li><a class="tab" href="#saved">Saved searches</a></li><li><a class="tab" href="#wishlist">Wishlist</a></li><li><a class="tab" href="#alerts">Alerts</a></li><li><a class="tab" href="#notifications">Notifications</a></li><li><a class="tab" href="#subscription">Subscription</a></li><li><a class="tab" href="#blocked">Blocked users</a></li></ul></nav>
+
+<div class="mt-4 grid gap-6 lg:grid-cols-[1fr_20rem]">
+<section id="listings" aria-labelledby="ml-h" class="min-w-0">
+  <div class="flex flex-wrap items-center justify-between gap-2"><h2 id="ml-h" class="h2">My listings</h2><a class="btn btn-primary btn-sm" href="sell.html">+ New listing</a></div>
+  <div class="mt-2"><div class="rounded border border-gray-900 bg-white p-2 text-sm" role="status">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <p><strong>3 of 5</strong> listings used this month <span class="text-xs text-gray-600">(Free · resets 1 Nov)</span></p>
+    <a class="text-xs underline" href="premium.html">Need more? Premium = 30/month</a>
+  </div>
+  <div class="mt-1 h-2 w-full rounded-full border border-gray-700 bg-white" aria-hidden="true"><div class="h-full rounded-full bg-gray-900" style="width:60%"></div></div>
+</div></div>
+  <ul class="mt-3 divide-y divide-gray-200 border-y border-gray-300"><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3rem_1fr_auto]">
+    <span class="ph-wrap aspect-[63/88] w-12"><img src="assets/ph.svg" alt="Charizard ex 199/165 · 151 listing photo" loading="lazy"></span>
+    <div class="min-w-0"><a class="font-semibold underline" href="listing.html">Charizard ex 199/165 · 151</a> <span class="badge " title="English-language card">EN</span>
+      <p class="text-xs text-gray-600">PSA 10 · <span class="font-mono">A$4,650</span> · 214 views · 3 messages</p>
+      </div>
+    <div class="col-start-2 flex flex-wrap items-center gap-1 sm:col-start-3 sm:flex-col sm:items-end"><span class="chip chip-on">Active</span>
+      <span class="flex gap-1"><a class="btn btn-sm" href="sell.html">Edit</a><a class="btn btn-sm" href="listing-sold.html">Mark sold</a></span></div>
+  </li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3rem_1fr_auto]">
+    <span class="ph-wrap aspect-[63/88] w-12"><img src="assets/ph.svg" alt="Umbreon VMAX 215/203 · Evolving Skies listing photo" loading="lazy"></span>
+    <div class="min-w-0"><a class="font-semibold underline" href="listing.html">Umbreon VMAX 215/203 · Evolving Skies</a> <span class="badge " title="English-language card">EN</span>
+      <p class="text-xs text-gray-600">PSA 9 · <span class="font-mono">A$1,180</span> · submitted 2 h ago</p>
+      </div>
+    <div class="col-start-2 flex flex-wrap items-center gap-1 sm:col-start-3 sm:flex-col sm:items-end"><span class="chip ">Pending review</span>
+      <span class="flex gap-1"></span></div>
+  </li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3rem_1fr_auto]">
+    <span class="ph-wrap aspect-[63/88] w-12"><img src="assets/ph.svg" alt="Shanks OP01-120 SEC Parallel listing photo" loading="lazy"></span>
+    <div class="min-w-0"><a class="font-semibold underline" href="listing.html">Shanks OP01-120 SEC Parallel</a> <span class="badge badge-jp" title="Japanese-language card">JP</span>
+      <p class="text-xs text-gray-600">PSA 9 · <span class="font-mono">A$540</span> · </p>
+      <p class="mt-1 rounded border border-dashed border-gray-700 bg-gray-50 p-1 text-xs">Reason: slab photo doesn’t show cert number. Edit &amp; resubmit (quota slot refunded).</p></div>
+    <div class="col-start-2 flex flex-wrap items-center gap-1 sm:col-start-3 sm:flex-col sm:items-end"><span class="chip chip-down">Rejected</span>
+      <span class="flex gap-1"><a class="btn btn-sm" href="sell.html">Edit</a></span></div>
+  </li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3rem_1fr_auto]">
+    <span class="ph-wrap aspect-[63/88] w-12"><img src="assets/ph.svg" alt="Pikachu with Grey Felt Hat SVP 085 listing photo" loading="lazy"></span>
+    <div class="min-w-0"><a class="font-semibold underline" href="listing-sold.html">Pikachu with Grey Felt Hat SVP 085</a> <span class="badge " title="English-language card">EN</span>
+      <p class="text-xs text-gray-600">PSA 10 · <span class="font-mono">A$995</span> · sold 24 Sep</p>
+      </div>
+    <div class="col-start-2 flex flex-wrap items-center gap-1 sm:col-start-3 sm:flex-col sm:items-end"><span class="chip ">Sold</span>
+      <span class="flex gap-1"></span></div>
+  </li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3rem_1fr_auto]">
+    <span class="ph-wrap aspect-[63/88] w-12"><img src="assets/ph.svg" alt="OP-06 Booster Box (sealed) listing photo" loading="lazy"></span>
+    <div class="min-w-0"><a class="font-semibold underline" href="listing.html">OP-06 Booster Box (sealed)</a> <span class="badge badge-jp" title="Japanese-language card">JP</span>
+      <p class="text-xs text-gray-600">Sealed · <span class="font-mono">A$210</span> · not submitted</p>
+      </div>
+    <div class="col-start-2 flex flex-wrap items-center gap-1 sm:col-start-3 sm:flex-col sm:items-end"><span class="chip ">Draft</span>
+      <span class="flex gap-1"><a class="btn btn-sm" href="sell.html">Edit</a></span></div>
+  </li><li class="grid grid-cols-[3rem_1fr] gap-3 py-3 sm:grid-cols-[3rem_1fr_auto]">
+    <span class="ph-wrap aspect-[63/88] w-12"><img src="assets/ph.svg" alt="Mew ex 232/091 (raw NM) listing photo" loading="lazy"></span>
+    <div class="min-w-0"><a class="font-semibold underline" href="listing.html">Mew ex 232/091 (raw NM)</a> <span class="badge " title="English-language card">EN</span>
+      <p class="text-xs text-gray-600">Raw · <span class="font-mono">A$85</span> · expired 20 Sep · relist</p>
+      </div>
+    <div class="col-start-2 flex flex-wrap items-center gap-1 sm:col-start-3 sm:flex-col sm:items-end"><span class="chip ">Expired</span>
+      <span class="flex gap-1"><a class="btn btn-sm" href="sell.html">Relist</a></span></div>
+  </li></ul>
+  <aside class="annot " aria-label="Wireframe annotation">Status chips: Draft · Pending review · Active · Sold · Expired (60 days) · Rejected (with moderator reason template). Only Pending/Active/Sold count toward quota.</aside>
+</section>
+
+<aside class="space-y-4">
+  <section id="subscription" class="card p-3" aria-labelledby="sub-h">
+    <h2 id="sub-h" class="font-bold">Subscription</h2>
+    <p class="text-sm">Plan: <strong>Free</strong> · 5 listings/month</p>
+    <a class="btn btn-primary btn-sm mt-2" href="premium.html">Upgrade to Premium A$12.99/mo</a>
+    <div class="mt-3 border-t border-dashed border-gray-400 pt-2 text-xs">
+      <p class="font-bold">Premium state:</p>
+      <p>Premium · A$12.99/mo incl. GST · renews 14 Oct 2026 · Visa •• 4242</p>
+      <a class="btn btn-sm mt-1" href="#subscription">Manage billing ↗</a>
+      <aside class="annot " aria-label="Wireframe annotation">“Manage billing” → Stripe customer portal (invoices, card, cancel). We never store card data.</aside>
+    </div>
+  </section>
+  <section id="saved" class="card p-3" aria-labelledby="ss-h">
+    <h2 id="ss-h" class="font-bold">Saved searches (2 of 3)</h2>
+    <ul class="mt-1 space-y-1 text-sm"><li><a class="underline" href="marketplace.html">Luffy manga · JP · PSA 10 · ≤ A$6,000</a> <span class="text-xs text-gray-600">· 1 new</span></li><li><a class="underline" href="marketplace.html">Sealed · One Piece · VIC</a></li></ul>
+  </section>
+  <section id="wishlist" class="card p-3" aria-labelledby="wl-h">
+    <h2 id="wl-h" class="font-bold">Wishlist</h2>
+    <ul class="mt-1 space-y-1 text-sm">
+      <li class="flex justify-between gap-2"><a class="underline" href="card-op-jp.html">Luffy OP05-119 Manga <span class="badge badge-jp" title="Japanese-language card">JP</span></a><span class="font-mono text-xs">alert ≤ A$5,800</span></li>
+      <li class="flex justify-between gap-2"><a class="underline" href="card.html">Umbreon VMAX 215/203 <span class="badge " title="English-language card">EN</span></a><span class="font-mono text-xs">any listing</span></li>
+    </ul>
+  </section>
+  <section id="blocked" class="card p-3 text-sm" aria-labelledby="bl-h"><h2 id="bl-h" class="font-bold">Blocked users (1)</h2><p>@quick_cash_cards <a class="underline" href="#blocked">Unblock</a></p></section>
+</aside>
+</div>
+
+<section id="alerts" class="mt-8" aria-labelledby="al-h">
+  <h2 id="al-h" class="h2">Drop alert watchlist</h2>
+  <p class="text-sm text-gray-700">Instant retail alerts are a Premium feature. <a class="underline" href="premium.html">Upgrade</a> — or follow the <a class="underline" href="drops-public.html">public delayed feed</a>.</p>
+  <ul class="mt-2 flex flex-wrap gap-2 text-sm"><li class="chip">Pokémon · all retailers ✕</li><li class="chip">One Piece OP-12 · Premium Bandai AU ✕</li><li class="chip">Only AT/BELOW RRP ✕</li><li><a class="chip" href="#alerts">+ Add</a></li></ul>
+</section>
+
+<section id="notifications" class="mt-8" aria-labelledby="np-h">
+  <h2 id="np-h" class="h2">Notification preferences</h2>
+  <div class="scroll-x mt-2">
+  <table class="tbl min-w-[26rem]">
+    <caption class="sr-only">Alert type by channel</caption>
+    <thead><tr><th scope="col" class="sticky-col">Alert type</th><th scope="col" class="text-center">Email</th><th scope="col" class="text-center">On-site</th><th scope="col" class="text-center">Discord <span class="font-normal normal-case">(Premium)</span></th></tr></thead>
+    <tbody><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !font-normal !text-gray-900 whitespace-normal"><span class="block w-[9.5rem] sm:w-auto">Retail drops — instant (Premium) <span class="chip !text-[10px]">Premium</span></span></th><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Retail drops — instant (Premium) via email" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Retail drops — instant (Premium) via on-site" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="false" aria-label="Retail drops — instant (Premium) via Discord" class="toggle "></button></td></tr><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !font-normal !text-gray-900 whitespace-normal"><span class="block w-[9.5rem] sm:w-auto">Retail drops — daily digest</span></th><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Retail drops — daily digest via email" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="false" aria-label="Retail drops — daily digest via on-site" class="toggle "></button></td><td class="text-center"><span class="text-xs text-gray-400">n/a</span></td></tr><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !font-normal !text-gray-900 whitespace-normal"><span class="block w-[9.5rem] sm:w-auto">Price alerts (cards on wishlist)</span></th><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Price alerts (cards on wishlist) via email" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Price alerts (cards on wishlist) via on-site" class="toggle on"></button></td><td class="text-center"><span class="text-xs text-gray-400">n/a</span></td></tr><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !font-normal !text-gray-900 whitespace-normal"><span class="block w-[9.5rem] sm:w-auto">New listing matches saved search</span></th><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="New listing matches saved search via email" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="New listing matches saved search via on-site" class="toggle on"></button></td><td class="text-center"><span class="text-xs text-gray-400">n/a</span></td></tr><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !font-normal !text-gray-900 whitespace-normal"><span class="block w-[9.5rem] sm:w-auto">Messages from buyers/sellers</span></th><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Messages from buyers/sellers via email" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Messages from buyers/sellers via on-site" class="toggle on"></button></td><td class="text-center"><span class="text-xs text-gray-400">n/a</span></td></tr><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !font-normal !text-gray-900 whitespace-normal"><span class="block w-[9.5rem] sm:w-auto">Listing approved / rejected</span></th><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Listing approved / rejected via email" class="toggle on"></button></td><td class="text-center"><button type="button" role="switch" aria-checked="true" aria-label="Listing approved / rejected via on-site" class="toggle on"></button></td><td class="text-center"><span class="text-xs text-gray-400">n/a</span></td></tr></tbody>
+  </table></div>
+  <div class="mt-3 flex flex-wrap items-center gap-2 text-sm"><span>Discord:</span><a class="btn btn-sm" href="#notifications">Connect Discord</a><span class="text-xs text-gray-600">(DMs from BRAND bot; optional)</span></div>
+  <div class="mt-4 card p-3 text-sm">
+    <h3 class="font-bold">Marketing emails</h3>
+    <label class="mt-1 flex items-center gap-2"><button type="button" role="switch" aria-checked="false" aria-label="Marketing emails" class="toggle "></button> News, product updates &amp; partner offers (off by default — separate opt-in)</label>
+    <p class="mt-2 text-xs text-gray-600">Every email has a one-click unsubscribe link for that alert type (Spam Act 2003). Transactional emails (receipts, listing decisions, security) can’t be turned off.</p>
+  </div>
+  <aside class="annot " aria-label="Wireframe annotation">Matrix: rows = alert type, columns = channel. Marketing consent stored separately from alert prefs with timestamp.</aside>
+</section>
+</main>
+<footer class="mt-12 border-t-2 border-gray-900 bg-gray-100 pb-20 pt-8 lg:pb-8">
+  <div class="wrap grid gap-6 md:grid-cols-[1fr_2fr]">
+    <div>
+      <a href="home.html" class="font-mono text-lg font-black tracking-widest">BRAND</a>
+      <p class="mt-2 text-sm text-gray-700">Market cap, prices &amp; population data for Pokémon TCG and One Piece Card Game collectors in Australia. Prices in AUD.</p>
+    </div>
+    <nav aria-label="Footer">
+      <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4"><li><a class="underline" href="methodology.html">Methodology</a> <span class="font-mono text-[10px] text-gray-500">/methodology/</span></li><li><a class="underline" href="data.html">Data</a> <span class="font-mono text-[10px] text-gray-500">/data/</span></li><li><a class="underline" href="data.html#api">API</a> <span class="font-mono text-[10px] text-gray-500">/api/</span></li><li><a class="underline" href="about.html">About</a> <span class="font-mono text-[10px] text-gray-500">/about/</span></li><li><a class="underline" href="contact.html">Contact</a> <span class="font-mono text-[10px] text-gray-500">/contact/</span></li><li><a class="underline" href="terms.html">Terms</a> <span class="font-mono text-[10px] text-gray-500">/terms/</span></li><li><a class="underline" href="privacy.html">Privacy</a> <span class="font-mono text-[10px] text-gray-500">/privacy/</span></li>
+        <li><a class="underline" href="index.html">Wireframe index</a></li>
+      </ul>
+    </nav>
+    <p class="border-t border-gray-300 pt-4 text-xs text-gray-600 md:col-span-2">Pokémon and One Piece are trademarks of their respective owners; BRAND is not affiliated with, endorsed or sponsored by The Pokémon Company, Nintendo, Game Freak, Creatures, Bandai, Eiichiro Oda/Shueisha, Toei Animation or PSA. Card images © their respective owners. Population data sourced from PSA; prices are indicative, in AUD incl. GST where applicable. © 2026 BRAND · ABN 00 000 000 000</p>
+  </div>
+</footer>
+<nav aria-label="Mobile tab bar" class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-gray-400 bg-white lg:hidden"><a href="home.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7v9H3z"/></svg>Home</a><a href="marketplace.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Market</a><a href="drops.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Drops</a><a href="messages.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages</a><a href="dashboard.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold" aria-current="page"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Account</a></nav>
+</body>
+</html>

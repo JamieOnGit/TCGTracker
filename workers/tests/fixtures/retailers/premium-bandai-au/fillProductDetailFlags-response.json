@@ -1,0 +1,113 @@
+[
+ {
+  "productCode": "A2870005001",
+  "areaCode": "au",
+  "productName": {
+   "en": "LUFFY’s ARTCANVAS 1/8 -20th Anniversary-"
+  },
+  "fixedPrice": true,
+  "fixedListPrice": {
+   "amount": 148,
+   "currency": "AUD"
+  },
+  "productImages": [
+   {
+    "fileUrl": "https://p-bandai.com/files/seller-products/ASP0005724001/DOLQKgjItM9OuVYuEub1.webp",
+    "width": 0,
+    "height": 0
+   }
+  ],
+  "flags": [
+   "PRE-ORDER"
+  ],
+  "productFlags": [
+   {
+    "labelCode": "PRE_ORDER",
+    "labelName": {
+     "en": "PRE-ORDER",
+     "fr": "PRE-ORDER",
+     "ko": "PRE-ORDER",
+     "zh": "et",
+     "zh-HK": "PRE-ORDER",
+     "zh-TW": "PRE-ORDER"
+    },
+    "textColor": "#FFFFFF",
+    "backgroundColor": "#DB005A"
+   }
+  ]
+ },
+ {
+  "productCode": "A2679391004",
+  "areaCode": "au",
+  "productName": {
+   "en": "RG 1/144 SWORD IMPULSE GUNDAM SpecII [Nov 2026 Delivery]"
+  },
+  "fixedPrice": true,
+  "fixedListPrice": {
+   "amount": 64,
+   "currency": "AUD"
+  },
+  "productImages": [
+   {
+    "fileUrl": "https://p-bandai.com/files/seller-products/ASP0004519003/q2AtFs02O9MPfznAFBBn.jpg",
+    "width": 0,
+    "height": 0
+   }
+  ],
+  "flags": [
+   "PRE-ORDER"
+  ],
+  "productFlags": [
+   {
+    "labelCode": "PRE_ORDER",
+    "labelName": {
+     "en": "PRE-ORDER",
+     "fr": "PRE-ORDER",
+     "ko": "PRE-ORDER",
+     "zh": "et",
+     "zh-HK": "PRE-ORDER",
+     "zh-TW": "PRE-ORDER"
+    },
+    "textColor": "#FFFFFF",
+    "backgroundColor": "#DB005A"
+   }
+  ]
+ },
+ {
+  "productCode": "A2869565001",
+  "areaCode": "au",
+  "productName": {
+   "en": "FIN FUNNEL & CLEAR COLOR BODY FOR PG UNLEASHED 1/60 ν GUNDAM [Jan 2027 Delivery]"
+  },
+  "fixedPrice": true,
+  "fixedListPrice": {
+   "amount": 249,
+   "currency": "AUD"
+  },
+  "productImages": [
+   {
+    "fileUrl": "https://p-bandai.com/files/seller-products/ASP0005758001/MyhbPUx62finiT1GDvUM.jpg",
+    "width": 0,
+    "height": 0
+   }
+  ],
+  "flags": [
+   "PRE-ORDER"
+  ],
+  "productFlags": [
+   {
+    "labelCode": "PRE_ORDER",
+    "labelName": {
+     "en": "PRE-ORDER",
+     "fr": "PRE-ORDER",
+     "ko": "PRE-ORDER",
+     "zh": "et",
+     "zh-HK": "PRE-ORDER",
+     "zh-TW": "PRE-ORDER"
+    },
+    "textColor": "#FFFFFF",
+    "backgroundColor": "#DB005A"
+   }
+  ]
+ }
+]

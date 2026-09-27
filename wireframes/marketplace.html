@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF · Marketplace home — /marketplace/ (+ /marketplace/{game}/)</title>
+<meta name="robots" content="noindex, nofollow"><!-- wireframe only; see SEO annotation for production rule -->
+<link rel="stylesheet" href="assets/wireframe.css">
+<script src="assets/wf.js" defer></script>
+</head>
+<body class="pb-16 lg:pb-0">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-2">Skip to content</a>
+<header class="sticky top-0 z-30 border-b border-gray-300 bg-white">
+  <div class="wrap flex h-14 items-center gap-2 lg:gap-4">
+    <details data-menu class="relative lg:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open menu"><svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary>
+      <nav aria-label="Mobile menu" class="absolute left-0 top-11 z-40 w-64 border border-gray-400 bg-white py-2 shadow-lg">
+        <ul><li><a class="block px-4 py-2 hover:bg-gray-100 " href="home.html">Home <span class="text-gray-500">(Market Cap)</span></a></li><li><a class="block px-4 py-2 hover:bg-gray-100 font-bold" href="marketplace.html" aria-current="page">Marketplace</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="drops.html">Drops</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="news.html">News</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="games.html">Cards</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="premium.html">Premium</a></li></ul>
+        <p class="border-t border-gray-200 px-4 pt-2 font-mono text-[10px] text-gray-500">Mobile: hamburger holds all 6 primary tabs; bottom tab bar holds the top 5 destinations.</p>
+      </nav>
+    </details>
+    <a href="home.html" class="flex shrink-0 items-center gap-2" aria-label="BRAND home">
+      <span class="grid h-8 w-8 place-items-center border-2 border-gray-900 font-mono text-[9px] font-bold" aria-hidden="true">LOGO</span>
+      <span class="font-mono text-lg font-black tracking-widest">BRAND</span>
+    </a>
+    <nav aria-label="Primary" class="hidden lg:flex"><a class="tab" href="home.html">Home <span class="hidden xl:inline text-gray-500 font-normal">(Market Cap)</span></a><a class="tab" href="marketplace.html" aria-current="page">Marketplace</a><a class="tab" href="drops.html">Drops</a><a class="tab" href="news.html">News</a><a class="tab" href="games.html">Cards</a><a class="tab" href="premium.html">Premium</a></nav>
+    <form role="search" action="games.html" class="ml-auto hidden min-w-0 flex-1 md:flex md:max-w-xs xl:max-w-sm">
+      <label for="site-q" class="sr-only">Search cards, sets, listings</label>
+      <input id="site-q" name="q" type="search" class="field rounded-r-none" placeholder="Search cards, sets, listings…">
+      <button class="btn rounded-l-none border-l-0" aria-label="Search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    </form>
+    <details data-menu class="relative ml-auto md:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></summary>
+      <form role="search" action="games.html" class="fixed inset-x-0 top-14 z-40 flex gap-2 border-b border-gray-400 bg-white p-3 shadow">
+        <label for="site-q-m" class="sr-only">Search cards, sets, listings</label>
+        <input id="site-q-m" name="q" type="search" class="field" placeholder="Search cards, sets, listings…">
+        <button class="btn btn-primary">Search</button>
+      </form>
+    </details>
+    <a href="dashboard.html#notifications" class="relative rounded p-1 hover:bg-gray-100" aria-label="Notifications, 3 unread"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white" aria-hidden="true">3</span></a>
+    <details data-menu class="relative">
+      <summary class="flex items-center gap-1 rounded p-1 hover:bg-gray-100" aria-label="Account menu">
+        <span class="grid h-7 w-7 place-items-center rounded-full border border-gray-700 bg-gray-200 text-[10px] font-bold" aria-hidden="true">JH</span>
+        <span class="hidden text-sm sm:inline">cardmate_syd ▾</span>
+      </summary>
+      <div class="absolute right-0 top-11 z-40 w-60 border border-gray-400 bg-white py-2 shadow-lg">
+        <p class="px-4 pb-2 text-xs text-gray-600">Signed in · <span class="chip">Free tier</span></p>
+        <ul class="border-t border-gray-200 pt-1 text-sm"><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html">Dashboard</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#listings">My Listings</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="messages.html">Messages<span class="chip chip-on">2</span></a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#alerts">Alerts</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#notifications">Settings</a></li>
+          <li class="border-t border-gray-200"><a class="block px-4 py-2 hover:bg-gray-100" href="admin.html">Admin console <span class="font-mono text-[10px]">(role-gated)</span></a></li>
+          <li><a class="block px-4 py-2 hover:bg-gray-100" href="home.html">Sign out</a></li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</header>
+<main id="main" class="wrap  min-w-0 py-2">
+<details class="seo" open>
+  <summary>▸ SEO annotation · <span class="font-normal">/marketplace/ (+ /marketplace/{game}/)</span> · INDEX</summary>
+  <dl class="grid gap-x-4 gap-y-1 border-t border-dashed border-gray-500 px-3 py-3 sm:grid-cols-[11rem_1fr]"><dt>URL path</dt><dd><code>/marketplace/ (+ /marketplace/{game}/)</code></dd><dt>H1</dt><dd>Marketplace</dd><dt>&lt;title&gt;</dt><dd>Buy &amp; Sell Pokémon and One Piece Cards in Australia — Graded, Raw, Sealed | BRAND</dd><dt>Meta description</dt><dd>{1,284} listings from Australian collectors: PSA graded slabs, raw singles and sealed product. Prices in AUD, message sellers securely.</dd><dt>JSON-LD</dt><dd>CollectionPage · ItemList (listings → /marketplace/listing/…/) · BreadcrumbList</dd><dt>Indexability</dt><dd>index, follow (/marketplace/ and /marketplace/{game}/ only; filter/sort param combos → noindex, follow)</dd><dt>Canonical</dt><dd>Self; filter params canonical to base path; ?page=N self-canonical</dd><dt>Key internal links</dt><dd>/marketplace/pokemon/ · /marketplace/one-piece/ · listing pages · /sellers/{username}/ · /premium/ · create listing</dd></dl>
+</details>
+
+<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+  <div>
+    <h1 class="text-2xl font-black md:text-3xl">Marketplace</h1>
+    <p class="text-sm text-gray-700">Buy &amp; sell graded cards, raw singles and sealed product with Australian collectors. Message sellers on-site; every listing is reviewed before it goes live.</p>
+  </div>
+  <a class="btn btn-primary" href="sell.html">+ Create listing</a>
+</div>
+<form role="search" class="mt-4 flex gap-2" action="marketplace.html">
+  <label for="mq" class="sr-only">Search listings</label>
+  <input id="mq" name="q" type="search" class="field" placeholder="Search listings — card name, number, set, cert #">
+  <button class="btn btn-primary">Search</button>
+</form>
+<div class="mt-4 grid gap-6 lg:grid-cols-[16rem_1fr]">
+  <aside aria-label="Filters" class="hidden lg:block">
+    <h2 class="h2 mb-2">Filters</h2>
+    <form action="marketplace.html" class="space-y-4 text-sm">
+  <fieldset><legend class="lbl">Game</legend>
+    <label class="mr-3 inline-flex items-center gap-1"><input type="radio" name="game" checked> All</label><label class="mr-3 inline-flex items-center gap-1"><input type="radio" name="game" > Pokémon</label><label class="mr-3 inline-flex items-center gap-1"><input type="radio" name="game" > One Piece</label></fieldset>
+  <fieldset><legend class="lbl">Language</legend>
+    <label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="lang" checked> <span class="badge " title="English-language card">EN</span> English</label><label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="lang" checked> <span class="badge badge-jp" title="Japanese-language card">JP</span> Japanese</label></fieldset>
+  <div><label class="lbl" for="set-d">Set</label><select id="set-d" class="field"><option>Any set</option><option>Scarlet &amp; Violet—151 (EN)</option><option>Pokémon Card 151 SV2a (JP)</option><option>Awakening of the New Era OP-05 (JP)</option></select></div>
+  <fieldset><legend class="lbl">Listing type</legend>
+    <label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="type" checked> Graded</label><label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="type" checked> Raw</label><label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="type" checked> Sealed</label></fieldset>
+  <div><label class="lbl" for="grade-d">Grade</label><select id="grade-d" class="field"><option>Any grade</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8 and below</option><option>Raw only</option></select></div>
+  <fieldset><legend class="lbl">Price (AUD)</legend><div class="flex items-center gap-2"><label class="sr-only" for="min-d">Min price</label><input id="min-d" class="field" inputmode="numeric" placeholder="Min A$"><span>–</span><label class="sr-only" for="max-d">Max price</label><input id="max-d" class="field" inputmode="numeric" placeholder="Max A$"></div></fieldset>
+  <div><label class="lbl" for="state-d">Location / state</label><select id="state-d" class="field"><option>All of Australia</option><option>NSW</option><option>VIC</option><option>QLD</option><option>WA</option><option>SA</option><option>TAS</option><option>ACT</option><option>NT</option></select>
+    <label class="mt-2 flex items-center gap-1"><input type="checkbox"> Local pickup available</label></div>
+  <div class="flex gap-2"><button class="btn btn-primary flex-1">Apply filters</button><a class="btn" href="marketplace.html">Reset</a></div>
+  <a class="block text-xs underline" href="dashboard.html#saved">☆ Save this search (email me new matches)</a>
+</form>
+  </aside>
+  <div class="min-w-0">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-sm text-gray-600"><strong>1,284</strong> active listings</p>
+      <div class="flex items-center gap-2">
+        <details data-menu class="lg:hidden">
+          <summary class="btn">⚙ Filters (2)</summary>
+          <div class="fixed inset-0 z-40 bg-black/40" aria-hidden="true"></div>
+          <div role="dialog" aria-label="Filters" class="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-xl border-t-2 border-gray-900 bg-white p-4">
+            <div class="mx-auto mb-3 h-1 w-10 rounded bg-gray-400" aria-hidden="true"></div>
+            <h2 class="h2 mb-2">Filters</h2>
+            <form action="marketplace.html" class="space-y-4 text-sm">
+  <fieldset><legend class="lbl">Game</legend>
+    <label class="mr-3 inline-flex items-center gap-1"><input type="radio" name="game" checked> All</label><label class="mr-3 inline-flex items-center gap-1"><input type="radio" name="game" > Pokémon</label><label class="mr-3 inline-flex items-center gap-1"><input type="radio" name="game" > One Piece</label></fieldset>
+  <fieldset><legend class="lbl">Language</legend>
+    <label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="lang" checked> <span class="badge " title="English-language card">EN</span> English</label><label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="lang" checked> <span class="badge badge-jp" title="Japanese-language card">JP</span> Japanese</label></fieldset>
+  <div><label class="lbl" for="set-m">Set</label><select id="set-m" class="field"><option>Any set</option><option>Scarlet &amp; Violet—151 (EN)</option><option>Pokémon Card 151 SV2a (JP)</option><option>Awakening of the New Era OP-05 (JP)</option></select></div>
+  <fieldset><legend class="lbl">Listing type</legend>
+    <label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="type" checked> Graded</label><label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="type" checked> Raw</label><label class="mr-3 inline-flex items-center gap-1"><input type="checkbox" name="type" checked> Sealed</label></fieldset>
+  <div><label class="lbl" for="grade-m">Grade</label><select id="grade-m" class="field"><option>Any grade</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8 and below</option><option>Raw only</option></select></div>
+  <fieldset><legend class="lbl">Price (AUD)</legend><div class="flex items-center gap-2"><label class="sr-only" for="min-m">Min price</label><input id="min-m" class="field" inputmode="numeric" placeholder="Min A$"><span>–</span><label class="sr-only" for="max-m">Max price</label><input id="max-m" class="field" inputmode="numeric" placeholder="Max A$"></div></fieldset>
+  <div><label class="lbl" for="state-m">Location / state</label><select id="state-m" class="field"><option>All of Australia</option><option>NSW</option><option>VIC</option><option>QLD</option><option>WA</option><option>SA</option><option>TAS</option><option>ACT</option><option>NT</option></select>
+    <label class="mt-2 flex items-center gap-1"><input type="checkbox"> Local pickup available</label></div>
+  <div class="flex gap-2"><button class="btn btn-primary flex-1">Apply filters</button><a class="btn" href="marketplace.html">Reset</a></div>
+  <a class="block text-xs underline" href="dashboard.html#saved">☆ Save this search (email me new matches)</a>
+</form>
+            <aside class="annot " aria-label="Wireframe annotation">Mobile: filters open as a bottom sheet (tap “Filters”). Desktop: persistent left sidebar.</aside>
+          </div>
+        </details>
+        <label for="sort" class="text-xs">Sort</label>
+        <select id="sort" class="field w-auto"><option>Newest</option><option>Price: low → high</option><option>Price: high → low</option><option>Ending soon</option></select>
+      </div>
+    </div>
+    <p class="mt-2 flex flex-wrap gap-1 text-xs"><span class="chip chip-on">EN + JP ✕</span><span class="chip chip-on">Graded ✕</span></p>
+    <ul class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[63/88] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Charizard ex 199/165 · 151" loading="lazy"></span>
+    <span class="chip chip-on absolute left-1 top-1 !text-[10px]">★ PREMIUM SELLER</span></a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Charizard ex 199/165 · 151</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge " title="English-language card">EN</span><span class="chip">Graded</span><span>PSA 10</span><span class="text-[10px]">✓ cert verified</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$4,650</p>
+    <p class="text-xs text-gray-600">Parramatta, NSW · @cardmate_syd</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[63/88] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Monkey.D.Luffy OP05-119 Manga · OP-05" loading="lazy"></span>
+    <span class="chip chip-on absolute left-1 top-1 !text-[10px]">★ PREMIUM SELLER</span></a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Monkey.D.Luffy OP05-119 Manga · OP-05</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge badge-jp" title="Japanese-language card">JP</span><span class="chip">Graded</span><span>PSA 10</span><span class="text-[10px]">✓ cert verified</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$6,150</p>
+    <p class="text-xs text-gray-600">Box Hill, VIC · @grandline_au</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[63/88] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Umbreon VMAX 215/203 · Evolving Skies" loading="lazy"></span>
+    </a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Umbreon VMAX 215/203 · Evolving Skies</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge " title="English-language card">EN</span><span class="chip">Graded</span><span>PSA 9</span><span class="text-[10px]">✓ cert verified</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$1,180</p>
+    <p class="text-xs text-gray-600">Subiaco, WA · @perthpulls</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[1/1] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: OP-05 Awakening of the New Era Booster Box (24 packs)" loading="lazy"></span>
+    </a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">OP-05 Awakening of the New Era Booster Box (24 packs)</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge badge-jp" title="Japanese-language card">JP</span><span class="chip">Sealed</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$265</p>
+    <p class="text-xs text-gray-600">Chermside, QLD · @qld_pulls</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[63/88] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Charizard ex SAR 349/190 · Shiny Treasure ex" loading="lazy"></span>
+    </a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Charizard ex SAR 349/190 · Shiny Treasure ex</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge badge-jp" title="Japanese-language card">JP</span><span class="chip">Graded</span><span>PSA 10</span><span class="text-[10px]">✓ cert verified</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$399</p>
+    <p class="text-xs text-gray-600">Adelaide, SA · @rad_cards</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[63/88] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Mew ex 232/091 · Paldean Fates (raw, NM)" loading="lazy"></span>
+    </a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Mew ex 232/091 · Paldean Fates (raw, NM)</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge " title="English-language card">EN</span><span class="chip">Raw</span><span>Raw · NM</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$85</p>
+    <p class="text-xs text-gray-600">Hobart, TAS · @taz_tcg</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[63/88] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Shanks OP01-120 SEC Parallel · Romance Dawn" loading="lazy"></span>
+    <span class="chip chip-on absolute left-1 top-1 !text-[10px]">★ PREMIUM SELLER</span></a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Shanks OP01-120 SEC Parallel · Romance Dawn</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge badge-jp" title="Japanese-language card">JP</span><span class="chip">Graded</span><span>PSA 9</span><span class="text-[10px]">✓ cert verified</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$540</p>
+    <p class="text-xs text-gray-600">Newcastle, NSW · @redhair_cards</p>
+  </div>
+</li><li class="card flex flex-col overflow-hidden">
+  <a href="listing.html" class="relative block"><span class="ph-wrap aspect-[1/1] w-full border-0 border-b"><img src="assets/ph.svg" alt="Listing photo: Prismatic Evolutions Elite Trainer Box" loading="lazy"></span>
+    </a>
+  <div class="flex flex-1 flex-col gap-1 p-2 text-sm">
+    <a href="listing.html" class="font-semibold leading-snug underline">Prismatic Evolutions Elite Trainer Box</a>
+    <p class="flex flex-wrap items-center gap-1 text-xs"><span class="badge " title="English-language card">EN</span><span class="chip">Sealed</span></p>
+    <p class="mt-auto font-mono text-lg font-black">A$189</p>
+    <p class="text-xs text-gray-600">Canberra, ACT · @act_collects</p>
+  </div>
+</li></ul>
+    <aside class="annot " aria-label="Wireframe annotation">Premium sellers get a badge, not ranking boost (sort is honest). Listing tiles link to /marketplace/listing/{id}-{slug}/.</aside>
+    <nav aria-label="Pagination" class="mt-4 flex gap-1 text-sm"><a class="btn btn-sm btn-primary" aria-current="page" href="marketplace.html?page=1">1</a><a class="btn btn-sm" href="marketplace.html?page=2">2</a><a class="btn btn-sm" href="marketplace.html?page=3">3</a><a class="btn btn-sm" href="marketplace.html?page=2" rel="next">Next ›</a></nav>
+  </div>
+</div>
+</main>
+<footer class="mt-12 border-t-2 border-gray-900 bg-gray-100 pb-20 pt-8 lg:pb-8">
+  <div class="wrap grid gap-6 md:grid-cols-[1fr_2fr]">
+    <div>
+      <a href="home.html" class="font-mono text-lg font-black tracking-widest">BRAND</a>
+      <p class="mt-2 text-sm text-gray-700">Market cap, prices &amp; population data for Pokémon TCG and One Piece Card Game collectors in Australia. Prices in AUD.</p>
+    </div>
+    <nav aria-label="Footer">
+      <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4"><li><a class="underline" href="methodology.html">Methodology</a> <span class="font-mono text-[10px] text-gray-500">/methodology/</span></li><li><a class="underline" href="data.html">Data</a> <span class="font-mono text-[10px] text-gray-500">/data/</span></li><li><a class="underline" href="data.html#api">API</a> <span class="font-mono text-[10px] text-gray-500">/api/</span></li><li><a class="underline" href="about.html">About</a> <span class="font-mono text-[10px] text-gray-500">/about/</span></li><li><a class="underline" href="contact.html">Contact</a> <span class="font-mono text-[10px] text-gray-500">/contact/</span></li><li><a class="underline" href="terms.html">Terms</a> <span class="font-mono text-[10px] text-gray-500">/terms/</span></li><li><a class="underline" href="privacy.html">Privacy</a> <span class="font-mono text-[10px] text-gray-500">/privacy/</span></li>
+        <li><a class="underline" href="index.html">Wireframe index</a></li>
+      </ul>
+    </nav>
+    <p class="border-t border-gray-300 pt-4 text-xs text-gray-600 md:col-span-2">Pokémon and One Piece are trademarks of their respective owners; BRAND is not affiliated with, endorsed or sponsored by The Pokémon Company, Nintendo, Game Freak, Creatures, Bandai, Eiichiro Oda/Shueisha, Toei Animation or PSA. Card images © their respective owners. Population data sourced from PSA; prices are indicative, in AUD incl. GST where applicable. © 2026 BRAND · ABN 00 000 000 000</p>
+  </div>
+</footer>
+<nav aria-label="Mobile tab bar" class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-gray-400 bg-white lg:hidden"><a href="home.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7v9H3z"/></svg>Home</a><a href="marketplace.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold" aria-current="page"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Market</a><a href="drops.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Drops</a><a href="messages.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages</a><a href="dashboard.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Account</a></nav>
+</body>
+</html>

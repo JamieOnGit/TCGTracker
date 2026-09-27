@@ -1,0 +1,254 @@
+{
+ "productResults": {
+  "products": [
+   {
+    "areaProductNo": "NAP0430503001AU",
+    "productCode": "N2856354001",
+    "areaCode": "AU",
+    "productName": {
+     "en": "ONE PIECE CARD GAME English Version 3rd Anniversary Set"
+    },
+    "productType": "PreOrder",
+    "fixedPrice": true,
+    "fixedListPrice": {
+     "amount": 200.0,
+     "currency": "AUD"
+    },
+    "saleStatus": "End",
+    "displayStatus": "On",
+    "saleStartExpectedDt": "2026-01-23T02:00:00Z",
+    "saleEndExpectedDt": "2026-02-13T14:59:59.999Z",
+    "productImages": [
+     {
+      "fileUrl": "files/seller-products/NSP0430503001/74G13GvG5poeerif5MrW.jpg",
+      "mediaType": "Image",
+      "altText": "OPCG_EN_3rdANN_06",
+      "width": 1200,
+      "height": 1200
+     }
+    ],
+    "flags": [
+     "PRE_ORDER_CLOSED"
+    ],
+    "productFlags": [
+     {
+      "labelCode": "PRE_ORDER_CLOSED",
+      "labelName": {
+       "en": "PRE-ORDER CLOSED",
+       "fr": "PRE-ORDER CLOSED",
+       "zh": "et",
+       "zh-HK": "PRE-ORDER CLOSED",
+       "zh-TW": "PRE-ORDER CLOSED"
+      },
+      "textColor": "#FFFFFF",
+      "backgroundColor": "#707070"
+     }
+    ]
+   },
+   {
+    "areaProductNo": "NAP0435295001AU",
+    "productCode": "N2863455001",
+    "areaCode": "AU",
+    "productName": {
+     "en": "ONE PIECE CARD GAME Premium Card Collection -Live Action Edition vol.2 Straw Hat Crew-"
+    },
+    "productType": "PreOrder",
+    "fixedPrice": true,
+    "fixedListPrice": {
+     "amount": 35.0,
+     "currency": "AUD"
+    },
+    "saleStatus": "End",
+    "displayStatus": "On",
+    "saleStartExpectedDt": "2026-04-24T02:00:00Z",
+    "saleEndExpectedDt": "2026-04-27T03:59:59.999Z",
+    "productImages": [
+     {
+      "fileUrl": "files/seller-products/NSP0435295001/RZQBr74hvkaSGo4vXp8w.jpg",
+      "mediaType": "Image",
+      "altText": "OPCG_PC_liveaction02EN_09",
+      "width": 1200,
+      "height": 1200
+     }
+    ],
+    "flags": [
+     "PRE_ORDER_CLOSED"
+    ],
+    "productFlags": [
+     {
+      "labelCode": "PRE_ORDER_CLOSED",
+      "labelName": {
+       "en": "PRE-ORDER CLOSED",
+       "fr": "PRE-ORDER CLOSED",
+       "zh": "et",
+       "zh-HK": "PRE-ORDER CLOSED",
+       "zh-TW": "PRE-ORDER CLOSED"
+      },
+      "textColor": "#FFFFFF",
+      "backgroundColor": "#707070"
+     }
+    ]
+   },
+   {
+    "areaProductNo": "NAP0374057005AU",
+    "productCode": "N2829516005",
+    "areaCode": "AU",
+    "productName": {
+     "en": "ONE PIECE CARD GAME Premium Card Collection -Best Selection Vol.5-[February 2026 Delivery]"
+    },
+    "productType": "PreOrder",
+    "fixedPrice": true,
+    "fixedListPrice": {
+     "amount": 43.0,
+     "currency": "AUD"
+    },
+    "saleStatus": "End",
+    "displayStatus": "On",
+    "saleStartExpectedDt": "2025-10-09T02:00:00Z",
+    "saleEndExpectedDt": "2025-11-03T14:59:59.999Z",
+    "productImages": [
+     {
+      "fileUrl": "files/seller-products/NSP0374057001/BhyJeOjnizFnCrrXHmSi.jpg",
+      "mediaType": "Image",
+      "altText": "OPCG_best05_thumbnail01",
+      "width": 1200,
+      "height": 1200
+     }
+    ],
+    "flags": [
+     "PRE_ORDER_CLOSED"
+    ],
+    "productFlags": [
+     {
+      "labelCode": "PRE_ORDER_CLOSED",
+      "labelName": {
+       "en": "PRE-ORDER CLOSED",
+       "fr": "PRE-ORDER CLOSED",
+       "zh": "et",
+       "zh-HK": "PRE-ORDER CLOSED",
+       "zh-TW": "PRE-ORDER CLOSED"
+      },
+      "textColor": "#FFFFFF",
+      "backgroundColor": "#707070"
+     }
+    ]
+   }
+  ],
+  "limit": 20,
+  "offset": 0,
+  "totalCount": 19,
+  "productStatusWaitingCount": 0,
+  "productStatusOnCount": 0,
+  "productStatusEndCount": 0
+ },
+ "aggs": {
+  "productStatuses": [
+   {
+    "productStatus": "End",
+    "prodCount": 19
+   }
+  ],
+  "series": [
+   {
+    "series": "03-002",
+    "prodCount": 19,
+    "seriesName": {
+     "en": "ONE PIECE",
+     "ja": "ワンピース",
+     "zh-HK": "海賊王"
+    }
+   }
+  ],
+  "shops": [
+   {
+    "shop": "05-0004",
+    "prodCount": 19,
+    "shopName": {
+     "en": "BANDAI CARD SHOP",
+     "ja": "BANDAI CARD SHOP",
+     "zh-HK": "Bandai Card Shop"
+    }
+   }
+  ],
+  "brands": [
+   {
+    "brand": "06-0074",
+    "prodCount": 19,
+    "brandName": {
+     "en": "ONE PIECE CARD GAME",
+     "ja": "ONE PIECE CARD GAME",
+     "zh-HK": "ONE PIECE CARD GAME"
+    }
+   }
+  ],
+  "categories": [
+   {
+    "category": "04-011",
+    "prodCount": 19,
+    "categoriesName": {
+     "en": "Card Games",
+     "fr": "Jeux de cartes",
+     "zh-HK": "卡牌遊戲"
+    }
+   }
+  ],
+  "shippingMonths": [
+   {
+    "shippingMonth": "202611",
+    "prodCount": 4
+   },
+   {
+    "shippingMonth": "202602",
+    "prodCount": 3
+   },
+   {
+    "shippingMonth": "202703",
+    "prodCount": 3
+   },
+   {
+    "shippingMonth": "202607",
+    "prodCount": 2
+   },
+   {
+    "shippingMonth": "202603",
+    "prodCount": 1
+   },
+   {
+    "shippingMonth": "202608",
+    "prodCount": 1
+   },
+   {
+    "shippingMonth": "202609",
+    "prodCount": 1
+   },
+   {
+    "shippingMonth": "202612",
+    "prodCount": 1
+   },
+   {
+    "shippingMonth": "202701",
+    "prodCount": 1
+   },
+   {
+    "shippingMonth": "202704",
+    "prodCount": 1
+   },
+   {
+    "shippingMonth": "202707",
+    "prodCount": 1
+   }
+  ],
+  "deliveryGroups": [
+   {
+    "deliveryGroup": "BCL",
+    "prodCount": 19
+   }
+  ],
+  "productTypes": [
+   {
+    "productType": "PreOrder",
+    "prodCount": 19
+   }
+  ]
+ }
+}

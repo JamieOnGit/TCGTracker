@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF · Data & API — /data/ (API overview section also served at /api/)</title>
+<meta name="robots" content="noindex, nofollow"><!-- wireframe only; see SEO annotation for production rule -->
+<link rel="stylesheet" href="assets/wireframe.css">
+<script src="assets/wf.js" defer></script>
+</head>
+<body class="pb-16 lg:pb-0">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-2">Skip to content</a>
+<header class="sticky top-0 z-30 border-b border-gray-300 bg-white">
+  <div class="wrap flex h-14 items-center gap-2 lg:gap-4">
+    <details data-menu class="relative lg:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open menu"><svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary>
+      <nav aria-label="Mobile menu" class="absolute left-0 top-11 z-40 w-64 border border-gray-400 bg-white py-2 shadow-lg">
+        <ul><li><a class="block px-4 py-2 hover:bg-gray-100 " href="home.html">Home <span class="text-gray-500">(Market Cap)</span></a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="marketplace.html">Marketplace</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="drops.html">Drops</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="news.html">News</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="games.html">Cards</a></li><li><a class="block px-4 py-2 hover:bg-gray-100 " href="premium.html">Premium</a></li></ul>
+        <p class="border-t border-gray-200 px-4 pt-2 font-mono text-[10px] text-gray-500">Mobile: hamburger holds all 6 primary tabs; bottom tab bar holds the top 5 destinations.</p>
+      </nav>
+    </details>
+    <a href="home.html" class="flex shrink-0 items-center gap-2" aria-label="BRAND home">
+      <span class="grid h-8 w-8 place-items-center border-2 border-gray-900 font-mono text-[9px] font-bold" aria-hidden="true">LOGO</span>
+      <span class="font-mono text-lg font-black tracking-widest">BRAND</span>
+    </a>
+    <nav aria-label="Primary" class="hidden lg:flex"><a class="tab" href="home.html">Home <span class="hidden xl:inline text-gray-500 font-normal">(Market Cap)</span></a><a class="tab" href="marketplace.html">Marketplace</a><a class="tab" href="drops.html">Drops</a><a class="tab" href="news.html">News</a><a class="tab" href="games.html">Cards</a><a class="tab" href="premium.html">Premium</a></nav>
+    <form role="search" action="games.html" class="ml-auto hidden min-w-0 flex-1 md:flex md:max-w-xs xl:max-w-sm">
+      <label for="site-q" class="sr-only">Search cards, sets, listings</label>
+      <input id="site-q" name="q" type="search" class="field rounded-r-none" placeholder="Search cards, sets, listings…">
+      <button class="btn rounded-l-none border-l-0" aria-label="Search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    </form>
+    <details data-menu class="relative ml-auto md:hidden">
+      <summary class="rounded p-1 hover:bg-gray-100" aria-label="Open search"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></summary>
+      <form role="search" action="games.html" class="fixed inset-x-0 top-14 z-40 flex gap-2 border-b border-gray-400 bg-white p-3 shadow">
+        <label for="site-q-m" class="sr-only">Search cards, sets, listings</label>
+        <input id="site-q-m" name="q" type="search" class="field" placeholder="Search cards, sets, listings…">
+        <button class="btn btn-primary">Search</button>
+      </form>
+    </details>
+    <a href="dashboard.html#notifications" class="relative rounded p-1 hover:bg-gray-100" aria-label="Notifications, 3 unread"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white" aria-hidden="true">3</span></a>
+    <details data-menu class="relative">
+      <summary class="flex items-center gap-1 rounded p-1 hover:bg-gray-100" aria-label="Account menu">
+        <span class="grid h-7 w-7 place-items-center rounded-full border border-gray-700 bg-gray-200 text-[10px] font-bold" aria-hidden="true">JH</span>
+        <span class="hidden text-sm sm:inline">cardmate_syd ▾</span>
+      </summary>
+      <div class="absolute right-0 top-11 z-40 w-60 border border-gray-400 bg-white py-2 shadow-lg">
+        <p class="px-4 pb-2 text-xs text-gray-600">Signed in · <span class="chip">Free tier</span></p>
+        <ul class="border-t border-gray-200 pt-1 text-sm"><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html">Dashboard</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#listings">My Listings</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="messages.html">Messages<span class="chip chip-on">2</span></a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#alerts">Alerts</a></li><li><a class="flex justify-between px-4 py-2 hover:bg-gray-100" href="dashboard.html#notifications">Settings</a></li>
+          <li class="border-t border-gray-200"><a class="block px-4 py-2 hover:bg-gray-100" href="admin.html">Admin console <span class="font-mono text-[10px]">(role-gated)</span></a></li>
+          <li><a class="block px-4 py-2 hover:bg-gray-100" href="home.html">Sign out</a></li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</header>
+<main id="main" class="wrap  min-w-0 py-2">
+<details class="seo" open>
+  <summary>▸ SEO annotation · <span class="font-normal">/data/ (API overview section also served at /api/)</span> · INDEX</summary>
+  <dl class="grid gap-x-4 gap-y-1 border-t border-dashed border-gray-500 px-3 py-3 sm:grid-cols-[11rem_1fr]"><dt>URL path</dt><dd><code>/data/ (API overview section also served at /api/)</code></dd><dt>H1</dt><dd>Data &amp; API</dd><dt>&lt;title&gt;</dt><dd>Pokémon &amp; One Piece Card Market Data — Free CSV/JSON Datasets &amp; API | BRAND</dd><dt>Meta description</dt><dd>Download PSA population, AUD floor price and market cap datasets for Pokémon and One Piece cards (CC BY 4.0), or use the BRAND API.</dd><dt>JSON-LD</dt><dd>DataCatalog (dataset[] → Dataset with distribution, license, creator) · WebAPI (/api/) · BreadcrumbList</dd><dt>Indexability</dt><dd>index, follow</dd><dt>Canonical</dt><dd>/data/ self; /api/ is its own page (API docs) canonical to itself</dd><dt>Key internal links</dt><dd>/methodology/ · /api/v1/openapi.json · /llms.txt · dataset pages</dd></dl>
+</details>
+
+<nav aria-label="Breadcrumb" class="mb-3 text-xs text-gray-600"><ol class="flex flex-wrap items-center gap-1"><li><a class="underline" href="home.html">Home</a></li><li aria-hidden="true">›</li><li aria-current="page" class="font-semibold text-gray-900">Data</li></ol></nav>
+<h1 class="text-3xl font-black">Data &amp; API</h1>
+<p class="mt-1 max-w-2xl text-sm text-gray-700">Download our market cap, population and drops datasets, or query them with the public API. Free to use with attribution.</p>
+<section class="mt-6" aria-labelledby="ds-h">
+  <h2 id="ds-h" class="h2">Datasets <span class="font-mono text-xs font-normal">/data/</span></h2>
+  <div class="scroll-x mt-2"><table class="tbl min-w-[40rem]"><thead><tr><th scope="col" class="sticky-col">Dataset</th><th scope="col">Size</th><th scope="col">Updated</th><th scope="col">Download</th></tr></thead>
+  <tbody><tr id="market-cap-psa10"><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !text-gray-900 whitespace-normal">Market cap — all cards (PSA 10)<span class="block font-mono text-[10px] font-normal text-gray-500">/data/market-cap-psa10.csv</span></th><td class="text-xs">18,402 rows</td><td class="text-xs">Daily</td><td class="whitespace-nowrap"><a class="btn btn-sm" href="data.html#market-cap-psa10">CSV</a> <a class="btn btn-sm" href="data.html#market-cap-psa10">JSON</a></td></tr><tr id="market-cap-all-grades"><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !text-gray-900 whitespace-normal">Market cap — all grades<span class="block font-mono text-[10px] font-normal text-gray-500">/data/market-cap-all-grades.csv</span></th><td class="text-xs">91,560 rows</td><td class="text-xs">Daily</td><td class="whitespace-nowrap"><a class="btn btn-sm" href="data.html#market-cap-all-grades">CSV</a> <a class="btn btn-sm" href="data.html#market-cap-all-grades">JSON</a></td></tr><tr id="pop-history"><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !text-gray-900 whitespace-normal">PSA population history (monthly)<span class="block font-mono text-[10px] font-normal text-gray-500">/data/pop-history.csv</span></th><td class="text-xs">1.2M rows</td><td class="text-xs">Monthly</td><td class="whitespace-nowrap"><a class="btn btn-sm" href="data.html#pop-history">CSV</a> <a class="btn btn-sm" href="data.html#pop-history">JSON</a></td></tr><tr id="set-market-cap"><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !text-gray-900 whitespace-normal">Set market cap<span class="block font-mono text-[10px] font-normal text-gray-500">/data/set-market-cap.csv</span></th><td class="text-xs">590 rows</td><td class="text-xs">Daily</td><td class="whitespace-nowrap"><a class="btn btn-sm" href="data.html#set-market-cap">CSV</a> <a class="btn btn-sm" href="data.html#set-market-cap">JSON</a></td></tr><tr id="drops-history"><th scope="row" class="sticky-col !border-b !border-gray-200 !normal-case !tracking-normal !text-sm !text-gray-900 whitespace-normal">Retail drops history (delayed 24h)<span class="block font-mono text-[10px] font-normal text-gray-500">/data/drops-history.csv</span></th><td class="text-xs">38,110 rows</td><td class="text-xs">Daily</td><td class="whitespace-nowrap"><a class="btn btn-sm" href="data.html#drops-history">CSV</a> <a class="btn btn-sm" href="data.html#drops-history">JSON</a></td></tr></tbody></table></div>
+  <div class="mt-3 card p-3 text-sm"><p><strong>Licence:</strong> CC BY 4.0. <strong>Attribution:</strong> “Data: BRAND (brand.example/data/)”, linked. PSA population figures © Collectors Universe, used under fair dealing for research/reporting.</p></div>
+  <aside class="annot " aria-label="Wireframe annotation">Each dataset has its own URL with Dataset JSON-LD (distribution → CSV/JSON DataDownload, license, temporalCoverage, creator). Files are versioned: /data/{name}/{yyyy-mm-dd}.csv + /latest.csv.</aside>
+</section>
+<section id="api" class="mt-8 scroll-mt-20" aria-labelledby="api-h">
+  <h2 id="api-h" class="h2">API <span class="font-mono text-xs font-normal">/api/v1/</span></h2>
+  <p class="text-sm text-gray-700">JSON REST API. Base URL <code class="font-mono">https://BRAND/api/v1/</code>. Auth: <code class="font-mono">Authorization: Bearer &lt;key&gt;</code>. OpenAPI spec: <a class="underline" href="data.html#api">/api/v1/openapi.json</a>.</p>
+  <div class="scroll-x mt-2"><table class="tbl min-w-[36rem]"><thead><tr><th scope="col">Method</th><th scope="col">Endpoint</th><th scope="col">Returns</th></tr></thead>
+  <tbody><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/cards</th><td class="text-sm">Search/list cards (?game, lang, set, q)</td></tr><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/cards/{card_id}</th><td class="text-sm">Card detail incl. external IDs</td></tr><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/cards/{card_id}/market-cap</th><td class="text-sm">Pop, floor, basis, market cap by grade</td></tr><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/cards/{card_id}/history</th><td class="text-sm">Pop & price history</td></tr><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/sets/{set_id}</th><td class="text-sm">Set detail + set market cap</td></tr><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/rankings</th><td class="text-sm">Ranked market cap (?game, lang, grade, page)</td></tr><tr><td class="font-mono text-xs font-bold">GET</td><th scope="row" class="!border-b !border-gray-200 !normal-case !tracking-normal !font-mono !text-xs !text-gray-900">/api/v1/drops</th><td class="text-sm">Drop events (delayed 30 min unless Premium key)</td></tr></tbody></table></div>
+  <pre class="scroll-x mt-3 rounded border border-gray-400 bg-gray-100 p-3 font-mono text-xs"><code>curl -H "Authorization: Bearer $KEY" \
+  https://BRAND/api/v1/cards/pkm-en-sv3pt5-199/market-cap
+{ "card_id": "pkm-en-sv3pt5-199", "lang": "en", "grades": [
+  { "grade": "PSA 10", "pop": 3412, "floor_aud": 4850, "basis": "last_sale", "market_cap_aud": 16548200 } ] }</code></pre>
+  <h3 class="mt-4 font-bold">API key tiers</h3>
+  <div class="scroll-x mt-2"><table class="tbl min-w-[32rem]"><thead><tr><th scope="col" class="sticky-col">Tier</th><th scope="col">Rate limit</th><th scope="col">Drops data</th><th scope="col">Price</th></tr></thead>
+  <tbody><tr><th scope="row" class="sticky-col !border-b !border-gray-200 !text-sm !normal-case !text-gray-900">Public (no key)</th><td>60 req/hour</td><td>24h delayed</td><td>Free</td></tr>
+  <tr><th scope="row" class="sticky-col !border-b !border-gray-200 !text-sm !normal-case !text-gray-900">Free key</th><td>1,000 req/day</td><td>30 min delayed</td><td>Free</td></tr>
+  <tr><th scope="row" class="sticky-col !border-b !border-gray-200 !text-sm !normal-case !text-gray-900">Premium key</th><td>10,000 req/day</td><td>Real-time</td><td>Included with Premium</td></tr>
+  <tr><th scope="row" class="sticky-col !border-b !border-gray-200 !text-sm !normal-case !text-gray-900">Commercial</th><td>Custom</td><td>Real-time + webhooks</td><td><a class="underline" href="contact.html">Contact us</a></td></tr></tbody></table></div>
+  <a class="btn btn-primary mt-3" href="dashboard.html">Get an API key</a>
+</section>
+<section class="mt-8 card p-4" aria-labelledby="llms-h">
+  <h2 id="llms-h" class="h2">For AI assistants: <span class="font-mono">/llms.txt</span></h2>
+  <p class="text-sm text-gray-700">We publish <code class="font-mono">/llms.txt</code> (and <code class="font-mono">/llms-full.txt</code>) summarising what BRAND measures, the methodology, canonical URL patterns, dataset links and the attribution we ask for, so LLMs cite accurate numbers.</p>
+  <aside class="annot " aria-label="Wireframe annotation">llms.txt links: /methodology/, /data/, /api/v1/openapi.json, /market-cap/{game}/ hubs. Regenerated daily with headline figures.</aside>
+</section>
+</main>
+<footer class="mt-12 border-t-2 border-gray-900 bg-gray-100 pb-20 pt-8 lg:pb-8">
+  <div class="wrap grid gap-6 md:grid-cols-[1fr_2fr]">
+    <div>
+      <a href="home.html" class="font-mono text-lg font-black tracking-widest">BRAND</a>
+      <p class="mt-2 text-sm text-gray-700">Market cap, prices &amp; population data for Pokémon TCG and One Piece Card Game collectors in Australia. Prices in AUD.</p>
+    </div>
+    <nav aria-label="Footer">
+      <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4"><li><a class="underline" href="methodology.html">Methodology</a> <span class="font-mono text-[10px] text-gray-500">/methodology/</span></li><li><a class="underline" href="data.html">Data</a> <span class="font-mono text-[10px] text-gray-500">/data/</span></li><li><a class="underline" href="data.html#api">API</a> <span class="font-mono text-[10px] text-gray-500">/api/</span></li><li><a class="underline" href="about.html">About</a> <span class="font-mono text-[10px] text-gray-500">/about/</span></li><li><a class="underline" href="contact.html">Contact</a> <span class="font-mono text-[10px] text-gray-500">/contact/</span></li><li><a class="underline" href="terms.html">Terms</a> <span class="font-mono text-[10px] text-gray-500">/terms/</span></li><li><a class="underline" href="privacy.html">Privacy</a> <span class="font-mono text-[10px] text-gray-500">/privacy/</span></li>
+        <li><a class="underline" href="index.html">Wireframe index</a></li>
+      </ul>
+    </nav>
+    <p class="border-t border-gray-300 pt-4 text-xs text-gray-600 md:col-span-2">Pokémon and One Piece are trademarks of their respective owners; BRAND is not affiliated with, endorsed or sponsored by The Pokémon Company, Nintendo, Game Freak, Creatures, Bandai, Eiichiro Oda/Shueisha, Toei Animation or PSA. Card images © their respective owners. Population data sourced from PSA; prices are indicative, in AUD incl. GST where applicable. © 2026 BRAND · ABN 00 000 000 000</p>
+  </div>
+</footer>
+<nav aria-label="Mobile tab bar" class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-gray-400 bg-white lg:hidden"><a href="home.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7v9H3z"/></svg>Home</a><a href="marketplace.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Market</a><a href="drops.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Drops</a><a href="messages.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages</a><a href="dashboard.html" class="flex flex-col items-center gap-0.5 py-2 text-[10px] text-gray-600"><svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Account</a></nav>
+</body>
+</html>

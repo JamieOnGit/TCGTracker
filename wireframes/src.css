@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Wireframe primitives (greyscale only) ---- */
+@layer base {
+  html { -webkit-text-size-adjust: 100%; accent-color: #171717; }
+  body { @apply bg-white text-gray-900 antialiased; }
+  summary { list-style: none; cursor: pointer; }
+  summary::-webkit-details-marker { display: none; }
+  :focus-visible { @apply outline outline-2 outline-offset-2 outline-black; }
+}
+
+@layer components {
+  .wrap { @apply mx-auto w-full max-w-7xl px-4 lg:px-6; }
+  .btn { @apply inline-flex items-center justify-center gap-1 whitespace-nowrap rounded border border-gray-800 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 hover:bg-gray-100; }
+  .btn-primary { @apply border-gray-900 bg-gray-900 text-white hover:bg-gray-700; }
+  .btn-sm { @apply px-2 py-1 text-xs; }
+  .btn-ghost { @apply border-transparent underline underline-offset-2 hover:bg-gray-100; }
+  .chip { @apply inline-flex items-center gap-0.5 whitespace-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-xs; }
+  .chip-on { @apply border-gray-900 bg-gray-900 text-white; }
+  .chip-up { @apply border-gray-800 bg-gray-800 text-white; }
+  .chip-down { @apply border-dashed border-gray-600 bg-white text-gray-800; }
+  .badge { @apply inline-flex items-center rounded-sm border border-gray-700 px-1 text-[10px] font-bold uppercase leading-4 tracking-wide; }
+  .badge-jp { @apply bg-gray-900 text-white; }
+  .card { @apply rounded border border-gray-300 bg-white; }
+  .field { @apply block w-full rounded border border-gray-400 bg-white px-2 py-1.5 text-sm placeholder:text-gray-400; }
+  .lbl { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600; }
+  .h2 { @apply text-lg font-bold; }
+  .tbl { @apply w-full border-collapse text-sm; }
+  .tbl th { @apply border-b-2 border-gray-800 px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600; }
+  .tbl thead th { @apply whitespace-nowrap; }
+  .tbl td { @apply border-b border-gray-200 px-2 py-2 align-middle; }
+  .sticky-col { @apply sticky left-0 z-10 bg-white; }
+  .scroll-x { @apply overflow-x-auto; }
+  .ph-wrap { @apply relative block overflow-hidden border border-gray-400 bg-gray-200; }
+  .ph-wrap > img { @apply absolute inset-0 h-full w-full; }
+  .ph-label { @apply absolute inset-x-0 bottom-0 bg-white/80 px-1 text-center font-mono text-[10px] leading-4 text-gray-700; }
+  /* annotations */
+  .annot { @apply my-1 inline-block max-w-full rounded-sm border border-dashed border-gray-500 bg-gray-50 px-2 py-1 font-mono text-[11px] leading-snug text-gray-700; }
+  .annot::before { content: "✎ NOTE · "; @apply font-bold; }
+  .seo { @apply my-4 rounded border-2 border-dashed border-gray-600 bg-gray-50 font-mono text-xs text-gray-800; }
+  .seo > summary { @apply px-3 py-2 font-bold; }
+  .seo dt { @apply font-bold text-gray-600; }
+  .seo dd { @apply break-words; }
+  .tab { @apply whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm hover:border-gray-400; }
+  .tab[aria-current] { @apply border-gray-900 font-bold; }
+  .seg { @apply inline-flex overflow-hidden rounded border border-gray-800 text-xs; }
+  .seg > a, .seg > span { @apply whitespace-nowrap border-r border-gray-800 px-2.5 py-1 last:border-r-0 hover:bg-gray-100; }
+  .seg > [aria-current] { @apply bg-gray-900 text-white hover:bg-gray-900; }
+  .toggle { @apply relative inline-block shrink-0 h-5 w-9 rounded-full border border-gray-700 bg-white align-middle; }
+  .toggle::after { content: ""; @apply absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-gray-500; }
+  .toggle.on { @apply bg-gray-900; }
+  .toggle.on::after { @apply left-auto right-0.5 bg-white; }
+}

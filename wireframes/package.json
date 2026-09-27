@@ -1,0 +1,15 @@
+{
+  "name": "brand-tcg-wireframes",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Low-fidelity clickable wireframes for BRAND (Pokémon TCG & One Piece Card Game, AU)",
+  "type": "module",
+  "scripts": {
+    "build:css": "tailwindcss -i src.css -o assets/wireframe.css --minify",
+    "screenshots": "node scripts/screenshot.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "tailwindcss": "^3.4.19"
+  }
+}

@@ -1,0 +1,688 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "v1",
+    "title": "PSA Public API",
+    "description": "This is the Swagger documentation for the PSA Public API. For security, it uses Bearer Authentication. To start testing calls, click Authorize and fill the textbox with `Bearer yourToken`. You can get your token <a href=\"/publicapi/documentation\">here</a>."
+  },
+  "basePath": "/publicapi",
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "paths": {
+    "/cert/GetByCertNumber/{certNumber}": {
+      "get": {
+        "tags": ["PSA Public API Methods"],
+        "operationId": "Cert_GetByCertNumber",
+        "consumes": [],
+        "produces": [
+          "application/json",
+          "text/json",
+          "application/xml",
+          "text/xml"
+        ],
+        "parameters": [
+          {
+            "name": "certNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PublicCertificationModel"
+            }
+          }
+        }
+      }
+    },
+    "/cert/GetByCertNumberForFileAppend/{certNumber}": {
+      "get": {
+        "tags": ["PSA Public API Methods"],
+        "operationId": "Cert_GetByCertNumberForFileAppend",
+        "consumes": [],
+        "produces": [
+          "application/json",
+          "text/json",
+          "application/xml",
+          "text/xml"
+        ],
+        "parameters": [
+          {
+            "name": "certNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/CertFileAppendModel"
+            }
+          }
+        }
+      }
+    },
+    "/cert/GetImagesByCertNumber/{certNumber}": {
+      "get": {
+        "tags": ["PSA Public API Methods"],
+        "operationId": "Cert_GetImagesByCertNumber",
+        "consumes": [],
+        "produces": [
+          "application/json",
+          "text/json",
+          "application/xml",
+          "text/xml"
+        ],
+        "parameters": [
+          {
+            "name": "certNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/order/GetProgress/{orderNumber}": {
+      "get": {
+        "tags": ["PSA Public API Methods"],
+        "operationId": "Order_GetProgress",
+        "consumes": [],
+        "produces": [
+          "application/json",
+          "text/json",
+          "application/xml",
+          "text/xml"
+        ],
+        "parameters": [
+          {
+            "name": "orderNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/OrderProgress"
+            }
+          }
+        }
+      }
+    },
+    "/order/GetSubmissionProgress/{submissionNumber}": {
+      "get": {
+        "tags": ["PSA Public API Methods"],
+        "operationId": "Order_GetSubmissionProgress",
+        "consumes": [],
+        "produces": [
+          "application/json",
+          "text/json",
+          "application/xml",
+          "text/xml"
+        ],
+        "parameters": [
+          {
+            "name": "submissionNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/OrderProgress"
+            }
+          }
+        }
+      }
+    },
+    "/pop/GetPSASpecPopulation/{specID}": {
+      "get": {
+        "tags": ["PSA Public API Methods"],
+        "operationId": "Pop_GetPSASpecPopulation",
+        "consumes": [],
+        "produces": [
+          "application/json",
+          "text/json",
+          "application/xml",
+          "text/xml"
+        ],
+        "parameters": [
+          {
+            "name": "specID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PSASpecPopulationModel"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "PublicCertificationModel": {
+      "type": "object",
+      "properties": {
+        "PSACert": {
+          "$ref": "#/definitions/PublicPSACert"
+        },
+        "DNACert": {
+          "$ref": "#/definitions/PublicDNACert"
+        }
+      }
+    },
+    "PublicPSACert": {
+      "type": "object",
+      "properties": {
+        "CertNumber": {
+          "type": "string"
+        },
+        "SpecID": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "SpecNumber": {
+          "type": "string"
+        },
+        "LabelType": {
+          "type": "string"
+        },
+        "ReverseBarCode": {
+          "type": "boolean"
+        },
+        "Year": {
+          "type": "string"
+        },
+        "Brand": {
+          "type": "string"
+        },
+        "Category": {
+          "type": "string"
+        },
+        "CardNumber": {
+          "type": "string"
+        },
+        "Subject": {
+          "type": "string"
+        },
+        "Variety": {
+          "type": "string"
+        },
+        "IsPSADNA": {
+          "type": "boolean"
+        },
+        "IsDualCert": {
+          "type": "boolean"
+        },
+        "GradeDescription": {
+          "type": "string"
+        },
+        "CardGrade": {
+          "type": "string"
+        },
+        "PrimarySigners": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "OtherSigners": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "AutographGrade": {
+          "type": "string"
+        },
+        "TotalPopulation": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "TotalPopulationWithQualifier": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "PopulationHigher": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "T206PopulationAllBacks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "T206PopulationHigherAllBacks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "ItemStatus": {
+          "type": "string"
+        }
+      }
+    },
+    "PublicDNACert": {
+      "type": "object",
+      "properties": {
+        "CertNumber": {
+          "type": "string"
+        },
+        "ItemDescription": {
+          "type": "string"
+        },
+        "Tag": {
+          "type": "string"
+        },
+        "PrimarySubjects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubjectDetail"
+          }
+        },
+        "OtherSubjects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubjectDetail"
+          }
+        },
+        "Attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValuePairOfStringAndString"
+          }
+        },
+        "ItemEra": {
+          "type": "string"
+        },
+        "Model": {
+          "type": "string"
+        },
+        "Length": {
+          "type": "string"
+        },
+        "Weight": {
+          "type": "string"
+        },
+        "AuthenticationResult": {
+          "type": "string"
+        },
+        "SignatureGrade": {
+          "type": "string"
+        },
+        "BaseballGrade": {
+          "type": "string"
+        },
+        "Notes": {
+          "type": "string"
+        },
+        "DNAItemType": {
+          "type": "string"
+        }
+      }
+    },
+    "SubjectDetail": {
+      "type": "object",
+      "properties": {
+        "FirstName": {
+          "type": "string"
+        },
+        "LastName": {
+          "type": "string"
+        },
+        "IsStamp": {
+          "type": "boolean"
+        },
+        "IsClubhouse": {
+          "type": "boolean"
+        },
+        "IsInThePresence": {
+          "type": "boolean"
+        },
+        "AuthenticationDate": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "AuthenticationLocation": {
+          "type": "string"
+        },
+        "Count": {
+          "format": "int32",
+          "type": "integer"
+        }
+      }
+    },
+    "KeyValuePairOfStringAndString": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "CertFileAppendModel": {
+      "type": "object",
+      "properties": {
+        "CertificationType": {
+          "format": "int32",
+          "enum": [0, 1, 2, 3, 4],
+          "type": "integer"
+        },
+        "IsHologram": {
+          "type": "string"
+        },
+        "IsReverseBarcode": {
+          "type": "string"
+        },
+        "PSACert": {
+          "$ref": "#/definitions/CertFileAppendPSACert"
+        },
+        "PSAPopulation": {
+          "$ref": "#/definitions/CertFileAppendPSAPopulation"
+        },
+        "DNACert": {
+          "$ref": "#/definitions/CertFileAppendDNACert"
+        }
+      }
+    },
+    "CertFileAppendPSACert": {
+      "type": "object",
+      "properties": {
+        "CertNumber": {
+          "type": "string"
+        },
+        "Year": {
+          "type": "string"
+        },
+        "Category": {
+          "type": "string"
+        },
+        "SetName": {
+          "type": "string"
+        },
+        "CardNumber": {
+          "type": "string"
+        },
+        "Subject": {
+          "type": "string"
+        },
+        "Variety": {
+          "type": "string"
+        },
+        "Grade": {
+          "type": "string"
+        },
+        "QualifierCode": {
+          "type": "string"
+        },
+        "GradeDescription": {
+          "type": "string"
+        }
+      }
+    },
+    "CertFileAppendPSAPopulation": {
+      "type": "object",
+      "properties": {
+        "TotalPopulation": {
+          "type": "string"
+        },
+        "PopulationHigher": {
+          "type": "string"
+        },
+        "TotalPopulationWithQualifier": {
+          "type": "string"
+        },
+        "T206PopulationAllBacks": {
+          "type": "string"
+        },
+        "T206PopulationHigherAllBacks": {
+          "type": "string"
+        }
+      }
+    },
+    "CertFileAppendDNACert": {
+      "type": "object",
+      "properties": {
+        "AuthenticationResult": {
+          "type": "string"
+        },
+        "PrimarySubject": {
+          "type": "string"
+        }
+      }
+    },
+    "OrderProgress": {
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string"
+        },
+        "problemOrder": {
+          "type": "boolean"
+        },
+        "readyForLabelReview": {
+          "type": "boolean"
+        },
+        "gradesReady": {
+          "type": "boolean"
+        },
+        "accountingHold": {
+          "type": "boolean"
+        },
+        "shipped": {
+          "type": "boolean"
+        },
+        "shipTrackingNumber": {
+          "type": "string"
+        },
+        "shipCarrier": {
+          "type": "string"
+        },
+        "orderProgressSteps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrderProgressStep"
+          }
+        }
+      }
+    },
+    "OrderProgressStep": {
+      "required": ["step"],
+      "type": "object",
+      "properties": {
+        "index": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "step": {
+          "format": "int32",
+          "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+          "type": "integer"
+        },
+        "completed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "PSASpecPopulationModel": {
+      "type": "object",
+      "properties": {
+        "SpecID": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "PSAPop": {
+          "$ref": "#/definitions/PSASpecPopSummmaryModel"
+        },
+        "PSADNAPop": {
+          "$ref": "#/definitions/PSASpecPopSummmaryModel"
+        }
+      }
+    },
+    "PSASpecPopSummmaryModel": {
+      "type": "object",
+      "properties": {
+        "Total": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Auth": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade1": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade1Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade1_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade1_5Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade2": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade2Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade2_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade3": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade3Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade3_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade4": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade4Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade4_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade5Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade5_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade6": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade6Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade6_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade7": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade7Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade7_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade8": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade8Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade8_5": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade9": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade9Q": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "Grade10": {
+          "format": "int32",
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
