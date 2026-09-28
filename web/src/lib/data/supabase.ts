@@ -180,6 +180,10 @@ export function supabaseRepository(): Repository {
       const { data } = await sb.from('market_cap_snapshots').select('date,market_cap_aud').match({ card_id: cardId, grade_key: gradeKey }).order('date')
       return (data ?? []).map((r: any) => ({ date: r.date, value: Number(r.market_cap_aud) }))
     },
+    async valueHistory(cardId, gradeKey) {
+      const { data } = await sb.from('market_cap_snapshots').select('date,floor_aud').match({ card_id: cardId, grade_key: gradeKey }).order('date')
+      return (data ?? []).map((r: any) => ({ date: r.date, value: Number(r.floor_aud) }))
+    },
     async listingStats(cardIds) {
       if (!cardIds.length) return []
       const { data } = await sb.from('card_listing_stats').select('*').in('card_id', cardIds).gt('active_count', 0)

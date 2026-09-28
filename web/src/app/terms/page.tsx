@@ -2,7 +2,7 @@ import { StaticPage, staticMeta } from '@/lib/staticPage'
 export const metadata = staticMeta('/terms/', 'Terms of Service & Marketplace Rules', 'Terms of service, subscription terms and marketplace rules.', true)
 export default function Terms() {
   return (
-    <StaticPage path="/terms/" h1="Terms of Service">
+    <StaticPage path="/terms/" h1="Terms of Service" eyebrow="TCG Trade">
       <p><strong>Draft outline, pending legal review. Not in force.</strong></p>
       <ul>
         <li>Subscription terms (Australian Consumer Law): price in AUD incl. GST, billing period, how to cancel in two clicks, what happens on failed payment.</li>

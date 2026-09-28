@@ -35,7 +35,7 @@ export function LineChart({ points, currency = true, height = 280, label }: { po
   const fmtX = (iso: string) => new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
   return (
     <figure className="chart" aria-label={label}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-hidden="true" preserveAspectRatio="none" style={{ height }}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-hidden="true">
         {ticks(min, max).map((t) => (
           <g key={t}>
             <line className="grid-line" x1={0} x2={W - padR} y1={y(t)} y2={y(t)} />

@@ -59,6 +59,7 @@ export function ebaySearchUrl(q: EbayCardQuery, s: EbaySettings = DEFAULT_EBAY):
   url.searchParams.set('_nkw', ebaySearchQuery(q))
   url.searchParams.set('_sop', '15') // lowest price + postage first
   url.searchParams.set('LH_PrefLoc', '1') // Australia only (locals first)
+  if (q.gradeKey !== undefined) url.searchParams.set('_sacat', '183454') // CCG Individual Cards
   if (s.affiliateEnabled && validCampaignId(s.campaignId)) {
     url.searchParams.set('mkcid', '1')
     url.searchParams.set('mkrid', s.rotationId)
@@ -70,6 +71,9 @@ export function ebaySearchUrl(q: EbayCardQuery, s: EbaySettings = DEFAULT_EBAY):
   }
   return url.toString()
 }
+
+/** EPN requires disclosure right next to affiliate links (docs/research/07 §E). */
+export const EBAY_DISCLOSURE = 'Ad: we may earn a commission from eBay.'
 
 export function ebaySettingsFromRows(rows: { key: string; value: unknown }[]): EbaySettings {
   const get = (k: string) => rows.find((r) => r.key === k)?.value

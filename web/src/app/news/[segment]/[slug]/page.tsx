@@ -29,13 +29,13 @@ export default async function Article({ params }: Props) {
   const path = articlePath(new Date(a.publishedAt), a.slug)
   const cards = await getRepo().getCardsByIds(a.tags.cardIds)
   return (
-    <>
-      <Breadcrumbs items={[{ name: 'News', path: '/news/' }, { name: a.title, path }]} />
-      <article>
-        <h1>{a.title}</h1>
-        <p><time dateTime={a.publishedAt}>{a.publishedAt.slice(0, 10)}</time></p>
-        {a.dek && <p>{a.dek}</p>}
-        <div>{a.bodyMd}</div>
+    <div className="container-x">
+      <div className="pt-6"><Breadcrumbs items={[{ name: 'News', path: '/news/' }, { name: a.title, path }]} /></div>
+      <article className="prose mx-auto max-w-[var(--measure)] pt-10">
+        <p className="eyebrow"><time dateTime={a.publishedAt}>{new Date(a.publishedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</time></p>
+        <h1 className="mt-3">{a.title}</h1>
+        {a.dek && <p className="lead mt-4">{a.dek}</p>}
+        <div className="mt-8 whitespace-pre-line">{a.bodyMd}</div>
         {cards.length > 0 && (
           <aside aria-label="Cards in this article">
             <h2>Cards mentioned</h2>
@@ -44,6 +44,6 @@ export default async function Article({ params }: Props) {
         )}
       </article>
       <JsonLd data={newsArticle({ headline: a.title, path, datePublished: a.publishedAt, dateModified: a.updatedAt, image: a.heroImageUrl ?? undefined })} />
-    </>
+    </div>
   )
 }

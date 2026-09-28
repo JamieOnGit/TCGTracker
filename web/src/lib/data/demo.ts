@@ -310,6 +310,10 @@ export const demoRepository: Repository = {
     const card = CARDS.find((c) => c.id === cardId)
     return card ? history(cardId + 'mc', gradeData(card, gradeKey).marketCapAud) : []
   },
+  async valueHistory(cardId, gradeKey) {
+    const card = CARDS.find((c) => c.id === cardId)
+    return card ? history(cardId + 'val' + gradeKey, gradeData(card, gradeKey).floorAud, 90) : []
+  },
   async listingStats(cardIds) {
     const out = new Map<string, ListingStats>()
     for (const l of LISTINGS) {

@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { fmtDate } from '@/components/Format'
+import { PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { buildMetadata } from '@/lib/seo/metadata'
-import { cardsPath, GAME_NAMES, isGame, isLang, LANG_NAMES, setPath } from '@/lib/seo/urls'
+import { cardsPath, GAME_NAMES, isGame, isLang, LANG_NAMES, marketCapPath, setPath } from '@/lib/seo/urls'
 
 export const revalidate = 3600
 type Props = { params: Promise<{ game: string; lang: string }> }
@@ -14,8 +16,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isGame(game) || !isLang(lang)) return {}
   return buildMetadata({
     path: cardsPath(game, lang),
-    title: `${GAME_NAMES[game]} ${LANG_NAMES[lang]} Sets – Card Lists & Prices`,
-    description: `All ${LANG_NAMES[lang]} ${GAME_NAMES[game]} sets we track, newest first, with PSA population and AUD market cap.`,
+    title: `${GAME_NAMES[game]} ${LANG_NAMES[lang]} Sets – Card Lists & Prices in AUD`,
+    description: `All ${LANG_NAMES[lang]} ${GAME_NAMES[game]} sets we track, newest first, with graded values and PSA population in Australian dollars.`,
   })
 }
 
@@ -24,18 +26,25 @@ export default async function LangHub({ params }: Props) {
   if (!isGame(game) || !isLang(lang)) notFound()
   const sets = await getRepo().listSets({ game, lang })
   return (
-    <>
-      <Breadcrumbs items={[{ name: 'Cards', path: '/cards/' }, { name: GAME_NAMES[game], path: cardsPath(game) }, { name: lang.toUpperCase(), path: cardsPath(game, lang) }]} />
-      <h1>{GAME_NAMES[game]} {LANG_NAMES[lang]} sets</h1>
-      <table>
-        <caption>Sets</caption>
-        <thead><tr><th scope="col">Set</th><th scope="col">Code</th><th scope="col">Released</th></tr></thead>
-        <tbody>
-          {sets.map((s) => (
-            <tr key={s.id}><th scope="row"><Link href={setPath(s)}>{s.name}</Link></th><td>{s.code}</td><td>{s.releaseDate ?? '—'}</td></tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    <div className="container-x">
+      <div className="pt-6"><Breadcrumbs items={[{ name: 'Cards', path: '/cards/' }, { name: GAME_NAMES[game], path: cardsPath(game) }, { name: LANG_NAMES[lang], path: cardsPath(game, lang) }]} /></div>
+      <PageIntro eyebrow={`${GAME_NAMES[game]} · ${LANG_NAMES[lang]}`} title={`${GAME_NAMES[game]} ${LANG_NAMES[lang]} sets`} lead={<><Link href={marketCapPath(game, lang)} className="prose-link">Rankings for {LANG_NAMES[lang]} {GAME_NAMES[game]}</Link> · <Link href={cardsPath(game, lang === 'en' ? 'jp' : 'en')} className="prose-link">{lang === 'en' ? 'Japanese' : 'English'} sets</Link></>} />
+      <div className="table-wrap">
+        <table className="dt">
+          <caption className="sr-only">Sets</caption>
+          <thead><tr><th scope="col">Set</th><th scope="col">Code</th><th scope="col" className="n">Released</th><th scope="col" className="n hide-sm">Rankings</th></tr></thead>
+          <tbody>
+            {sets.map((s) => (
+              <tr key={s.id}>
+                <th scope="row"><Link href={setPath(s)} className="prose-link" style={{ textDecorationColor: 'transparent' }}>{s.name}</Link></th>
+                <td className="muted">{s.code}</td>
+                <td className="n">{fmtDate(s.releaseDate)}</td>
+                <td className="n hide-sm"><Link href={marketCapPath(s.game, s.lang, s.slug)} className="prose-link">View</Link></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }

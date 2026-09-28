@@ -4,7 +4,7 @@ export const metadata = staticMeta('/api/', 'Public Data API – TCG Market Cap,
 
 export default function Api() {
   return (
-    <StaticPage path="/api/" h1="Public data API">
+    <StaticPage path="/api/" h1="Public data API" eyebrow="TCG Trade">
       <p>A read-only, versioned API at <code>/api/v1/</code> is planned (brief phase 4). Every request needs an API key; free and paid tiers have different rate limits. It will be documented with OpenAPI.</p>
       <h2>Planned endpoints</h2>
       <ul>

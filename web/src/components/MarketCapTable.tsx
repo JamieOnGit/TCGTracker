@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getRepo, type MarketQuery, type MarketRow, type MarketSort } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
-import { ebaySearchUrl } from '@/lib/domain/ebay'
+import { EBAY_DISCLOSURE, ebaySearchUrl } from '@/lib/domain/ebay'
 import type { Rules } from '@/lib/domain/rules'
 import type { SearchParams } from '@/lib/seo/metadata'
 import { cardPath, GAMES, GAME_NAMES, LANGS, marketCapPath, type Game, type Lang } from '@/lib/seo/urls'
@@ -50,6 +50,7 @@ function BuyCell({ row, rules, stats }: { row: MarketRow; rules: Rules; stats: P
           eBay ↗
         </a>
       )}
+      {buy.external && rules.ebay.affiliateEnabled && <span className="subtle" title={EBAY_DISCLOSURE}>Ad</span>}
       <Link href={buy.setAlertHref} rel="nofollow" className="prose-link">Alert me</Link>
       <Link href={buy.sellHref} rel="nofollow" className="prose-link">Sell</Link>
     </span>

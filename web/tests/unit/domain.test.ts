@@ -153,3 +153,26 @@ describe('Buy button', () => {
     expect(resolveBuyButton({ card: jp, gradeKey: 'psa-10', stats, externalFallback: false }).kind).toBe('none')
   })
 })
+
+describe('eBay links', async () => {
+  const { ebaySearchUrl, ebaySearchQuery, DEFAULT_EBAY } = await import('@/lib/domain/ebay')
+  const q = { cardId: 'c1', name: 'Charizard ex', number: '199', setName: '151', lang: 'en' as const, game: 'pokemon' as const, gradeKey: 'psa-10' }
+  it('searches eBay Australia for the exact card, grade and language', () => {
+    expect(ebaySearchQuery(q)).toBe('Charizard ex 199 151 PSA 10')
+    expect(ebaySearchQuery({ ...q, lang: 'jp', number: '095' })).toBe('Charizard ex 95 151 Japanese PSA 10')
+    const url = new URL(ebaySearchUrl(q)!)
+    expect(url.host).toBe('www.ebay.com.au')
+    expect(url.searchParams.get('_sacat')).toBe('183454')
+    expect(url.searchParams.get('campid')).toBeNull()
+  })
+  it('applies EPN tracking to every card once a valid campaign id is saved', () => {
+    const url = new URL(ebaySearchUrl(q, { ...DEFAULT_EBAY, affiliateEnabled: true, campaignId: '5338123456' })!)
+    expect(url.searchParams.get('campid')).toBe('5338123456')
+    expect(url.searchParams.get('mkrid')).toBe('705-53470-19255-0')
+    expect(url.searchParams.get('customid')).toBe('tcgtrade-c1')
+  })
+  it('ignores an invalid campaign id and respects the off switch', () => {
+    expect(new URL(ebaySearchUrl(q, { ...DEFAULT_EBAY, affiliateEnabled: true, campaignId: 'abc' })!).searchParams.get('campid')).toBeNull()
+    expect(ebaySearchUrl(q, { ...DEFAULT_EBAY, enabled: false })).toBeNull()
+  })
+})

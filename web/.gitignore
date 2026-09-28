@@ -10,3 +10,4 @@ test-results/
 .open-next/
 .wrangler/
 .dev.vars
+.next-*/

@@ -194,6 +194,7 @@ export interface Repository {
   cardGrades(cardId: string): Promise<GradeRow[]>
   popHistory(cardId: string, gradeKey: string): Promise<HistoryPoint[]>
   marketCapHistory(cardId: string, gradeKey: string): Promise<HistoryPoint[]>
+  valueHistory(cardId: string, gradeKey: string): Promise<HistoryPoint[]>
   listingStats(cardIds: string[]): Promise<ListingStats[]>
   listingsForCard(cardId: string, opts: { gradeKey?: string; status: 'active' | 'closed' }): Promise<ListingRow[]>
   marketplace(query: MarketplaceQuery): Promise<Paged<ListingRow>>
