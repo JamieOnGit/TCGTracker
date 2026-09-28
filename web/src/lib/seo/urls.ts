@@ -81,7 +81,7 @@ export function absoluteUrl(path: string): string {
   return `${siteUrl()}${path.startsWith('/') ? path : `/${path}`}`
 }
 export function siteName(): string {
-  return process.env.NEXT_PUBLIC_SITE_NAME ?? 'BRAND'
+  return process.env.NEXT_PUBLIC_SITE_NAME ?? 'TCG Trade'
 }
 
 export const NEWS_CATEGORIES = ['pokemon', 'one-piece', 'market', 'drops', 'guides', 'grading'] as const

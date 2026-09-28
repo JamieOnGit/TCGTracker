@@ -273,6 +273,7 @@ export const demoRepository: Repository = {
           floorAud: d.floorAud,
           basis: LISTINGS.some((l) => l.cardId === card.id && l.gradeKey === gradeKey && l.status === 'active') ? 'marketplace_ask' : 'external_ask',
           marketCapAud: d.marketCapAud,
+          spark7d: history(card.id + gradeKey + 'sp', d.floorAud, 8).map((h) => h.value),
           change1d: Math.round((rand(card.id + 'd1') - 0.5) * 60) / 10,
           change7d: Math.round((rand(card.id + 'd7') - 0.5) * 200) / 10,
           change30d: Math.round((rand(card.id + 'd30') - 0.5) * 400) / 10,
@@ -280,11 +281,11 @@ export const demoRepository: Repository = {
         } satisfies MarketRow
       }),
     )
-    rows.sort((a, b) => b.marketCapAud - a.marketCapAud)
+    rows.sort((a, b) => (b.marketCapAud ?? b.floorAud) - (a.marketCapAud ?? a.floorAud))
     rows = rows.map((r, i) => ({ ...r, rank: i + 1 }))
     const key: Record<MarketQuery['sort'], (r: MarketRow) => number> = {
-      market_cap: (r) => r.marketCapAud,
-      population: (r) => r.population,
+      market_cap: (r) => r.marketCapAud ?? r.floorAud,
+      population: (r) => r.population ?? -1,
       floor: (r) => r.floorAud,
       change_7d: (r) => r.change7d ?? 0,
       change_30d: (r) => r.change30d ?? 0,

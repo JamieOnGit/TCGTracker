@@ -67,7 +67,7 @@ function permanent(req: NextRequest, pathname: string) {
   return NextResponse.redirect(url, 301)
 }
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const last = pathname.split('/').pop() ?? ''
   const isFile = last.includes('.')

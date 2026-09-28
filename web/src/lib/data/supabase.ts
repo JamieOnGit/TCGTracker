@@ -114,14 +114,18 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toCard)
     },
     async marketCap(query) {
-      const sortCol = { market_cap: 'market_cap_aud', population: 'population', floor: 'floor_aud', change_7d: 'market_cap_7d_ago', change_30d: 'market_cap_30d_ago' }[query.sort]
+      const sortCol = { market_cap: 'rank_value', population: 'population', floor: 'floor_aud', change_7d: 'floor_7d_ago', change_30d: 'floor_30d_ago' }[query.sort]
       let q = sb.from('market_cap_rankings').select('*', { count: 'exact' })
       if (query.gradeKey !== 'all') q = q.eq('grade_key', query.gradeKey)
       if (query.game) q = q.eq('game', query.game)
       if (query.lang) q = q.eq('lang', query.lang)
       if (query.setId) q = q.eq('set_id', query.setId)
       const from = (query.page - 1) * query.pageSize
-      const { data, count } = await q.order(sortCol, { ascending: query.order === 'asc' }).range(from, from + query.pageSize - 1)
+      if (query.q) {
+        const matches = await this.searchCards(query.q, 200)
+        q = q.in('card_id', matches.map((c) => c.id))
+      }
+      const { data, count } = await q.order(sortCol, { ascending: query.order === 'asc', nullsFirst: false }).range(from, from + query.pageSize - 1)
       const rows = data ?? []
       const cards = await this.getCardsByIds(rows.map((r: any) => r.card_id))
       const byId = new Map(cards.map((c) => [c.id, c]))
@@ -134,10 +138,12 @@ export function supabaseRepository(): Repository {
           population: r.population,
           floorAud: Number(r.floor_aud),
           basis: r.basis,
-          marketCapAud: Number(r.market_cap_aud),
-          change1d: pct(Number(r.market_cap_aud), r.market_cap_1d_ago && Number(r.market_cap_1d_ago)),
-          change7d: pct(Number(r.market_cap_aud), r.market_cap_7d_ago && Number(r.market_cap_7d_ago)),
-          change30d: pct(Number(r.market_cap_aud), r.market_cap_30d_ago && Number(r.market_cap_30d_ago)),
+          marketCapAud: r.market_cap_aud === null ? null : Number(r.market_cap_aud),
+          spark7d: (r.spark_7d ?? []).map(Number),
+          // Value change (the floor) — the honest measure while population is missing.
+          change1d: pct(Number(r.floor_aud), r.floor_1d_ago && Number(r.floor_1d_ago)),
+          change7d: pct(Number(r.floor_aud), r.floor_7d_ago && Number(r.floor_7d_ago)),
+          change30d: pct(Number(r.floor_aud), r.floor_30d_ago && Number(r.floor_30d_ago)),
           asOf: r.as_of,
         }))
       return { rows: out, total: count ?? out.length, page: query.page, pageSize: query.pageSize, asOf: rows[0]?.as_of ?? null }

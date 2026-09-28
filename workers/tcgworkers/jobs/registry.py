@@ -7,12 +7,18 @@
 | prices      | market.floor_refresh_hours (4h)     | waiting on pricing approval (14.2)      |
 | floors      | market.floor_refresh_hours (4h)     | ready; needs price data                 |
 | snapshots   | daily                               | ready; needs population + floors        |
-| drops:<r>   | retailers.watch_interval_seconds    | waiting on ToS sign-off per retailer    |
 | expiry      | hourly                              | ready                                   |
+| listing_expiring | hourly                         | renewal reminders (listings.expiry_warning_days) |
+| email       | every 20s                           | email_outbox sender (tcgworkers.email)  |
+| drops_dispatch | every 15s                        | drop alert fan-out (drops.dispatcher)   |
+
+The drop monitors themselves are not scheduled jobs: they run continuously
+in tcgworkers.drops.runner (one thread per enabled retailer).
 """
 
 from __future__ import annotations
 
+import functools
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -21,7 +27,9 @@ from typing import Any
 import httpx
 import psycopg
 
+from tcgworkers.config import Env
 from tcgworkers.db import pipeline_run
+from tcgworkers.email.providers import EmailProvider, provider_from_env
 from tcgworkers.sources.fx.rba import F11_URL, parse_f11
 from tcgworkers.sources.population.base import SourceNotApproved
 
@@ -35,7 +43,9 @@ class Job:
     name: str
     every_hours_setting: str | None
     every_hours_default: float
-    run: Callable[[Conn, str], None]
+    run: Callable[[Conn, Env], object]
+    every_seconds: float | None = None  # sub-hour jobs (email, drop dispatch)
+    heartbeat_max_age: float | None = None  # seconds without success before the heartbeat fails
 
 
 def refresh_fx(conn: Conn, user_agent: str) -> None:
@@ -121,16 +131,19 @@ def refresh_floors(conn: Conn, user_agent: str) -> None:
 
 
 def snapshot_market_caps(conn: Conn, user_agent: str) -> None:
-    """Daily market cap snapshot = latest population x current floor."""
+    """Daily snapshot of every floor price, with market cap = population x
+    floor where a population is known. Cards without population keep
+    population/market_cap_aud null and rank by value (rank_value) while
+    market.rank_by_price_until_population is on."""
     with pipeline_run(conn, "snapshots") as stats:
         cur = conn.execute(
             """insert into public.market_cap_snapshots
                  (card_id, grade_key, date, population, floor_aud, basis, market_cap_aud, fx_date)
-               select p.card_id, p.grade_key, (now() at time zone 'Australia/Melbourne')::date, p.population,
+               select f.card_id, f.grade_key, (now() at time zone 'Australia/Melbourne')::date, p.population,
                       f.floor_aud, f.basis, round(p.population * f.floor_aud, 2),
                       (select max(date) from public.fx_rates)
-                 from public.population_current p
-                 join public.floor_prices f on f.card_id = p.card_id and f.grade_key = p.grade_key
+                 from public.floor_prices f
+                 left join public.population_current p on p.card_id = f.card_id and p.grade_key = f.grade_key
                on conflict (card_id, grade_key, date) do update set population = excluded.population,
                  floor_aud = excluded.floor_aud, basis = excluded.basis,
                  market_cap_aud = excluded.market_cap_aud, fx_date = excluded.fx_date"""
@@ -147,18 +160,93 @@ def expire_listings(conn: Conn, user_agent: str) -> None:
         stats["expired"] = cur.rowcount
 
 
-def not_approved(what: str) -> Callable[[Conn, str], None]:
-    def run(conn: Conn, user_agent: str) -> None:
+def warn_expiring_listings(conn: Conn, user_agent: str) -> None:
+    """Queue a 'listing_expiring' reminder (on-site + email, per the seller's
+    preferences) for active listings expiring within
+    listings.expiry_warning_days. Deduplicated per listing per expiry date, so
+    a renewed listing gets a fresh reminder before its new expiry."""
+    with pipeline_run(conn, "listing_expiring") as stats:
+        rows = conn.execute(
+            """with due as (
+                 select l.id, l.seller_id, l.title, l.price_aud, l.expires_at,
+                        'listing_expiring:' || l.id || ':'
+                          || to_char(l.expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS') as dkey
+                   from public.listings l
+                  where l.status = 'active' and l.expires_at is not null and l.expires_at > now()
+                    and l.expires_at <= now() + make_interval(
+                          days => coalesce(public.setting_int('listings.expiry_warning_days'), 5)))
+               select d.id,
+                      public.notify(
+                        d.seller_id, 'listing_expiring', 'Your listing expires soon: ' || d.title, d.title,
+                        '/account/listings/',
+                        jsonb_build_object('listing_id', d.id, 'listing_title', d.title, 'expires_at', d.expires_at,
+                                           'price_aud', d.price_aud, 'dedupe', d.dkey),
+                        'listing_expiring', d.dkey)::text as queued
+                 from due d
+                where not exists (select 1 from public.email_outbox o where o.dedupe_key = d.dkey)
+                  and not exists (select 1 from public.notifications n
+                                   where n.user_id = d.seller_id and n.type = 'listing_expiring'
+                                     and n.data ->> 'dedupe' = d.dkey)"""
+        ).fetchall()
+        stats["warned"] = len(rows)
+
+
+def send_emails(conn: Conn, env: Env) -> object:
+    from tcgworkers.email.sender import run_sender
+
+    return run_sender(
+        conn,
+        email_provider(env),
+        site_url=env.site_url,
+        from_override=env.email_from,
+        admin_email=env.admin_alert_email,
+    )
+
+
+def dispatch_drops(conn: Conn, env: Env) -> object:
+    from tcgworkers.drops.dispatcher import run_dispatcher
+
+    result = run_dispatcher(
+        conn,
+        site_url=env.site_url,
+        discord_webhook_url=env.discord_drops_webhook_url,
+        admin_email=env.admin_alert_email,
+    )
+    if result.emails_queued:
+        # Premium alerts are instant: send now rather than waiting for the
+        # next email tick. SKIP LOCKED makes the overlap with that job safe.
+        send_emails(conn, env)
+    return result
+
+
+@functools.lru_cache(maxsize=4)
+def email_provider(env: Env) -> EmailProvider:
+    """One provider per process (the SMTP/HTTP settings don't change)."""
+    return provider_from_env(env)
+
+
+def not_approved(what: str) -> Callable[[Conn, Env], None]:
+    def run(conn: Conn, env: Env) -> None:
         raise SourceNotApproved(f"{what} source not approved yet - see docs/research")
 
     return run
 
 
+def _ua(fn: Callable[[Conn, str], None]) -> Callable[[Conn, Env], None]:
+    def run(conn: Conn, env: Env) -> None:
+        fn(conn, env.user_agent)
+
+    return run
+
+
 JOBS: tuple[Job, ...] = (
-    Job("fx", "market.fx_refresh_hours", 24, refresh_fx),
+    Job("fx", "market.fx_refresh_hours", 24, _ua(refresh_fx)),
     Job("population", "market.population_refresh_hours", 24, not_approved("population")),
     Job("prices", "market.floor_refresh_hours", 4, not_approved("pricing")),
-    Job("floors", "market.floor_refresh_hours", 4, refresh_floors),
-    Job("snapshots", None, 24, snapshot_market_caps),
-    Job("expiry", None, 1, expire_listings),
+    Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors)),
+    Job("snapshots", None, 24, _ua(snapshot_market_caps)),
+    Job("expiry", None, 1, _ua(expire_listings)),
+    Job("listing_expiring", None, 1, _ua(warn_expiring_listings)),
+    Job("email", None, 0, send_emails, every_seconds=20, heartbeat_max_age=300),
+    Job("drops_dispatch", None, 0, dispatch_drops, every_seconds=15, heartbeat_max_age=300),
 )

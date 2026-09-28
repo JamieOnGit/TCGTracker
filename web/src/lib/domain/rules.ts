@@ -4,6 +4,8 @@
  * supabase/migrations/20260927000100_foundations.sql and are only used when the
  * database isn't configured (demo mode, unit tests).
  */
+import { DEFAULT_EBAY, ebaySettingsFromRows, type EbaySettings } from './ebay'
+
 export type QuotaPeriod = 'calendar_month' | 'rolling_30_days'
 
 export interface Rules {
@@ -23,6 +25,9 @@ export interface Rules {
   dropsPublicDelayMinutes: number
   freeDelayedDropAlerts: boolean
   primaryGrade: string
+  freeDropDelayMinutes: number
+  rankByPriceUntilPopulation: boolean
+  ebay: EbaySettings
 }
 
 export const DEFAULT_RULES: Rules = {
@@ -38,10 +43,13 @@ export const DEFAULT_RULES: Rules = {
   listingExpiryDays: 60,
   soldVisibleDays: 90,
   minPhotos: 2,
-  externalBuyFallback: false,
-  dropsPublicDelayMinutes: 30,
-  freeDelayedDropAlerts: false,
+  externalBuyFallback: true,
+  dropsPublicDelayMinutes: 1440,
+  freeDelayedDropAlerts: true,
   primaryGrade: 'psa-10',
+  freeDropDelayMinutes: 1440,
+  rankByPriceUntilPopulation: true,
+  ebay: DEFAULT_EBAY,
 }
 
 const KEY_MAP: Record<string, keyof Rules> = {
@@ -61,6 +69,8 @@ const KEY_MAP: Record<string, keyof Rules> = {
   'drops.public_delay_minutes': 'dropsPublicDelayMinutes',
   'drops.free_delayed_alerts': 'freeDelayedDropAlerts',
   'market.primary_grade': 'primaryGrade',
+  'drops.free_delay_minutes': 'freeDropDelayMinutes',
+  'market.rank_by_price_until_population': 'rankByPriceUntilPopulation',
 }
 
 /** Build Rules from site_settings rows ({key, value}). Unknown keys are ignored. */
@@ -70,6 +80,7 @@ export function rulesFromSettings(rows: { key: string; value: unknown }[]): Rule
     const field = KEY_MAP[key]
     if (field !== undefined) (rules as unknown as Record<string, unknown>)[field] = value
   }
+  rules.ebay = ebaySettingsFromRows(rows)
   return rules
 }
 

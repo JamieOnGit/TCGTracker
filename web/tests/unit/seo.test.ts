@@ -48,7 +48,7 @@ describe('metadata (brief 7.2)', () => {
   })
   it('card title follows the brief pattern', () => {
     expect(titles.card({ name: 'Charizard ex', number: '199', printedTotal: '165', setName: '151', lang: 'en' })).toBe(
-      'Charizard ex 199/165 (151) PSA 10 Price, Population & Market Cap',
+      'Charizard ex 199/165 (151) PSA 10 Price in AUD, Population & Market Cap',
     )
   })
 })

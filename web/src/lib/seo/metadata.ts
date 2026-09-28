@@ -63,13 +63,13 @@ export function buildMetadata(input: PageSeoInput): Metadata {
 
 // ------------------------------------------------------------- title patterns
 export const titles = {
-  home: () => 'Pokémon & One Piece Graded Card Market Cap Rankings (AUD)',
+  home: () => 'Pokémon & One Piece Card Market Cap Rankings in AUD (Australia)',
   card: (c: { name: string; number: string; printedTotal?: string | null; setName: string; lang: string; grade?: string }) =>
-    `${c.name} ${c.printedTotal ? `${c.number}/${c.printedTotal}` : c.number} (${c.setName}${c.lang === 'jp' ? ', Japanese' : ''}) ${c.grade ?? 'PSA 10'} Price, Population & Market Cap`,
+    `${c.name} ${c.printedTotal ? `${c.number}/${c.printedTotal}` : c.number} (${c.setName}${c.lang === 'jp' ? ', Japanese' : ''}) ${c.grade ?? 'PSA 10'} Price in AUD, Population & Market Cap`,
   set: (s: { name: string; gameName: string; lang: string }) =>
-    `${s.name} (${s.gameName} ${s.lang.toUpperCase()}) Card List, Prices & PSA Population`,
+    `${s.name} (${s.gameName} ${s.lang.toUpperCase()}) Card List, Prices in AUD & PSA Population`,
   cardMarketplace: (c: { name: string; number: string; setName: string; lang: string }) =>
     `${c.name} ${c.number} (${c.setName} ${c.lang.toUpperCase()}) for Sale in Australia`,
   listing: (l: { title: string; state?: string }) => `${l.title} for Sale${l.state ? ` – ${l.state}` : ''}`,
-  marketCap: (scope: string) => `${scope} Market Cap Rankings – PSA 10 Population × Floor Price`,
+  marketCap: (scope: string) => `${scope} Card Market Cap Rankings in AUD`,
 }

@@ -532,6 +532,7 @@ dependencies = [
     { name = "httpx" },
     { name = "psycopg", extra = ["binary"] },
     { name = "sentry-sdk" },
+    { name = "tzdata" },
 ]
 
 [package.dev-dependencies]
@@ -547,6 +548,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "sentry-sdk", specifier = ">=2.0" },
+    { name = "tzdata", specifier = ">=2024.1" },
 ]
 
 [package.metadata.requires-dev]

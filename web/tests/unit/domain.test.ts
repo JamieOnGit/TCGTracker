@@ -136,7 +136,7 @@ describe('Buy button', () => {
   it('links to the card marketplace page sorted by price when listings exist', () => {
     const b = resolveBuyButton({ card, gradeKey: 'psa-10', stats, externalFallback: false })
     expect(b).toMatchObject({ kind: 'listings', count: 2, fromAud: 4650, href: '/marketplace/pokemon/en/151/199-charizard-ex/?sort=price-asc&grade=psa-10' })
-    expect(b.label).toBe('Buy · 2 from $4,650')
+    expect(b.label).toBe('Buy · 2 from $4,650') // component renders it with A$
   })
   it('all grades sums across grades', () => {
     expect(resolveBuyButton({ card, gradeKey: null, stats, externalFallback: false })).toMatchObject({ count: 3, fromAud: 1450 })

@@ -56,10 +56,11 @@ export interface MarketRow {
   rank: number
   card: CardRow
   gradeKey: string
-  population: number
+  population: number | null // null until a licensed population source exists
   floorAud: number
   basis: FloorBasis
-  marketCapAud: number
+  marketCapAud: number | null
+  spark7d: number[]
   change1d: number | null
   change7d: number | null
   change30d: number | null
