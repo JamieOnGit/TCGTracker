@@ -337,8 +337,8 @@ select id, 'OP09-BOX', 'https://example.test/op09', 'One Piece Card Game OP-09 B
 from public.retailers where slug = 'jb-hi-fi';
 insert into public.drop_events (retail_product_id, event_type, price_aud, rrp_aud, rrp_tag, dedupe_key)
 select id, 'IN_STOCK', 199, 199, 'AT_RRP', 'jb-hi-fi:OP09-BOX:IN_STOCK:1' from public.retail_products;
-select tests.ok((select public_at - occurred_at from public.drop_events limit 1) = interval '30 minutes',
-  'public_at = occurred_at + drops.public_delay_minutes');
+select tests.ok((select public_at - occurred_at from public.drop_events limit 1) = interval '1 day',
+  'public_at = occurred_at + drops.public_delay_minutes (1 day)');
 select tests.throws($$
   insert into public.drop_events (retail_product_id, event_type, dedupe_key)
   select id, 'IN_STOCK', 'jb-hi-fi:OP09-BOX:IN_STOCK:1' from public.retail_products
@@ -354,7 +354,7 @@ select tests.ok((select count(*) from public.drop_events) = 0, 'and from Free me
 select tests.login('00000000-0000-0000-0000-00000000000e');
 select tests.ok((select count(*) from public.drop_events) = 1, 'Premium members see it instantly');
 reset role;
-update public.drop_events set occurred_at = now() - interval '31 minutes', public_at = now() - interval '1 minute';
+update public.drop_events set occurred_at = now() - interval '25 hours', public_at = now() - interval '1 minute';
 select set_config('request.jwt.claims', '', false);
 set role anon;
 select tests.ok((select count(*) from public.drop_events) = 1, 'after the delay it appears in the public history');
@@ -401,5 +401,64 @@ select tests.ok(
      join public.card_listing_stats s on s.card_id = m.card_id and s.grade_key = m.grade_key
    where s.active_count > 0) = '20000000-0000-0000-0000-000000000001',
   'market cap row and Buy-button stats resolve to the same card_id and grade');
+
+-- ------------------------------------------------ alert delivery (2026-09-28)
+-- Drop alerts: Premium instant, Free 1 day later (drops.free_delay_minutes).
+select tests.ok(
+  (select tier_at_enqueue = 'premium' from public.drop_alert_deliveries
+    where user_id = '00000000-0000-0000-0000-00000000000e' and channel = 'email'),
+  'a Premium member''s drop alert is queued on the instant schedule');
+select tests.ok(
+  (select f.deliver_at - p.deliver_at from public.drop_alert_deliveries f, public.drop_alert_deliveries p
+    where f.user_id = '00000000-0000-0000-0000-00000000000b' and f.channel = 'email'
+      and p.user_id = '00000000-0000-0000-0000-00000000000e' and p.channel = 'email'
+      and f.drop_event_id = p.drop_event_id) = interval '1 day',
+  'a Free member''s drop alert is due exactly 1 day after the Premium one');
+select tests.ok(not exists (select 1 from public.drop_alert_deliveries where channel = 'discord'),
+  'Discord delivery is opt-in');
+-- If a queued instant alert becomes due after the member lapses to Free, it is pushed back, never sent early.
+insert into public.retail_products (retailer_id, sku, url, title, game)
+select id, 'ETB-1', 'https://example.test/etb', 'Pokemon TCG Elite Trainer Box', 'pokemon' from public.retailers where slug = 'jb-hi-fi';
+insert into public.drop_events (retail_product_id, event_type, price_aud, dedupe_key, occurred_at)
+select id, 'IN_STOCK', 89.95, 'jb-hi-fi:ETB-1:IN_STOCK:1', now() - interval '5 minutes' from public.retail_products where sku = 'ETB-1';
+update public.subscriptions set status = 'canceled', tier = 'free' where user_id = '00000000-0000-0000-0000-00000000000e';
+select tests.ok(
+  not exists (select 1 from public.claim_due_drop_alerts(1000) c
+              join public.drop_events e on e.id = c.drop_event_id
+              where c.user_id = '00000000-0000-0000-0000-00000000000e' and e.dedupe_key = 'jb-hi-fi:ETB-1:IN_STOCK:1'),
+  'a lapsed Premium member does not get the instant alert');
+select tests.ok(
+  (select d.deliver_at - e.occurred_at from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+    where d.user_id = '00000000-0000-0000-0000-00000000000e' and e.dedupe_key = 'jb-hi-fi:ETB-1:IN_STOCK:1' and d.channel = 'email')
+  = interval '1 day', '...it is rescheduled to the Free timing');
+update public.subscriptions set status = 'active', tier = 'premium' where user_id = '00000000-0000-0000-0000-00000000000e';
+
+-- Messages: one batched email per conversation per window, and an on-site notification.
+select tests.ok((select count(*) from public.email_outbox where template = 'message' and user_id = '00000000-0000-0000-0000-00000000000a') = 1,
+  'the seller gets a message email, queued for the batch window');
+select tests.ok((select send_after > now() from public.email_outbox where template = 'message' limit 1),
+  'message emails wait for the batch window before sending');
+select tests.ok(exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-00000000000a' and type = 'message'),
+  'and an on-site notification');
+
+-- Listing approval: seller notified; wishlist and saved-search watchers matched.
+insert into public.wishlist_items (user_id, card_id, grade_key) values
+  ('00000000-0000-0000-0000-00000000000c', '20000000-0000-0000-0000-000000000004', null);
+insert into public.saved_searches (user_id, name, query) values
+  ('00000000-0000-0000-0000-00000000000c', 'JP Luffy under 100', '{"lang":"jp","price_max":100}');
+update public.listings set status = 'pending_review', title = 'Luffy manga JP', description = ''
+  where title = 'Luffy manga proxy card';
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000d');
+update public.listings set status = 'active' where title = 'Luffy manga JP';
+reset role;
+select tests.ok(exists (select 1 from public.email_outbox where template = 'listing_status' and user_id = '00000000-0000-0000-0000-00000000000b'),
+  'the seller is emailed when their listing goes live');
+select tests.ok(exists (select 1 from public.email_outbox where template = 'wishlist' and user_id = '00000000-0000-0000-0000-00000000000c'),
+  'a wishlist watcher is emailed when the card is listed');
+select tests.ok(exists (select 1 from public.email_outbox where template = 'saved_search' and user_id = '00000000-0000-0000-0000-00000000000c'),
+  'a saved-search watcher is emailed on a match');
+select tests.ok((select count(*) from public.email_outbox where dedupe_key is not null)
+  = (select count(distinct dedupe_key) from public.email_outbox where dedupe_key is not null), 'no email is queued twice');
 
 \echo 'All database tests passed'
