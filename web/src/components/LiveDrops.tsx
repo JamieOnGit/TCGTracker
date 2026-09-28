@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { supabaseBrowser } from '@/lib/supabase/browser'
+import { loadSupabaseBrowser, supabaseAvailable } from '@/lib/supabase/browser-lazy'
 
 type Row = { id: number; event_type: string; price_aud: number | null; rrp_tag: string; rrp_delta_pct: number | null; occurred_at: string; retail_products: { title: string; url: string; retailers: { name: string } } }
 
@@ -14,12 +14,13 @@ const time = new Intl.DateTimeFormat('en-AU', { hour: 'numeric', minute: '2-digi
  * simply see the upgrade prompt.
  */
 export function LiveDrops() {
-  const [state, setState] = useState<{ status: 'loading' | 'anon' | 'free' | 'premium'; rows: Row[] }>(() => ({ status: supabaseBrowser() ? 'loading' : 'anon', rows: [] }))
+  const [state, setState] = useState<{ status: 'loading' | 'anon' | 'free' | 'premium'; rows: Row[] }>(() => ({ status: supabaseAvailable() ? 'loading' : 'anon', rows: [] }))
   useEffect(() => {
-    const sb = supabaseBrowser()
-    if (!sb) return
+    if (!supabaseAvailable()) return
     let active = true
     const load = async () => {
+      const sb = await loadSupabaseBrowser()
+      if (!sb || !active) return
       const { data: auth } = await sb.auth.getUser()
       if (!auth.user) return active && setState({ status: 'anon', rows: [] })
       const { data: premium } = await sb.rpc('is_premium', { p_user: auth.user.id })

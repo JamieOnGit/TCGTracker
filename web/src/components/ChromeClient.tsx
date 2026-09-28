@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Bell, Home, LayoutGrid, Menu, Search, ShoppingBag, Store, X } from 'lucide-react'
-import { supabaseBrowser } from '@/lib/supabase/browser'
+import { loadSupabaseBrowser, supabaseAvailable } from '@/lib/supabase/browser-lazy'
 
 type Item = { href: string; label: string; match: string[] }
 
@@ -37,11 +37,14 @@ export function HeaderScroll() {
 
 /** Sign in link, or bell + account menu when signed in. Client-side so pages stay cacheable. */
 export function AccountArea() {
-  const [state, setState] = useState<{ signedIn: boolean; unread: number; loaded: boolean }>(() => ({ signedIn: false, unread: 0, loaded: supabaseBrowser() === null }))
+  const [state, setState] = useState<{ signedIn: boolean; unread: number; loaded: boolean }>(() => ({ signedIn: false, unread: 0, loaded: !supabaseAvailable() }))
   useEffect(() => {
-    const sb = supabaseBrowser()
-    if (!sb) return
+    if (!supabaseAvailable()) return
     let cancelled = false
+    let cleanup = () => {}
+    ;(async () => {
+    const sb = (await loadSupabaseBrowser())!
+    if (cancelled) return
     const load = async () => {
       const { data } = await sb.auth.getUser()
       if (!data.user) return !cancelled && setState({ signedIn: false, unread: 0, loaded: true })
@@ -53,9 +56,11 @@ export function AccountArea() {
       .channel('bell')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => load())
       .subscribe()
+    cleanup = () => sb.removeChannel(channel)
+    })()
     return () => {
       cancelled = true
-      sb.removeChannel(channel)
+      cleanup()
     }
   }, [])
   if (!state.loaded) return <span className="inline-block w-16" aria-hidden="true" />

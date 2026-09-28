@@ -4,6 +4,10 @@ import Stripe from 'stripe'
 import { supabaseForRequest, supabaseService } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/seo/urls'
 
+function billingConfigured(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_PREMIUM_MONTHLY && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
 function stripe() {
   const key = process.env.STRIPE_SECRET_KEY
   if (!key) throw new Error('Stripe is not configured')
@@ -14,7 +18,8 @@ function stripe() {
 export async function startCheckout(): Promise<void> {
   const sb = await supabaseForRequest()
   const { data: auth } = await sb.auth.getUser()
-  if (!auth.user) redirect('/login/?next=/premium/')
+  if (!auth.user) redirect('/login/?next=/account/billing/upgrade/')
+  if (!billingConfigured()) redirect('/account/billing/?error=unavailable')
   const db = supabaseService()
   const { data: sub } = await db.from('subscriptions').select('stripe_customer_id,status').eq('user_id', auth.user.id).single()
   if (sub?.status === 'active' || sub?.status === 'trialing') redirect('/account/billing/')
@@ -46,7 +51,8 @@ export async function openBillingPortal(): Promise<void> {
   const { data: auth } = await sb.auth.getUser()
   if (!auth.user) redirect('/login/?next=/account/billing/')
   const { data: sub } = await sb.from('subscriptions').select('stripe_customer_id').eq('user_id', auth.user.id).single()
-  if (!sub?.stripe_customer_id) redirect('/premium/')
+  if (!sub?.stripe_customer_id) redirect('/account/billing/upgrade/')
+  if (!process.env.STRIPE_SECRET_KEY) redirect('/account/billing/?error=unavailable')
   const portal = await stripe().billingPortal.sessions.create({ customer: sub.stripe_customer_id, return_url: `${siteUrl()}/account/billing/` })
   redirect(portal.url)
 }

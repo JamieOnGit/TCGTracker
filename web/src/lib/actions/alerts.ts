@@ -12,12 +12,15 @@ async function uid() {
 
 /** "Set alert" on a card: email me when it's listed (optionally a grade and max price). */
 export async function addWishlist(cardId: string, gradeKey: string | null, maxPriceAud?: number): Promise<ActionResult> {
+  if (!z.uuid().safeParse(cardId).success) return { ok: false, error: 'Choose a card.' }
+  if (gradeKey !== null && !/^(raw|[a-z]{2,4}-\d{1,2}(\.5)?)$/.test(gradeKey)) return { ok: false, error: 'Choose a grade.', field: 'grade' }
+  if (maxPriceAud !== undefined && !(maxPriceAud > 0 && maxPriceAud < 10_000_000)) return { ok: false, error: 'Enter a price in dollars, or leave it blank.', field: 'maxPrice' }
   const { sb, id } = await uid()
   if (!id) return { ok: false, error: 'Sign in to set an alert.' }
   const { error } = await sb.from('wishlist_items').insert({ user_id: id, card_id: cardId, grade_key: gradeKey, max_price_aud: maxPriceAud ?? null })
   if (error && !error.message.includes('duplicate')) return { ok: false, error: friendlyError(error.message) }
   revalidatePath('/account/alerts/')
-  return { ok: true, message: "Alert set. We'll email you when it's listed." }
+  return { ok: true, message: error ? 'You already have this alert.' : "Alert set. We'll email you when it's listed." }
 }
 
 export async function removeWishlist(id: number): Promise<ActionResult> {
@@ -57,7 +60,7 @@ const TYPES = ['message', 'listing_status', 'listing_expiring', 'saved_search', 
 const CHANNELS = ['email', 'onsite', 'discord'] as const
 
 /** Notification preference centre: every alert type x channel. */
-export async function savePreferences(form: FormData): Promise<ActionResult> {
+export async function savePreferences(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
   const { sb, id } = await uid()
   if (!id) return { ok: false, error: 'Sign in again.' }
   const rows = TYPES.flatMap((t) => CHANNELS.map((c) => ({ user_id: id, alert_type: t, channel: c, enabled: form.get(`${t}:${c}`) === 'on', updated_at: new Date().toISOString() })))

@@ -40,7 +40,9 @@
     ".next-admin/types/**/*.ts",
     ".next-admin/dev/types/**/*.ts",
     ".next-account/types/**/*.ts",
-    ".next-account/dev/types/**/*.ts"
+    ".next-account/dev/types/**/*.ts",
+    ".next-ci/types/**/*.ts",
+    ".next-ci/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
