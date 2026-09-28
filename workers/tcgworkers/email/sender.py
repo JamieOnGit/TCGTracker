@@ -154,11 +154,12 @@ def _send_one(
             store.mark_suppressed(row, f"member turned off {pref} emails")
             result.suppressed += 1
             return
-        if user_id is None:
-            user_id = store.resolve_user(row.to_email)
         token = None
-        if user_id:
-            token = store.unsubscribe_token(user_id, UNSUBSCRIBE_TYPE.get(row.template, row.template))
+        unsubscribe_type = UNSUBSCRIBE_TYPE.get(row.template)
+        if user_id is None and unsubscribe_type:
+            user_id = store.resolve_user(row.to_email)
+        if user_id and unsubscribe_type:
+            token = store.unsubscribe_token(user_id, unsubscribe_type)
         email = build_email(row, site_url=site_url, from_addr=from_addr, unsubscribe_token=token)
         message_id = provider.send(email)
     except (EmailSendError, UnknownTemplate) as exc:

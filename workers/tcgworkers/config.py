@@ -50,6 +50,9 @@ class Env:
     discord_drops_webhook_url: str | None = None
     admin_alert_email: str | None = None
     healthcheck_url: str | None = None
+    # PriceCharting (tcgworkers.sources.pricing.pricecharting).
+    pricecharting_token: str | None = None
+    pricecharting_csv_url_template: str | None = None
 
     @classmethod
     def from_environ(cls, environ: dict[str, str] | None = None) -> Env:
@@ -80,6 +83,8 @@ class Env:
             discord_drops_webhook_url=e.get("DISCORD_DROPS_WEBHOOK_URL") or None,
             admin_alert_email=e.get("ADMIN_ALERT_EMAIL") or None,
             healthcheck_url=e.get("HEALTHCHECK_URL") or None,
+            pricecharting_token=e.get("PRICECHARTING_TOKEN") or None,
+            pricecharting_csv_url_template=e.get("PRICECHARTING_CSV_URL_TEMPLATE") or None,
         )
 
 

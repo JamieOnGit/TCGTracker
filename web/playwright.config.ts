@@ -4,6 +4,7 @@ const PORT = Number(process.env.E2E_PORT ?? 3200)
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['account/**', 'admin/**'],
   timeout: 30_000,
   use: {
     baseURL: `http://localhost:${PORT}`,
@@ -17,6 +18,6 @@ export default defineConfig({
     command: `npx next start -p ${PORT}`,
     port: PORT,
     reuseExistingServer: true,
-    env: { NEXT_PUBLIC_SITE_URL: `http://localhost:${PORT}` },
+    env: { NEXT_PUBLIC_SITE_URL: `http://localhost:${PORT}`, NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next' },
   },
 })

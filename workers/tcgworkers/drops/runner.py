@@ -32,11 +32,11 @@ from typing import Any
 
 from tcgworkers.alerts import queue_admin_alert
 from tcgworkers.db import connect, load_rules
-from tcgworkers.drops.base import REGISTRY, RetailerAdapter
+from tcgworkers.drops.base import REGISTRY, AdapterBlocked, RetailerAdapter
 from tcgworkers.drops.engine import CycleResult, run_cycle
 from tcgworkers.drops.http import BackingOff, Disallowed, PoliteClient
 from tcgworkers.drops.models import Observation
-from tcgworkers.drops.store import PostgresDropStore, load_rrp_entries, load_watch_rules
+from tcgworkers.drops.store import PostgresDropStore, is_first_scan, load_rrp_entries, load_watch_rules
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def fetch(
         if mode == "watch":
             return list(adapter.watch(client, watch_urls))
         return list(adapter.discover(client))
-    except (BackingOff, Disallowed) as exc:
+    except (BackingOff, Disallowed, AdapterBlocked) as exc:
         log.warning("drops %s %s: %s", adapter.slug, mode, exc)
         return exc
     except Exception as exc:
@@ -130,21 +130,29 @@ class PostgresCycle:
             rules = load_rules(conn)
             rrp = load_rrp_entries(conn)
             watch = load_watch_rules(conn, cfg.id)
+            baseline = is_first_scan(conn, cfg.id)
             conn.commit()  # don't sit idle-in-transaction while fetching
-            urls = [r.value for r in watch if r.kind == "url"]
+            urls = [r.value for r in watch if r.kind in ("url", "sku")]
             observations = fetch(adapter, client, mode, urls)
             now = datetime.now(UTC)
             try:
                 result = run_cycle(
                     cfg.slug,
                     observations,
-                    PostgresDropStore(conn, cfg.id),
+                    PostgresDropStore(conn, cfg.id, baseline=baseline),
                     rules=rules,
                     rrp_entries=rrp,
                     watchlist=watch,
                     now=now,
                 )
                 conn.commit()
+                if baseline and result.new_events:
+                    log.info(
+                        "drops %s: first scan stored %d products as a baseline (%d events suppressed)",
+                        cfg.slug,
+                        result.tcg,
+                        len(result.new_events),
+                    )
             except Exception as exc:
                 conn.rollback()
                 log.exception("drops %s %s: storing the cycle failed", cfg.slug, mode)

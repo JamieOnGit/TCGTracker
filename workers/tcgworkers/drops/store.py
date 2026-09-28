@@ -9,6 +9,7 @@ store never commits by itself; the runner commits once per cycle.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import datetime
 from typing import Any
 
@@ -22,10 +23,18 @@ from tcgworkers.drops.rrp import RrpEntry
 Conn = psycopg.Connection[dict[str, Any]]
 
 
+BASELINE_REASON = "baseline: first scan of this retailer, so existing stock is not a drop"
+
+
 class PostgresDropStore:
-    def __init__(self, conn: Conn, retailer_id: str) -> None:
+    """``baseline=True`` (the retailer's first ever scan) stores products,
+    states and events as usual but marks every event suppressed, so switching
+    a retailer on doesn't alert members about its whole existing range."""
+
+    def __init__(self, conn: Conn, retailer_id: str, *, baseline: bool = False) -> None:
         self.conn = conn
         self.retailer_id = retailer_id
+        self.baseline = baseline
         self._product_ids: dict[str, int] = {}
 
     def last_state(self, retailer: str, sku: str) -> ProductState | None:
@@ -103,6 +112,8 @@ class PostgresDropStore:
             )
 
     def save_event(self, event: DropEvent) -> bool:
+        if self.baseline:
+            event = replace(event, suppressed=True, suppressed_reason=BASELINE_REASON)
         product_id = self._product_ids.get(event.sku)
         if product_id is None:  # the engine always saves the observation first
             found = self.conn.execute(
@@ -155,6 +166,14 @@ class PostgresDropStore:
         return Health(
             consecutive_errors=row["consecutive_errors"], zero_product_cycles=row["zero_product_cycles"]
         )
+
+
+def is_first_scan(conn: Conn, retailer_id: str) -> bool:
+    row = conn.execute(
+        "select not exists (select 1 from public.retail_products where retailer_id = %s) as first",
+        (retailer_id,),
+    ).fetchone()
+    return bool(row and row["first"])
 
 
 def load_rrp_entries(conn: Conn) -> list[RrpEntry]:

@@ -14,10 +14,10 @@ const time = new Intl.DateTimeFormat('en-AU', { hour: 'numeric', minute: '2-digi
  * simply see the upgrade prompt.
  */
 export function LiveDrops() {
-  const [state, setState] = useState<{ status: 'loading' | 'anon' | 'free' | 'premium'; rows: Row[] }>({ status: 'loading', rows: [] })
+  const [state, setState] = useState<{ status: 'loading' | 'anon' | 'free' | 'premium'; rows: Row[] }>(() => ({ status: supabaseBrowser() ? 'loading' : 'anon', rows: [] }))
   useEffect(() => {
     const sb = supabaseBrowser()
-    if (!sb) return setState({ status: 'anon', rows: [] })
+    if (!sb) return
     let active = true
     const load = async () => {
       const { data: auth } = await sb.auth.getUser()

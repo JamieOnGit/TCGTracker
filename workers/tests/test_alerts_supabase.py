@@ -266,3 +266,74 @@ def test_outbox_suppression_retry_and_admin_alert_dedupe(conn, members):
     assert n == 1
     conn.execute("delete from public.email_outbox where data ->> 'alert_key' = %s", (key,))
     conn.commit()
+
+
+def test_first_scan_of_a_retailer_is_a_silent_baseline(conn, members):
+    """Switching a retailer on must not alert members about its whole range."""
+    from tcgworkers.drops.base import RetailerAdapter
+    from tcgworkers.drops.http import PoliteClient
+    from tcgworkers.drops.runner import PostgresCycle, RetailerConfig
+
+    slug = f"test-shop-{uuid.uuid4().hex[:6]}"
+    rid = conn.execute(
+        """insert into public.retailers (slug, name, base_url, adapter, enabled)
+           values (%s, 'Test Shop', 'https://shop.example', 'test_shop', false) returning id::text as id""",
+        (slug,),
+    ).fetchone()["id"]
+    conn.commit()
+    state = {"availability": Availability.OUT_OF_STOCK}
+
+    class Shop(RetailerAdapter):
+        name = "Test Shop"
+
+        def discover(self, client):
+            return [
+                Observation(
+                    slug,
+                    "etb-1",
+                    "https://shop.example/etb-1",
+                    "Pokemon TCG Surging Sparks Elite Trainer Box",
+                    state["availability"],
+                    Decimal("89.00"),
+                    datetime.now(UTC),
+                ),
+                Observation(
+                    slug,
+                    "bb-1",
+                    "https://shop.example/bb-1",
+                    "One Piece Card Game OP-09 Booster Box",
+                    Availability.IN_STOCK_ONLINE,
+                    Decimal("199.00"),
+                    datetime.now(UTC),
+                ),
+            ]
+
+    Shop.slug = slug
+    cfg = RetailerConfig(rid, slug, "Test Shop", "test_shop", 90, 300)
+    cycle = PostgresCycle(URL)
+    ids = [u for u, _ in members.values()]
+    deliveries = lambda: conn.execute(  # noqa: E731
+        """select count(*) as n from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+             join public.retail_products p on p.id = e.retail_product_id
+            where p.retailer_id = %s and d.user_id = any(%s::uuid[])""",
+        (rid, ids),
+    ).fetchone()["n"]
+    try:
+        first = cycle(cfg, "discovery", Shop(), PoliteClient(user_agent="test"))
+        assert first.error is None and len(first.new_events) == 3  # 2x NEW_LISTING + IN_STOCK
+        events = conn.execute(
+            """select suppressed, suppressed_reason from public.drop_events e
+                 join public.retail_products p on p.id = e.retail_product_id where p.retailer_id = %s""",
+            (rid,),
+        ).fetchall()
+        assert all(e["suppressed"] and e["suppressed_reason"].startswith("baseline") for e in events)
+        assert deliveries() == 0
+
+        state["availability"] = Availability.IN_STOCK_ONLINE  # a real restock on the next cycle
+        second = cycle(cfg, "discovery", Shop(), PoliteClient(user_agent="test"))
+        assert [e.event_type.value for e in second.new_events] == ["IN_STOCK"]
+        assert deliveries() > 0
+    finally:
+        conn.rollback()
+        conn.execute("delete from public.retailers where id = %s", (rid,))
+        conn.commit()

@@ -75,6 +75,22 @@ SAMPLE: dict[str, dict[str, object]] = {
 def test_every_outbox_template_has_a_sample_and_rules():
     assert set(SAMPLE) == set(TEMPLATES)
     assert set(PREFERENCE_TYPE) == set(TEMPLATES) == set(UNSUBSCRIBE_TYPE)
+    # Both must be valid notification_preferences.alert_type values (the web
+    # /unsubscribe/ route upserts the token's type there).
+    allowed = {
+        "message",
+        "listing_status",
+        "listing_expiring",
+        "saved_search",
+        "wishlist",
+        "drop",
+        "billing",
+        "weekly_digest",
+        "marketing",
+    }
+    assert {v for v in PREFERENCE_TYPE.values() if v} <= allowed
+    assert {v for v in UNSUBSCRIBE_TYPE.values() if v} <= allowed
+    assert UNSUBSCRIBE_TYPE["admin_alert"] is None
 
 
 @pytest.mark.parametrize("template", TEMPLATES)
@@ -87,8 +103,13 @@ def test_every_template_renders_with_compliance_footer(template):
         assert PREFS in part
         assert UNSUB in part
     assert "max-width:560px" in r.html
-    assert "#F7F5F0" in r.html and "#1C1B19" in r.html
-    assert "Cormorant Garamond" in r.html and "Inter" in r.html
+    # Midnight Holo theme.
+    assert "background:#0B0D14" in r.html and "background:#121521" in r.html and "color:#EEF0F7" in r.html
+    assert "background:#6D5DF6;background-image:linear-gradient(100deg,#6D5DF6,#3EC6FF,#FF6AD5)" in r.html
+    assert "letter-spacing:.28em" in r.html and ">TCG TRADE</a>" in r.html
+    assert '<meta name="color-scheme" content="dark light">' in r.html
+    assert "color:#9D8CFF" in r.html  # links
+    assert "Inter" in r.html
     assert r.html.startswith("<!doctype html>")
 
 
@@ -155,6 +176,19 @@ def test_drop_email_labels():
         CTX,
     )
     assert "Was: A$99.95" in change.text and "RRP UNKNOWN" not in change.text
+    assert "Price: A$89.95 ▼" in change.text and "color:#3DDC97" in change.html  # cheaper = green
+    dearer = render(
+        "drop", {**SAMPLE["drop"], "event_type": "PRICE_CHANGE", "previous_price_aud": "79.95"}, CTX
+    )
+    assert "Price: A$89.95 ▲" in dearer.text and "color:#FF6B7A" in dearer.html
+
+
+def test_primary_button_and_rrp_tag_colours():
+    r = render("drop", SAMPLE["drop"], CTX)
+    assert "background:#6D5DF6;color:#FFFFFF" in r.html
+    assert "border:1px solid #FF6B7A" in r.html  # ABOVE RRP chip
+    below = render("drop", {**SAMPLE["drop"], "rrp_tag": "BELOW_RRP", "rrp_delta_pct": "-10"}, CTX)
+    assert "border:1px solid #3DDC97" in below.html
 
 
 def test_free_drop_email_has_the_24h_upgrade_line():
@@ -191,3 +225,36 @@ def test_absolute_url_never_links_unsafe_schemes():
 def test_format_when_uses_melbourne_time():
     assert format_when("2026-09-28T01:05:00+00:00") == "Mon 28 Sep 2026, 11:05 am AEST"
     assert format_when("2026-12-01T01:05:00Z").endswith("AEDT")
+
+
+AFFILIATE = (
+    "https://www.ebay.com.au/sch/i.html?_nkw=charizard+psa+10&_sacat=183454&mkcid=1&mkrid=705-53470-19255-0"
+    "&siteid=15&campid=5336728181&customid=c-123&toolid=10001&mkevt=1"
+)
+
+
+@pytest.mark.parametrize("template", TEMPLATES)
+def test_emails_never_carry_ebay_affiliate_links(template):
+    # docs/research/07 §E: EPN links in email need EPN's prior written approval.
+    data = {**SAMPLE[template], "url": AFFILIATE, "body": f"Check eBay: {AFFILIATE}"}
+    r = render(template, data, CTX)
+    for part in (r.html, r.text):
+        for param in ("campid", "mkrid", "mkcid", "customid", "toolid", "mkevt"):
+            assert f"{param}=" not in part, (template, param)
+        assert "rover.ebay" not in part
+    if "ebay.com.au" in r.text:
+        assert "_nkw=charizard+psa+10&_sacat=183454" in r.text  # the plain search link survives
+
+
+def test_rover_links_become_their_target():
+    from tcgworkers.email.templates import strip_affiliate
+
+    rover = (
+        "http://rover.ebay.com/rover/1/705-53470-19255-0/1?campid=5336728181&customid=x&toolid=10001"
+        "&mpre=https%3A%2F%2Fwww.ebay.com.au%2Fitm%2F123%3Fmkevt%3D1"
+    )
+    assert strip_affiliate(rover) == "https://www.ebay.com.au/itm/123"
+    assert (
+        strip_affiliate("https://www.jbhifi.com.au/products/x?campid=1")
+        == "https://www.jbhifi.com.au/products/x?campid=1"
+    )

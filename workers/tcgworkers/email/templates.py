@@ -17,12 +17,13 @@ Templates never raise on a missing field: they fall back to the generic
 from __future__ import annotations
 
 import html
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urljoin, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 from tcgworkers.config import DEFAULT_SITE_URL
@@ -61,8 +62,10 @@ PREFERENCE_TYPE: dict[str, str | None] = {
     "welcome": None,
 }
 
-# alert_type written on the unsubscribe token (what one click turns off).
-UNSUBSCRIBE_TYPE: dict[str, str] = {
+# alert_type written on the unsubscribe token (what one click turns off);
+# must be a notification_preferences.alert_type. Admin alerts are internal
+# operational mail to staff, not a member alert, so they carry no token.
+UNSUBSCRIBE_TYPE: dict[str, str | None] = {
     "message": "message",
     "listing_status": "listing_status",
     "listing_expiring": "listing_expiring",
@@ -70,7 +73,7 @@ UNSUBSCRIBE_TYPE: dict[str, str] = {
     "saved_search": "saved_search",
     "drop": "drop",
     "billing": "billing",
-    "admin_alert": "admin_alert",
+    "admin_alert": None,
     "welcome": "marketing",
 }
 
@@ -96,14 +99,30 @@ EVENT_LABELS: dict[str, str] = {
 
 FREE_DELAY_LINE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: {url}"
 
-# Palette / type (docs/research/05-design-review.md direction).
-BG = "#F7F5F0"
-INK = "#1C1B19"
-MUTED = "#6B675F"
-RULE = "#E4E0D6"
-CARD = "#FFFFFF"
+# "Midnight Holo" palette, matching the site theme.
+BG = "#0B0D14"  # page background
+PANEL = "#121521"  # main content panel
+INK = "#EEF0F7"  # text
+MUTED = "#9AA1B5"
+RULE = "#2C3347"
+PRIMARY = "#6D5DF6"  # buttons, and the solid fallback for the holo bar
+HOLO = "linear-gradient(100deg,#6D5DF6,#3EC6FF,#FF6AD5)"
+LINK = "#9D8CFF"
+UP = "#3DDC97"
+DOWN = "#FF6B7A"
+WORDMARK = "TCG TRADE"
 SERIF = "'Cormorant Garamond', Georgia, serif"
+WORDMARK_FONT = "Georgia, 'Times New Roman', serif"
 SANS = "Inter, Arial, sans-serif"
+
+
+def _tag_colour(tag: str) -> str:
+    """Green for good-for-the-buyer RRP tags, red for above RRP."""
+    if tag.startswith(("AT RRP", "BELOW RRP")):
+        return UP
+    if tag.startswith("ABOVE RRP"):
+        return DOWN
+    return LINK
 
 
 class UnknownTemplate(ValueError):
@@ -168,12 +187,46 @@ def format_when(value: Any) -> str:
     return f"{local:%a} {local.day} {local:%b %Y}, {hour}:{local:%M} {ampm} {local.tzname()}"
 
 
+# eBay Partner Network tracking parameters. EPN forbids affiliate links in
+# email/SMS/push without prior written approval (docs/research/07 §E.2), so
+# emails only ever carry plain eBay URLs.
+_EPN_PARAMS = frozenset({"mkcid", "mkrid", "campid", "customid", "toolid", "mkevt", "mkgroupid", "siteid"})
+_EBAY_HOST = re.compile(r"(^|\.)ebay\.(com|com\.au|co\.uk|ca|de|fr|it|es)$", re.IGNORECASE)
+_URL_IN_TEXT = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
+EBAY_AU = "https://www.ebay.com.au/"
+
+
+def strip_affiliate(url: str) -> str:
+    """Remove EPN tracking from an eBay URL (rover links become their target)."""
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    if host.startswith("rover.ebay.") or host == "rover.ebay.com":
+        target = dict(parse_qsl(parts.query)).get("mpre")
+        return strip_affiliate(unquote(target)) if target and target.startswith("http") else EBAY_AU
+    if not _EBAY_HOST.search(host):
+        return url
+    kept = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k.lower() not in _EPN_PARAMS]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment))
+
+
+def _strip_affiliate_in(text: str) -> str:
+    def fix(m: re.Match[str]) -> str:
+        raw = html.unescape(m.group(0))
+        clean = strip_affiliate(raw)
+        return (
+            m.group(0) if clean == raw else html.escape(clean, quote=True) if "&amp;" in m.group(0) else clean
+        )
+
+    return _URL_IN_TEXT.sub(fix, text)
+
+
 def absolute_url(site_url: str, url: Any, fallback: str = "/") -> str:
-    """Relative site paths become absolute; only http(s) links pass through."""
+    """Relative site paths become absolute; only http(s) links pass through,
+    and never with eBay affiliate tracking."""
     raw = str(url or "").strip() or fallback
     parts = urlsplit(raw)
     if parts.scheme in ("http", "https") and parts.netloc:
-        return raw
+        return strip_affiliate(raw)
     if parts.scheme or parts.netloc:  # javascript:, mailto:, //host - never linked
         raw = fallback
     return urljoin(site_url.rstrip("/") + "/", raw.lstrip("/"))
@@ -182,6 +235,19 @@ def absolute_url(site_url: str, url: Any, fallback: str = "/") -> str:
 def _one_line(text: Any, limit: int = 200) -> str:
     s = " ".join(str(text or "").split())
     return s if len(s) <= limit else s[: limit - 1].rstrip() + "…"
+
+
+def _direction(price: Any, previous: Any) -> str | None:
+    """Colour for a price move: green when cheaper, red when dearer."""
+    try:
+        now, before = Decimal(str(price)), Decimal(str(previous))
+    except (InvalidOperation, ValueError):
+        return None
+    if now < before:
+        return UP
+    if now > before:
+        return DOWN
+    return None
 
 
 def rrp_label(tag: Any, delta: Any) -> str | None:
@@ -217,22 +283,23 @@ def _html_block(b: Block) -> str:
         return f'<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:{INK};">{e(b[1])}</p>'
     if kind == "quote":
         return (
-            f'<p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid {INK};background:{BG};'
+            f'<p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid {PRIMARY};background:{BG};'
             f'font-size:15px;line-height:1.6;color:{INK};">{e(b[1])}</p>'
         )
     if kind == "tags":
         chips = "".join(
-            f'<span style="display:inline-block;margin:0 6px 6px 0;padding:3px 8px;border:1px solid {INK};'
-            f'font-size:11px;font-weight:700;letter-spacing:0.06em;color:{INK};">{e(t)}</span>'
+            f'<span style="display:inline-block;margin:0 6px 6px 0;padding:3px 8px;border:1px solid {_tag_colour(t)};'
+            f'border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;color:{_tag_colour(t)};">'
+            f"{e(t)}</span>"
             for t in b[1]
         )
         return f'<p style="margin:0 0 12px;">{chips}</p>'
     if kind == "rows":
         rows = "".join(
             f'<tr><td style="padding:6px 0;border-bottom:1px solid {RULE};font-size:13px;color:{MUTED};'
-            f'width:40%;">{e(k)}</td><td style="padding:6px 0;border-bottom:1px solid {RULE};font-size:14px;'
-            f'color:{INK};text-align:right;">{e(v)}</td></tr>'
-            for k, v in b[1]
+            f'width:40%;">{e(row[0])}</td><td style="padding:6px 0;border-bottom:1px solid {RULE};font-size:14px;'
+            f'color:{row[2] if len(row) > 2 else INK};text-align:right;">{e(row[1])}</td></tr>'
+            for row in b[1]
         )
         return (
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
@@ -241,7 +308,7 @@ def _html_block(b: Block) -> str:
     if kind == "button":
         return (
             f'<p style="margin:8px 0 24px;"><a href="{e(b[2], quote=True)}" style="display:inline-block;'
-            f"padding:12px 22px;background:{INK};color:{BG};text-decoration:none;font-size:14px;"
+            f"padding:12px 22px;background:{PRIMARY};color:#FFFFFF;text-decoration:none;font-size:14px;"
             f'font-weight:600;border-radius:4px;">{e(b[1])}</a></p>'
         )
     if kind == "note":
@@ -260,7 +327,7 @@ def _text_block(b: Block) -> str:
     if kind == "tags":
         return " ".join(f"[{t}]" for t in b[1])
     if kind == "rows":
-        return "\n".join(f"{k}: {v}" for k, v in b[1])
+        return "\n".join(f"{row[0]}: {row[1]}" for row in b[1])
     if kind == "button":
         return f"{b[1]}: {b[2]}"
     raise ValueError(f"unknown block {kind!r}")
@@ -275,7 +342,7 @@ def _footer(ctx: RenderContext, template: str, reason: str) -> tuple[str, str]:
         reason,
         f"Notification preferences: {ctx.preferences_url}",
     ]
-    link = f"color:{MUTED};text-decoration:underline;"
+    link = f"color:{LINK};text-decoration:underline;"
     parts_html = [
         e(reason),
         f'<a href="{e(ctx.preferences_url, quote=True)}" style="{link}">Notification preferences</a>',
@@ -309,17 +376,22 @@ def _layout(
     doc = (
         '<!doctype html><html lang="en-AU"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<meta name="color-scheme" content="light"><title>{e(subject)}</title></head>'
+        '<meta name="color-scheme" content="dark light"><meta name="supported-color-schemes" content="dark light">'
+        f"<title>{e(subject)}</title></head>"
         f'<body style="margin:0;padding:0;background:{BG};color:{INK};font-family:{SANS};">'
         f'<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{e(preheader)}</div>'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{BG};">'
         '<tr><td align="center" style="padding:24px 16px;">'
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         'style="max-width:560px;width:100%;">'
-        f'<tr><td style="padding:0 0 16px;"><a href="{e(site, quote=True)}" style="font-family:{SERIF};'
-        f'font-size:24px;font-weight:600;color:{INK};text-decoration:none;">{BRAND}</a></td></tr>'
-        f'<tr><td style="background:{CARD};border:1px solid {RULE};border-radius:6px;padding:28px 28px 12px;'
-        f'font-family:{SANS};">{body_html}</td></tr>'
+        f'<tr><td style="padding:0 0 16px;"><a href="{e(site, quote=True)}" style="font-family:{WORDMARK_FONT};'
+        f'font-size:18px;font-weight:400;letter-spacing:.28em;color:{INK};text-decoration:none;">{WORDMARK}</a>'
+        "</td></tr>"
+        # 3px holo bar: solid fallback first for clients that drop gradients.
+        f'<tr><td style="height:3px;line-height:3px;font-size:0;background:{PRIMARY};background-image:{HOLO};'
+        'border-radius:6px 6px 0 0;">&nbsp;</td></tr>'
+        f'<tr><td style="background:{PANEL};border:1px solid {RULE};border-top:0;border-radius:0 0 6px 6px;'
+        f'padding:28px 28px 12px;font-family:{SANS};color:{INK};">{body_html}</td></tr>'
         f'<tr><td style="padding:20px 4px 0;font-family:{SANS};">{footer_html}</td></tr>'
         "</table></td></tr></table></body></html>"
     )
@@ -423,8 +495,11 @@ def _drop(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     tag = rrp_label(data.get("rrp_tag"), data.get("rrp_delta_pct"))
     tags = [label] + ([tag] if tag else [])
     subject = _one_line(f"{label}: {product} at {retailer}" + (f" — {price}" if price != "—" else ""), 150)
-    rows: list[tuple[str, str]] = [("Retailer", retailer), ("Price", price)]
+    rows: list[tuple[str, ...]] = [("Retailer", retailer), ("Price", price)]
     if data.get("event_type") == "PRICE_CHANGE" and data.get("previous_price_aud") is not None:
+        direction = _direction(data.get("price_aud"), data.get("previous_price_aud"))
+        if direction:
+            rows[1] = ("Price", f"{price} {'▼' if direction == UP else '▲'}", direction)
         rows.append(("Was", format_aud(data.get("previous_price_aud"))))
     if data.get("rrp_aud") is not None:
         rows.append(("RRP", format_aud(data.get("rrp_aud"))))
@@ -568,4 +643,12 @@ def render(template: str, data: Mapping[str, Any] | None, ctx: RenderContext) ->
         raise UnknownTemplate(template)
     subject, blocks, preheader, reason = builder(data or {}, ctx)
     subject = _one_line(subject, 180)  # also strips CR/LF: no header injection
-    return _layout(ctx, template, subject, blocks, preheader, reason)
+    out = _layout(ctx, template, subject, blocks, preheader, reason)
+    # Belt and braces: no eBay affiliate link survives anywhere in an email,
+    # including links pasted into message text (07 §E).
+    return RenderedEmail(
+        subject=out.subject,
+        html=_strip_affiliate_in(out.html),
+        text=_strip_affiliate_in(out.text),
+        preheader=out.preheader,
+    )

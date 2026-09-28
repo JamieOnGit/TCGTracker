@@ -15,14 +15,13 @@ from __future__ import annotations
 
 import random
 import time
-import urllib.robotparser
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
 import httpx
 
-_DISALLOW_ALL = ["User-agent: *", "Disallow: /"]
+from tcgworkers.drops.robots import Robots
 
 
 class Disallowed(RuntimeError):
@@ -40,7 +39,7 @@ class BackingOff(RuntimeError):
 
 @dataclass
 class _Host:
-    robots: urllib.robotparser.RobotFileParser | None = None
+    robots: Robots | None = None
     robots_fetched_at: float = 0.0
     last_request_at: float = 0.0
     backoff_until: float = 0.0
@@ -89,22 +88,31 @@ class PoliteClient:
         origin, host = self._host(url)
         now = self.clock()
         if host.robots is None or now - host.robots_fetched_at > self.robots_ttl:
-            parser = urllib.robotparser.RobotFileParser()
             try:
                 r = self._http.get(f"{origin}/robots.txt")
                 if r.status_code in (401, 403):
-                    parser.parse(_DISALLOW_ALL)  # blocked from robots.txt itself: stay out
+                    parser = Robots.disallow_all()  # blocked from robots.txt itself: stay out
                 elif r.status_code >= 400:
-                    parser.parse([])  # no robots.txt: everything allowed
+                    parser = Robots.allow_all()  # no robots.txt: everything allowed
                 else:
-                    parser.parse(r.text.splitlines())
+                    parser = Robots.parse(r.text)
             except httpx.HTTPError:
-                parser.parse(_DISALLOW_ALL)  # can't read it: be conservative
+                parser = Robots.disallow_all()  # can't read it: be conservative
             host.robots, host.robots_fetched_at = parser, now
         return host.robots.can_fetch(self.user_agent, url)
 
     # ------------------------------------------------------------------- fetch
-    def get(self, url: str, *, headers: dict[str, str] | None = None) -> httpx.Response:
+    def get(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        pass_statuses: tuple[int, ...] = (),
+        use_cache: bool = True,
+    ) -> httpx.Response:
+        """Polite GET. Statuses in ``pass_statuses`` are returned to the caller
+        instead of triggering back-off / raising (e.g. an API's 403 "invalid
+        key", which means "re-read the credentials", not "slow down")."""
         if not self.allowed(url):
             raise Disallowed(url)
         origin, host = self._host(url)
@@ -112,7 +120,7 @@ class PoliteClient:
         if now < host.backoff_until:
             raise BackingOff(origin, host.backoff_until)
 
-        cached = self._cache.get(url)
+        cached = self._cache.get(url) if use_cache else None
         if cached and now - cached.fetched_at < self.cache_ttl:
             return cached.response
 
@@ -129,6 +137,8 @@ class PoliteClient:
         response = self._http.get(url, headers=req_headers)
         host.last_request_at = self.clock()
 
+        if response.status_code in pass_statuses:
+            return response
         if response.status_code in (403, 429, 503):
             host.strikes += 1
             retry_after = response.headers.get("Retry-After", "")

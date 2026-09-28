@@ -4,7 +4,7 @@
 |-------------|-------------------------------------|-----------------------------------------|
 | fx          | market.fx_refresh_hours (24h)       | live (RBA F11, CC BY 4.0)               |
 | population  | market.population_refresh_hours     | waiting on a licensed source (14.1)     |
-| prices      | market.floor_refresh_hours (4h)     | waiting on pricing approval (14.2)      |
+| prices      | market.floor_refresh_hours (4h)     | PriceCharting (needs PRICECHARTING_TOKEN) |
 | floors      | market.floor_refresh_hours (4h)     | ready; needs price data                 |
 | snapshots   | daily                               | ready; needs population + floors        |
 | expiry      | hourly                              | ready                                   |
@@ -225,6 +225,12 @@ def email_provider(env: Env) -> EmailProvider:
     return provider_from_env(env)
 
 
+def prices_job(conn: Conn, env: Env) -> None:
+    from tcgworkers.jobs.prices import refresh_prices
+
+    refresh_prices(conn, env)
+
+
 def not_approved(what: str) -> Callable[[Conn, Env], None]:
     def run(conn: Conn, env: Env) -> None:
         raise SourceNotApproved(f"{what} source not approved yet - see docs/research")
@@ -242,7 +248,7 @@ def _ua(fn: Callable[[Conn, str], None]) -> Callable[[Conn, Env], None]:
 JOBS: tuple[Job, ...] = (
     Job("fx", "market.fx_refresh_hours", 24, _ua(refresh_fx)),
     Job("population", "market.population_refresh_hours", 24, not_approved("population")),
-    Job("prices", "market.floor_refresh_hours", 4, not_approved("pricing")),
+    Job("prices", "market.floor_refresh_hours", 4, prices_job),
     Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors)),
     Job("snapshots", None, 24, _ua(snapshot_market_caps)),
     Job("expiry", None, 1, _ua(expire_listings)),

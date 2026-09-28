@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Bell, Home, LayoutGrid, Menu, Search, ShoppingBag, Store, X } from 'lucide-react'
 import { supabaseBrowser } from '@/lib/supabase/browser'
 
@@ -37,10 +37,10 @@ export function HeaderScroll() {
 
 /** Sign in link, or bell + account menu when signed in. Client-side so pages stay cacheable. */
 export function AccountArea() {
-  const [state, setState] = useState<{ signedIn: boolean; unread: number; loaded: boolean }>({ signedIn: false, unread: 0, loaded: false })
+  const [state, setState] = useState<{ signedIn: boolean; unread: number; loaded: boolean }>(() => ({ signedIn: false, unread: 0, loaded: supabaseBrowser() === null }))
   useEffect(() => {
     const sb = supabaseBrowser()
-    if (!sb) return setState({ signedIn: false, unread: 0, loaded: true })
+    if (!sb) return
     let cancelled = false
     const load = async () => {
       const { data } = await sb.auth.getUser()
@@ -80,7 +80,12 @@ export function AccountArea() {
 export function MobileMenu({ items }: { items: Item[] }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-  useEffect(() => setOpen(false), [pathname])
+  const [lastPath, setLastPath] = useState(pathname)
+  if (pathname !== lastPath) {
+    // Close the menu after navigating (state update during render, per React docs).
+    setLastPath(pathname)
+    setOpen(false)
+  }
   return (
     <div className="lg:hidden">
       <button className="icon-btn" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(true)}>
@@ -133,20 +138,27 @@ export function TabBar() {
   )
 }
 
+const themeListeners = new Set<() => void>()
+function readTheme(): string {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
+}
+
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<string>('dark')
-  useEffect(() => {
-    try {
-      setTheme(localStorage.getItem('theme') === 'light' ? 'light' : 'dark')
-    } catch {}
-  }, [])
+  const theme = useSyncExternalStore(
+    (cb) => {
+      themeListeners.add(cb)
+      return () => themeListeners.delete(cb)
+    },
+    readTheme,
+    () => 'dark',
+  )
   const apply = (t: string) => {
-    setTheme(t)
     try {
       localStorage.setItem('theme', t)
     } catch {}
     if (t === 'dark') document.documentElement.removeAttribute('data-theme')
     else document.documentElement.setAttribute('data-theme', t)
+    themeListeners.forEach((l) => l())
   }
   return (
     <div className="seg" role="radiogroup" aria-label="Theme">

@@ -138,12 +138,23 @@ def test_welcome_and_admin_alerts_ignore_alert_preferences():
     assert send_due(store, provider, now=NOW).sent == 2
 
 
-def test_admin_alert_to_a_registered_admin_gets_an_unsubscribe_token():
+def test_admin_alerts_carry_no_unsubscribe_token():
     store, provider = FakeOutbox(), FakeProvider()
     store.users_by_email["admin@tcgtrade.com.au"] = "admin-id"
     store.add("admin_alert", {"title": "x"}, user_id=None, to_email="admin@tcgtrade.com.au")
     send_due(store, provider, now=NOW)
-    assert "List-Unsubscribe" in provider.sent[0].headers
+    assert "List-Unsubscribe" not in provider.sent[0].headers and not store.tokens
+    assert "https://tcgtrade.com.au/account/settings/" in provider.sent[0].text
+
+
+def test_member_email_without_user_id_is_matched_by_address():
+    store, provider = FakeOutbox(), FakeProvider()
+    store.users_by_email["ash@example.com"] = USER
+    store.add("billing", {"kind": "receipt", "amount_aud": "12.99"}, user_id=None)
+    send_due(store, provider, now=NOW)
+    assert (
+        provider.sent[0].headers["List-Unsubscribe"] == "<https://tcgtrade.com.au/unsubscribe/?t=tok-billing>"
+    )
 
 
 def test_transient_failure_backs_off_exponentially_then_succeeds():

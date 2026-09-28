@@ -199,7 +199,7 @@ def test_config_load_failure_keeps_running_workers():
 def test_missing_adapter_raises_an_admin_alert_but_others_start():
     alerts: list[str] = []
     runner = DropRunner(
-        load_retailers=lambda: [GOOD, RetailerConfig("id-t", "target-au", "Target", "target_au", 90, 300)],
+        load_retailers=lambda: [GOOD, RetailerConfig("id-n", "nowhere-au", "Nowhere", "nowhere_au", 90, 300)],
         cycle=Harness(),
         make_adapter=lambda cfg: GoodAdapter() if cfg.slug == "good-shop" else adapter_for(cfg),
         make_client=_client,
@@ -208,7 +208,7 @@ def test_missing_adapter_raises_an_admin_alert_but_others_start():
     runner.reload()
     try:
         assert set(runner.workers) == {"good-shop"}
-        assert alerts == ["retailer-start:target-au"]
+        assert alerts == ["retailer-start:nowhere-au"]
     finally:
         runner.stop(timeout=5)
 
