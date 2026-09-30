@@ -9,7 +9,7 @@ Rough monthly cost, similar to beforeyoufly.com.au:
 | Service | What for | Cost to start |
 |---|---|---|
 | VentraIP | `tcgtracker.com.au` domain | about A$20–30 a year |
-| Cloudflare | DNS and website hosting (Workers) | Free. Workers Paid (US$5/mo) once traffic grows. |
+| Cloudflare | DNS (Free) and website hosting (Workers Paid, US$5/mo: the site bundle is over the free plan's 3 MB limit) | US$5/mo |
 | Supabase | Database, sign-in, photo storage, realtime messaging | Free. Pro (US$25/mo) once you have real users, for daily backups and no pausing. |
 | Fly.io | The 24/7 drop monitor and alert sender, in Sydney | about US$2–5/mo |
 | Resend | Alert emails | Free for 3,000 emails/mo (100 a day). Pro (US$20/mo) when alert volume grows. |

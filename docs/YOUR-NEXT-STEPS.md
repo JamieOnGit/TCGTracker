@@ -21,12 +21,13 @@ It isn't online yet. That needs the accounts below, which only you can open.
 | 1 | GitHub repo `JamieOnGit/TCGTracker` | ✅ Done |
 | 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Active. Finish the two SSL settings (2.8) if you haven't. |
 | 3a | Supabase project `tcgtracker` (Sydney) | ✅ Done |
-| 3b | Supabase sign-in URLs | ☐ Confirm Site URL and Redirect URL are set |
+| 3b | Supabase sign-in URLs | ☐ Confirm Site URL and Redirect URL are set (Authentication → URL Configuration) |
 | 3c–3d | Access token, Project ID and DB password saved as GitHub secrets | ✅ Done |
-| **3e** | **Merge pull request #1** | ⏭ **Do next.** All checks are green. |
-| **3f** | **Run "Deploy database"** | ⏭ Then tell Claude "database deployed" |
+| 3e | Merge pull request #1 | ✅ Merged |
+| 3f | Database deployed to Supabase | ✅ Done (tables visible in Table Editor) |
 | 3g | Make yourself admin | After Step 4 |
-| 4 onwards | Cloudflare site, Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
+| **4** | **Put the website online (Cloudflare Workers)** | ⏭ **Do next** |
+| 5 onwards | Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
 
 ---
 
@@ -81,12 +82,12 @@ These let GitHub load the database tables into Supabase for you. Don't paste the
    | `SUPABASE_ACCESS_TOKEN` | the access token |
    | `SUPABASE_DB_PASSWORD` | the database password |
 
-### 3e · Merge the code into main (1 min) ⏭ next
+### 3e · Merge the code into main ✅ done
 The "Deploy database" button only appears once the code is on `main`.
 1. Open **https://github.com/JamieOnGit/TCGTracker/pull/1**.
 2. Click **Ready for review**, then **Merge pull request** → **Confirm merge**. All checks are green.
 
-### 3f · Load the database (3 min)
+### 3f · Load the database ✅ done
 1. Open **https://github.com/JamieOnGit/TCGTracker/actions** → click **Deploy database** in the left list.
 2. Click **Run workflow** (right side). Keep branch `main`, type `deploy` in the box, then click the green **Run workflow**.
 3. Wait for the green tick (about a minute). Click into the run to see each step. "Apply migrations" lists every table set it created.
@@ -101,22 +102,62 @@ where user_id = (select id from auth.users where email = 'jamieha1998@gmail.com'
 ```
 You'll need the keys under **Project Settings → API** (Project URL, anon key, service_role key) in Step 4.
 
-## Step 4 · Cloudflare Workers: the website itself (≈15 min)
-1. In Cloudflare, go to **Workers & Pages → Create → Import a repository** → connect GitHub → pick **TCGTracker**.
-2. Set Root directory to `web`, Build command to `npm ci && npx opennextjs-cloudflare build`, and Deploy command to `npx opennextjs-cloudflare deploy`.
-3. Under **Settings → Variables and secrets**, add these. Mark every key as a **Secret**. Also add every `NEXT_PUBLIC_…` value as a **Build variable**, because those are baked in when the site builds.
+## Step 4 · Cloudflare Workers: put the website online (≈25 min) ⏭ next
+
+### 4a · Upgrade to Workers Paid (US$5/month), required
+The site's code bundle is about 3.8 MB compressed, and Cloudflare's free Workers plan allows 3 MB. Workers Paid allows 10 MB and covers every Worker on your account.
+1. Cloudflare dashboard → **Workers & Pages** → **Plans** (or **Compute (Workers) → Plans**).
+2. Choose **Workers Paid** ($5/month) and add a card. Your domains stay on their Free plans; this is only the Workers plan.
+
+### 4b · Get the Supabase keys (keep them out of the chat)
+Supabase → **Project Settings → API Keys**. You need three values:
+
+| Value | Where |
+|---|---|
+| Project URL | **Project Settings → Data API** (looks like `https://abcdefghijklmnopqrst.supabase.co`) |
+| Public key | the **anon** key (on the **Legacy API keys** tab) or the **publishable** key (`sb_publishable_…`). Either works. |
+| Secret key | the **service_role** key (Legacy tab) or a **secret** key (`sb_secret_…`). Never share this one. |
+
+### 4c · Connect the repo to Cloudflare
+1. Cloudflare → **Workers & Pages → Create application → Import a repository** (or "Continue with GitHub"). Authorise Cloudflare for your GitHub account and choose **JamieOnGit/TCGTracker**.
+2. Fill in the form:
+
+   | Field | Value |
+   |---|---|
+   | Project name | `tcgtracker`. It must match exactly (it's the name in `web/wrangler.jsonc`). |
+   | Production branch | `main` |
+   | Root directory (under Advanced / Build settings) | `web` |
+   | Build command | `npx opennextjs-cloudflare build` |
+   | Deploy command | `npx opennextjs-cloudflare deploy` |
+
+3. **Build variables** (on the same screen under **Advanced settings → Build variables**, or later under **Settings → Build → Variables and secrets**). These are baked into the site when it builds:
 
    | Name | Value |
    |---|---|
    | `NEXT_PUBLIC_SITE_URL` | `https://tcgtracker.com.au` |
-   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role key (Secret) |
-   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | from Step 6 |
-   | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PREMIUM_MONTHLY` | from Step 8 (Secret) |
-   | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | from Step 11 |
-4. Under **Settings → Domains & Routes → Add → Custom domain**, enter `tcgtracker.com.au`.
-5. Later, add a **Redirect Rule**: `www.tcgtracker.com.au/*` → `https://tcgtracker.com.au/$1` (301).
+   | `NEXT_PUBLIC_SUPABASE_URL` | the Project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the public (anon/publishable) key |
+
+4. Click **Deploy**. The first build takes 3–6 minutes. If it fails, copy the last 30 lines of the build log to Claude.
+
+### 4d · Add the runtime secret
+After the first deploy: **Workers & Pages → tcgtracker → Settings → Variables and secrets → Add**:
+- Type **Secret**, name `SUPABASE_SERVICE_ROLE_KEY`, value = the secret (service_role / `sb_secret_…`) key. Save.
+
+Add it as a **Secret**, not plain text: plain-text variables set in the dashboard are replaced on every deploy, while secrets are kept. Stripe, push and Sentry values come later (Steps 6, 8 and 11) and go in the same place as Secrets. `NEXT_PUBLIC_VAPID_PUBLIC_KEY` goes in the Build variables.
+
+### 4e · Connect the domain
+1. **Workers & Pages → tcgtracker → Settings → Domains & Routes → Add → Custom domain** → `tcgtracker.com.au` → **Add domain**. Cloudflare creates the DNS record and the certificate itself (allow a few minutes).
+2. **www → main address:**
+   - **DNS → Records → Add record:** Type `AAAA`, Name `www`, IPv6 `100::`, Proxy **on** (orange cloud). This is a placeholder address so Cloudflare can catch `www` traffic.
+   - **Rules → Redirect Rules → Create rule:** "Redirect from WWW to root" template, or a custom rule: when hostname equals `www.tcgtracker.com.au`, dynamic redirect to `concat("https://tcgtracker.com.au", http.request.uri.path)`, status **301**, preserve query string.
+
+### 4f · Check it
+1. Open **https://tcgtracker.com.au**. You should see the TCGTracker homepage with the market table. It'll be empty until prices are imported (Step 9) and the catalogue is loaded.
+2. **https://www.tcgtracker.com.au** should jump to `https://tcgtracker.com.au`.
+3. Click **Sign in**, enter your email, and open the link **on the same device**. Supabase's built-in email sender allows only a few emails an hour until Step 5.
+4. Then do **3g** (make yourself admin), and open **https://tcgtracker.com.au/admin/**.
+5. ✉️ Tell Claude: **"site is live"**. Claude runs the SEO and speed checks against the real domain.
 
 ## Step 5 · Resend: alert emails (≈15 min)
 1. Go to **https://resend.com** → **Domains → Add domain** → `tcgtracker.com.au`.
@@ -260,7 +301,7 @@ These give reliable stock and price data **with permission**, which beats any wo
 | Service | Cost |
 |---|---|
 | Domain (VentraIP) | ~A$20–30/yr |
-| Cloudflare hosting | Free → US$5/mo as traffic grows |
+| Cloudflare Workers Paid (site hosting) | US$5/mo (needed from day one: the site is over the free plan's 3 MB limit) |
 | Supabase | Free → US$25/mo once there are real users (daily backups) |
 | Fly.io (Sydney) | ~US$2–5/mo |
 | Resend | Free (3,000 emails/mo) → US$20/mo |
