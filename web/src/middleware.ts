@@ -15,7 +15,7 @@ import { listingPath, parseListingSegment } from '@/lib/seo/urls'
  */
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SB_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const REDIRECT_PREFIXES = ['/cards/', '/marketplace/', '/market-cap/']
+const REDIRECT_PREFIXES = ['/cards/', '/marketplace/', '/market-cap/', '/releases/', '/guides/', '/drops/', '/news/', '/sellers/']
 const PRIVATE_PREFIXES = ['/account/', '/messages/', '/admin/', '/report/']
 
 // Small per-instance cache of redirect lookups (positive and negative).
@@ -74,10 +74,15 @@ export async function middleware(req: NextRequest) {
 
   // 1. Canonical form: lowercase + trailing slash.
   if (!isFile) {
+    // A file URL with a stray slash (/releases/calendar.ics/) -> the file itself.
+    if (/\.[a-z0-9]+\/$/i.test(pathname)) return permanent(req, pathname.slice(0, -1))
     let fixed = pathname.toLowerCase()
     if (!fixed.endsWith('/')) fixed += '/'
     if (fixed !== pathname) return permanent(req, fixed)
   }
+
+  // /market-cap/ would duplicate the homepage rankings: the homepage is canonical.
+  if (pathname === '/market-cap/') return permanent(req, '/')
 
   // 3. Listing lifecycle URLs.
   const m = /^\/marketplace\/listing\/([^/]+)\/$/.exec(pathname)

@@ -45,7 +45,7 @@ export async function MarketCapPage({ params, searchParams }: { params: MarketCa
   if (!scope) notFound()
   const rules = await getRepo().getRules()
   const query = parseMarketQuery(searchParams, { game: scope.game, lang: scope.lang, setId: scope.set?.id }, rules.primaryGrade)
-  const crumbs = [{ name: 'Market cap', path: '/market-cap/' }]
+  const crumbs: { name: string; path: string }[] = [] // Home (= all-games market cap) is prepended by Breadcrumbs
   if (scope.game) crumbs.push({ name: GAME_NAMES[scope.game], path: marketCapPath(scope.game) })
   if (scope.lang) crumbs.push({ name: scope.lang.toUpperCase(), path: marketCapPath(scope.game, scope.lang) })
   if (scope.set) crumbs.push({ name: scope.set.name, path: scope.path })

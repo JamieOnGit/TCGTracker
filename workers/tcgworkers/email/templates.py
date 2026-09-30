@@ -16,6 +16,7 @@ Templates never raise on a missing field: they fall back to the generic
 
 from __future__ import annotations
 
+import contextlib
 import html
 import re
 from collections.abc import Callable, Mapping
@@ -32,6 +33,8 @@ from tcgworkers.drops.models import RrpTag
 
 BRAND = "TCG Trade"
 TIMEZONE = ZoneInfo("Australia/Melbourne")
+SYDNEY = ZoneInfo("Australia/Sydney")
+DEALS_PATH = "/deals/"
 PREFERENCES_PATH = "/account/settings/"
 UNSUBSCRIBE_PATH = "/unsubscribe/"
 PREMIUM_PATH = "/premium/"
@@ -46,6 +49,8 @@ TEMPLATES: tuple[str, ...] = (
     "billing",
     "admin_alert",
     "welcome",
+    "release",
+    "deal",
 )
 
 # notification_preferences.alert_type checked at send time (None = always send:
@@ -60,6 +65,8 @@ PREFERENCE_TYPE: dict[str, str | None] = {
     "billing": "billing",
     "admin_alert": None,
     "welcome": None,
+    "release": "release",
+    "deal": "wishlist",
 }
 
 # alert_type written on the unsubscribe token (what one click turns off);
@@ -75,6 +82,8 @@ UNSUBSCRIBE_TYPE: dict[str, str | None] = {
     "billing": "billing",
     "admin_alert": None,
     "welcome": "marketing",
+    "release": "release",
+    "deal": "wishlist",
 }
 
 _UNSUBSCRIBE_LABEL: dict[str, str] = {
@@ -87,6 +96,8 @@ _UNSUBSCRIBE_LABEL: dict[str, str] = {
     "billing": "billing emails",
     "admin_alert": "admin alert emails",
     "welcome": "marketing emails",
+    "release": "release reminder emails",
+    "deal": "wishlist alerts",
 }
 
 EVENT_LABELS: dict[str, str] = {
@@ -96,6 +107,8 @@ EVENT_LABELS: dict[str, str] = {
     "PRICE_CHANGE": "PRICE CHANGE",
     "QUEUE_LIVE": "QUEUE LIVE",
 }
+
+QUANTITY_LABELS: dict[str, str] = {"few": "A few left", "some": "Some in stock", "plenty": "Plenty in stock"}
 
 FREE_DELAY_LINE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: {url}"
 
@@ -168,8 +181,8 @@ def format_aud(value: Any) -> str:
     return f"{sign}A${abs(amount):,.2f}"
 
 
-def format_when(value: Any) -> str:
-    """'Fri 3 Oct 2026, 9:05 am AEST' in Melbourne time."""
+def format_when(value: Any, tz: ZoneInfo = TIMEZONE) -> str:
+    """'Fri 3 Oct 2026, 9:05 am AEST' in Melbourne time (or ``tz``)."""
     if value is None or value == "":
         return ""
     if isinstance(value, datetime):
@@ -181,7 +194,7 @@ def format_when(value: Any) -> str:
             return str(value)
     if dt.tzinfo is None:
         return dt.strftime("%a %d %b %Y")
-    local = dt.astimezone(TIMEZONE)
+    local = dt.astimezone(tz)
     hour = local.hour % 12 or 12
     ampm = "am" if local.hour < 12 else "pm"
     return f"{local:%a} {local.day} {local:%b %Y}, {hour}:{local:%M} {ampm} {local.tzname()}"
@@ -487,7 +500,105 @@ def drop_event_label(event_type: Any) -> str:
     return EVENT_LABELS.get(str(event_type or ""), str(event_type or "DROP").replace("_", " "))
 
 
+# ---------------------------------------------------- member sightings
+def sighting_headline(channel: Any, product: str, place: str) -> str:
+    """'In store: Pokémon booster bundles at Kmart Chadstone, VIC'."""
+    where = "In store" if channel == "in_store" else "Online"
+    return f"{where}: {product} at {place}"
+
+
+def quantity_label(quantity: Any) -> str | None:
+    return QUANTITY_LABELS.get(str(quantity or ""))
+
+
+def limit_label(limit: Any) -> str | None:
+    try:
+        n = int(limit)
+    except (TypeError, ValueError):
+        return None
+    return f"Limit {n} per customer" if n > 0 else None
+
+
+def confirmed_label(count: Any) -> str:
+    try:
+        n = int(count or 0)
+    except (TypeError, ValueError):
+        n = 0
+    if n <= 0:
+        return "Verified by a trusted scout or moderator"
+    return f"Confirmed by {n} member{'s' if n != 1 else ''}"
+
+
+_DROP_REASON = "You're receiving this because retail drop alerts are on for your TCG Trade account."
+
+
+def _sighting(data: Mapping[str, Any], ctx: RenderContext) -> Built:
+    """A member's confirmed in-store or online sighting."""
+    channel = str(data.get("channel") or "")
+    in_store = channel == "in_store"
+    product = _one_line(data.get("product_title") or "Stock", 150)
+    retailer = _one_line(data.get("retailer") or "the retailer", 60)
+    place = _one_line(data.get("place") or retailer, 100)
+    price = format_aud(data.get("price_aud"))
+    tag = rrp_label(data.get("rrp_tag"), data.get("rrp_delta_pct"))
+    subject = _one_line(
+        sighting_headline(channel, product, place) + (f" — {price}" if price != "—" else ""), 150
+    )
+    tags = ["IN STORE" if in_store else "ONLINE", "MEMBER SIGHTING"] + ([tag] if tag else [])
+    rows: list[tuple[str, ...]] = [("Retailer", retailer)]
+    if in_store:
+        if data.get("store_name"):
+            rows.append(("Store", _one_line(data.get("store_name"), 80)))
+        suburb = _one_line(data.get("suburb"), 60)
+        state = str(data.get("state") or "")
+        if suburb or state:
+            rows.append(("Location", ", ".join(x for x in (suburb, state) if x)))
+    if price != "—":
+        rows.append(("Price", price))
+    if data.get("rrp_aud") is not None:
+        rows.append(("RRP", format_aud(data.get("rrp_aud"))))
+    stock = quantity_label(data.get("quantity"))
+    if stock:
+        rows.append(("Stock", stock))
+    limit = limit_label(data.get("purchase_limit"))
+    if limit:
+        rows.append(("Purchase limit", limit))
+    if data.get("occurred_at"):
+        rows.append(("Confirmed", format_when(data.get("occurred_at"))))
+    confirmed = confirmed_label(data.get("confirm_count"))
+    blocks: list[Block] = [("tags", tags), ("h", product), ("rows", rows), ("p", f"{confirmed}.")]
+    if data.get("note"):
+        blocks.append(("quote", _one_line(data.get("note"), 280)))
+    if data.get("photo_url"):
+        blocks.append(("p", f"Photo from the store: {absolute_url(ctx.site_url, data.get('photo_url'))}"))
+    if in_store:
+        state = str(data.get("state") or "").upper()
+        blocks.append(
+            (
+                "button",
+                f"See {state} sightings" if state else "See sightings",
+                absolute_url(ctx.site_url, data.get("drops_path"), "/drops/"),
+            )
+        )
+    else:
+        blocks.append(("button", f"Go to {retailer}", absolute_url(ctx.site_url, data.get("url"), "/drops/")))
+    if str(data.get("tier") or "free") != "premium":
+        blocks.append(("quote", FREE_DELAY_LINE.format(url=absolute_url(ctx.site_url, PREMIUM_PATH))))
+    blocks.append(
+        (
+            "note",
+            "Reported by a TCG Trade member and confirmed by the community. Stock moves fast and may be "
+            "gone by the time you arrive; call the store if you're travelling far. "
+            "TCG Trade never buys, queues or checks out for you.",
+        )
+    )
+    pre = " · ".join(x for x in (place, price if price != "—" else None, stock, confirmed) if x)
+    return subject, blocks, pre, _DROP_REASON
+
+
 def _drop(data: Mapping[str, Any], ctx: RenderContext) -> Built:
+    if data.get("source") == "member":
+        return _sighting(data, ctx)
     label = drop_event_label(data.get("event_type"))
     product = _one_line(data.get("product_title") or data.get("title") or "A tracked product", 150)
     retailer = _one_line(data.get("retailer") or "the retailer", 60)
@@ -522,12 +633,7 @@ def _drop(data: Mapping[str, Any], ctx: RenderContext) -> Built:
         )
     )
     pre = f"{label} · {retailer} · {price}" + (f" · {tag}" if tag else "")
-    return (
-        subject,
-        blocks,
-        pre,
-        "You're receiving this because retail drop alerts are on for your TCG Trade account.",
-    )
+    return subject, blocks, pre, _DROP_REASON
 
 
 def _billing(data: Mapping[str, Any], ctx: RenderContext) -> Built:
@@ -624,6 +730,82 @@ def _welcome(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     )
 
 
+def _release(data: Mapping[str, Any], ctx: RenderContext) -> Built:
+    """Reminder queued by public.send_release_reminders() the day before."""
+    title = _one_line(data.get("title") or "A release you're following is coming up")
+    blocks: list[Block] = [("tags", ["RELEASE REMINDER"]), ("h", title)]
+    body = str(data.get("body") or "").strip()
+    if body:
+        blocks.append(("p", body))
+    blocks.append(
+        ("button", "See the release details", absolute_url(ctx.site_url, data.get("url"), "/releases/"))
+    )
+    blocks.append(
+        (
+            "note",
+            "Release dates can move and stores stock at different times. Turn on drop alerts to hear "
+            "the moment it lands at an Australian retailer.",
+        )
+    )
+    return (
+        title,
+        blocks,
+        _one_line(body or title, 120),
+        "You're receiving this because you asked for a reminder about this release on TCG Trade.",
+    )
+
+
+def _site_path(value: Any, fallback: str) -> str:
+    """Only a path on our own site: deal emails never carry the eBay link,
+    which is affiliate-tracked when EPN is on (EPN forbids that in email)."""
+    raw = str(value or "")
+    return raw if raw.startswith("/") and not raw.startswith("//") else fallback
+
+
+def _deal(data: Mapping[str, Any], ctx: RenderContext) -> Built:
+    """eBay listing well under market value, for a card on the member's
+    wishlist (queued by the ebay_deals_notify trigger)."""
+    title = _one_line(data.get("title") or "A card on your wishlist is on eBay under market value")
+    auction = str(data.get("buying_option") or "") == "AUCTION"
+    blocks: list[Block] = [("tags", ["EBAY DEAL", "AUCTION" if auction else "BUY IT NOW"]), ("h", title)]
+    rows: list[tuple[str, ...]] = []
+    if data.get("price_aud") is not None:
+        rows.append(("Current bid" if auction else "Price", format_aud(data.get("price_aud"))))
+    if data.get("shipping_aud") is not None:
+        rows.append(("Postage", format_aud(data.get("shipping_aud"))))
+    if data.get("market_aud") is not None:
+        rows.append(("TCG Trade market value", format_aud(data.get("market_aud"))))
+    if data.get("discount_pct") not in (None, ""):
+        with contextlib.suppress(InvalidOperation, ValueError):
+            rows.append(("Under market value", f"{Decimal(str(data['discount_pct'])):.0f}%", UP))
+    if auction and data.get("end_time"):
+        rows.append(("Auction ends", format_when(data.get("end_time"), SYDNEY)))
+    if rows:
+        blocks.append(("rows", rows))
+    body = str(data.get("body") or "").strip()
+    if body:
+        blocks.append(("p", body))
+    blocks.append(
+        ("button", "See the deal", absolute_url(ctx.site_url, _site_path(data.get("url"), DEALS_PATH)))
+    )
+    card_path = _site_path(data.get("card_path"), "")
+    if card_path:
+        blocks.append(("p", f"Price history for this card: {absolute_url(ctx.site_url, card_path)}"))
+    blocks.append(
+        (
+            "note",
+            "Found by searching eBay Australia's public listings. Check the photos, the seller and the "
+            "grading certificate before you buy; TCG Trade isn't part of the sale.",
+        )
+    )
+    return (
+        title,
+        blocks,
+        _one_line(body or title, 120),
+        "You're receiving this because the card is on your TCG Trade wishlist.",
+    )
+
+
 _BUILDERS: dict[str, Callable[[Mapping[str, Any], RenderContext], Built]] = {
     "message": _message,
     "listing_status": _listing_status,
@@ -634,6 +816,8 @@ _BUILDERS: dict[str, Callable[[Mapping[str, Any], RenderContext], Built]] = {
     "billing": _billing,
     "admin_alert": _admin_alert,
     "welcome": _welcome,
+    "release": _release,
+    "deal": _deal,
 }
 
 

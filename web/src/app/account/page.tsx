@@ -2,10 +2,11 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AccountHead, DemoNotice, QuotaMeter, TierLabel, UpgradePrompt } from '@/components/account/bits'
 import { fmtDate } from '@/components/Format'
-import { getAccount, myListings, notifications, unreadMessageCount } from '@/lib/account/data'
+import { db, getAccount, myListings, notifications, unreadMessageCount } from '@/lib/account/data'
 import { audFromCents, relativeTime, summariseListings } from '@/lib/account/format'
 import { requireMember } from '@/lib/account/gate'
 import { signOut } from '@/lib/actions/auth'
+import { accountDropAlertsPath, accountSightingsPath } from '@/lib/seo/urls'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Your account' }
@@ -15,7 +16,13 @@ export default async function AccountHome() {
   if (!m) return <DemoNotice />
   const acct = await getAccount()
   if (!acct) redirect('/login/?next=/account/')
-  const [listings, unread, recent] = await Promise.all([myListings(acct.userId), unreadMessageCount(), notifications(5)])
+  const [listings, unread, recent, drop] = await Promise.all([
+    myListings(acct.userId),
+    unreadMessageCount(),
+    notifications(5),
+    (await db()).from('drop_alert_filters').select('onboarded_at').maybeSingle(),
+  ])
+  const dropSetupDone = Boolean(drop.data?.onboarded_at)
   const s = summariseListings(listings)
   const name = acct.displayName || acct.username
   const blocked = acct.quota.used >= acct.quota.limit
@@ -40,6 +47,18 @@ export default async function AccountHome() {
           </>
         }
       />
+
+      {!dropSetupDone && (
+        <section className="upgrade-card mb-4" aria-labelledby="dropsetup-h" data-testid="drop-setup-card">
+          <p className="eyebrow"><span className="holo-text">Drop alerts</span></p>
+          <h2 id="dropsetup-h" className="serif mt-2 text-lg">Finish setting up your drop alerts</h2>
+          <p className="muted mt-2 text-sm">Choose your games, stores, states and keywords, and turn on push, so you hear about restocks and in-store sightings you actually care about.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href={accountDropAlertsPath()} className="btn btn-primary">Set up drop alerts</Link>
+            <Link href={accountSightingsPath()} className="btn btn-secondary">Report a sighting</Link>
+          </div>
+        </section>
+      )}
 
       <div className="acct-grid">
         <div>
@@ -117,6 +136,8 @@ export default async function AccountHome() {
             <h2 id="links-h" className="text-lg">Shortcuts</h2>
             <ul className="mt-3 grid gap-2 text-sm">
               <li><Link className="prose-link" href="/account/alerts/">Wishlist, saved searches &amp; drop alerts</Link></li>
+              <li><Link className="prose-link" href={accountSightingsPath()}>Report an in-store sighting</Link></li>
+              <li><Link className="prose-link" href="/deals/">eBay deals under market value</Link></li>
               <li><Link className="prose-link" href="/account/settings/">Profile &amp; notification preferences</Link></li>
               <li><Link className="prose-link" href="/account/billing/">{acct.tier === 'premium' ? 'Manage billing' : 'Upgrade to Premium'}</Link></li>
               <li><Link className="prose-link" href={`/sellers/${acct.username}/`}>Your public seller page</Link></li>

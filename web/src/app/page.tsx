@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return buildMetadata({
     path: '/',
     title: titles.home(),
-    description: 'Live rankings of graded Pokémon and One Piece cards in Australian dollars: PSA 10 values, market cap, 7 and 30 day moves, JP and EN, plus an Australian marketplace and retail drop alerts.',
+    description: 'Graded Pokémon and One Piece card prices in Australian dollars: PSA 10 values, market cap and 7/30-day moves for JP and EN cards, plus drop alerts.',
     searchParams: await searchParams,
   })
 }

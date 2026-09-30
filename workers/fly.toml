@@ -5,6 +5,8 @@
 #   fly secrets set DATABASE_URL=... EMAIL_PROVIDER=resend RESEND_API_KEY=... \
 #       ADMIN_ALERT_EMAIL=... HEALTHCHECK_URL=https://hc-ping.com/<uuid> \
 #       DISCORD_DROPS_WEBHOOK_URL=... SENTRY_DSN=... PRICECHARTING_TOKEN=... \
+#       SUPABASE_URL=https://<ref>.supabase.co VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:hello@tcgtrade.com.au \
+#       EBAY_CLIENT_ID=... EBAY_CLIENT_SECRET=... \
 #       PRICECHARTING_CSV_URL_TEMPLATE='https://www.pricecharting.com/...?t={token}&category={category}'
 #   (JB Hi-Fi's Algolia key is discovered at runtime; JB_ALGOLIA_* are optional.)
 #   fly deploy

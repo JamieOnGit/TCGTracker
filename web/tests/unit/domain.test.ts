@@ -75,6 +75,22 @@ describe('tier gating', () => {
     expect(r.freeQuota).toBe(7)
     expect(r.premiumMonthlyCents).toBe(999)
   })
+  it('reads sighting and scout settings, keeping defaults for bad values', () => {
+    expect(DEFAULT_RULES.sightings).toMatchObject({ confirmationsNeeded: 2, confirmationsWithPhoto: 1, trustedAfter: 5, rewardEvery: 10, rewardDays: 30 })
+    const r = rulesFromSettings([
+      { key: 'sightings.confirmations_needed', value: 3 },
+      { key: 'scouts.reward_every', value: '12' },
+      { key: 'scouts.reward_days', value: -1 },
+      { key: 'sightings.trusted_after', value: 'lots' },
+      { key: 'sightings.enabled', value: false },
+    ])
+    expect(r.sightings.confirmationsNeeded).toBe(3)
+    expect(r.sightings.rewardEvery).toBe(12)
+    expect(r.sightings.rewardDays).toBe(30)
+    expect(r.sightings.trustedAfter).toBe(5)
+    expect(r.sightings.enabled).toBe(false)
+    expect(DEFAULT_RULES.sightings.enabled).toBe(true)
+  })
 })
 
 describe('billing webhook reducer', () => {

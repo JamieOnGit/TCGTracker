@@ -12,9 +12,12 @@ export const revalidate = 300
 type Props = { params: Promise<{ username: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const seller = await getRepo().getSeller((await params).username)
+  const repo = getRepo()
+  const seller = await repo.getSeller((await params).username)
   if (!seller) return {}
+  const listings = await repo.listingsBySeller(seller.username)
   return buildMetadata({
+    noindex: listings.length === 0, // an empty profile is a thin page
     path: sellerPath(seller.username),
     title: `${seller.displayName ?? seller.username} – Seller Profile`,
     description: `Cards for sale from ${seller.displayName ?? seller.username}${seller.state ? ` (${seller.state})` : ''}, member since ${seller.memberSince.slice(0, 7)}.`,

@@ -1,38 +1,39 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { DROP_SELECT, toDrop } from '@/lib/data/drops'
+import type { DropRow } from '@/lib/data/types'
+import { accountDropAlertsPath, accountSightingsPath } from '@/lib/seo/urls'
 import { loadSupabaseBrowser, supabaseAvailable } from '@/lib/supabase/browser-lazy'
-
-type Row = { id: number; event_type: string; price_aud: number | null; rrp_tag: string; rrp_delta_pct: number | null; occurred_at: string; retail_products: { title: string; url: string; retailers: { name: string } } }
-
-const LABEL: Record<string, string> = { NEW_LISTING: 'New listing', PREORDER_OPEN: 'Pre-order open', IN_STOCK: 'In stock', PRICE_CHANGE: 'Price change', QUEUE_LIVE: 'Queue live' }
-const time = new Intl.DateTimeFormat('en-AU', { hour: 'numeric', minute: '2-digit', day: 'numeric', month: 'short', timeZone: 'Australia/Melbourne' })
+import { DropFeed } from './DropFeed'
 
 /**
- * The instant feed. RLS returns events younger than the public delay only to
- * Premium members, so this panel is safe to render for everyone: Free members
- * simply see the upgrade prompt.
+ * The instant feed: retailer monitors and confirmed member sightings. RLS
+ * returns events younger than the public delay only to Premium members, so
+ * this panel is safe to render for everyone: Free members simply see the
+ * upgrade prompt. Supabase is loaded on demand to keep it out of first load.
  */
 export function LiveDrops() {
-  const [state, setState] = useState<{ status: 'loading' | 'anon' | 'free' | 'premium'; rows: Row[] }>(() => ({ status: supabaseAvailable() ? 'loading' : 'anon', rows: [] }))
+  const [state, setState] = useState<{ status: 'loading' | 'anon' | 'free' | 'premium'; rows: DropRow[] }>(() => ({ status: supabaseAvailable() ? 'loading' : 'anon', rows: [] }))
   useEffect(() => {
     if (!supabaseAvailable()) return
     let active = true
+    let premium = false
     const load = async () => {
+      // Don't poll a background tab; the next visible tick catches up.
+      if (premium && document.visibilityState === 'hidden') return
       const sb = await loadSupabaseBrowser()
       if (!sb || !active) return
-      const { data: auth } = await sb.auth.getUser()
-      if (!auth.user) return active && setState({ status: 'anon', rows: [] })
-      const { data: premium } = await sb.rpc('is_premium', { p_user: auth.user.id })
-      if (!premium) return active && setState({ status: 'free', rows: [] })
+      if (!premium) {
+        const { data: auth } = await sb.auth.getUser()
+        if (!auth.user) return active && setState({ status: 'anon', rows: [] })
+        const { data: isPremium } = await sb.rpc('is_premium', { p_user: auth.user.id })
+        if (!isPremium) return active && setState({ status: 'free', rows: [] })
+        premium = true
+      }
       const since = new Date(Date.now() - 86_400_000).toISOString()
-      const { data } = await sb
-        .from('drop_events')
-        .select('id,event_type,price_aud,rrp_tag,rrp_delta_pct,occurred_at,retail_products!inner(title,url,retailers!inner(name))')
-        .gte('occurred_at', since)
-        .order('occurred_at', { ascending: false })
-        .limit(50)
-      if (active) setState({ status: 'premium', rows: (data as unknown as Row[]) ?? [] })
+      const { data } = await sb.from('drop_events').select(DROP_SELECT).gte('occurred_at', since).order('occurred_at', { ascending: false }).limit(50)
+      if (active) setState({ status: 'premium', rows: (data ?? []).map(toDrop) })
     }
     load()
     const t = setInterval(load, 30_000)
@@ -51,24 +52,21 @@ export function LiveDrops() {
       {state.status === 'loading' && <p className="muted mt-3 text-sm">Loading…</p>}
       {(state.status === 'anon' || state.status === 'free') && (
         <div className="mt-3 text-sm">
-          <p>Premium members see restocks and pre-orders the moment they happen, by email and here. Everyone else gets them 24 hours later.</p>
-          <div className="mt-4 flex gap-3">
+          <p>Premium members see restocks, pre-orders and member in-store sightings the moment they happen, by push, email, Discord and here. Everyone else gets them 24 hours later.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/premium/" className="btn btn-holo btn-sm">Get instant alerts · A$12.99/mo</Link>
             {state.status === 'anon' && <Link href="/login/?next=/drops/" className="btn btn-secondary btn-sm">Sign in</Link>}
           </div>
         </div>
       )}
       {state.status === 'premium' && (
-        state.rows.length === 0 ? <p className="muted mt-3 text-sm">Nothing in the last 24 hours. Your alerts are on.</p> : (
-          <ul className="mt-3">
-            {state.rows.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-baseline justify-between gap-2 border-b py-2 text-sm" style={{ borderColor: 'var(--line)' }}>
-                <span><span className="num muted mr-3">{time.format(new Date(r.occurred_at))}</span><a href={r.retail_products.url} target="_blank" rel="nofollow noopener" className="prose-link">{r.retail_products.title}</a> · {r.retail_products.retailers.name}</span>
-                <span className="badge badge-live">{LABEL[r.event_type] ?? r.event_type}{r.price_aud ? ` · A$${Number(r.price_aud).toFixed(2)}` : ''}</span>
-              </li>
-            ))}
-          </ul>
-        )
+        <>
+          <DropFeed rows={state.rows} compact empty="Nothing in the last 24 hours. Your alerts are on." />
+          <p className="mt-4 flex flex-wrap gap-4 text-sm">
+            <Link href={accountDropAlertsPath()} className="prose-link">Alert settings</Link>
+            <Link href={accountSightingsPath()} className="prose-link">Sightings</Link>
+          </p>
+        </>
       )}
     </section>
   )

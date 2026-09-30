@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
+import { Markdown } from '@/components/Markdown'
 import { getRepo } from '@/lib/data'
 import { newsArticle } from '@/lib/seo/jsonld'
 import { buildMetadata } from '@/lib/seo/metadata'
@@ -35,7 +36,7 @@ export default async function Article({ params }: Props) {
         <p className="eyebrow"><time dateTime={a.publishedAt}>{new Date(a.publishedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</time></p>
         <h1 className="mt-3">{a.title}</h1>
         {a.dek && <p className="lead mt-4">{a.dek}</p>}
-        <div className="mt-8 whitespace-pre-line">{a.bodyMd}</div>
+        <div className="mt-8"><Markdown source={a.bodyMd} /></div>
         {cards.length > 0 && (
           <aside aria-label="Cards in this article">
             <h2>Cards mentioned</h2>

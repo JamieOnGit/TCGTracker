@@ -33,6 +33,7 @@ export default async function AdminOverview() {
   const tiles = [
     <Stat key="l" label="Pending listings" value={counts.pending} href="/admin/listings/" tone="warn" />,
     <Stat key="r" label="Open reports" value={counts.reports} href="/admin/reports/" tone="warn" />,
+    <Stat key="s" label="Sightings to review" value={counts.sightings} href="/admin/sightings/" tone="warn" />,
     <Stat key="m" label="Mapping queue" value={counts.mapping} href="/admin/mapping/" tone="warn" />,
     <Stat key="e" label="Failed emails" value={counts.failedEmails} href="/admin/emails/?status=failed" tone="down" />,
     isAdmin ? <Stat key="a" label="Adapters unhealthy" value={unhealthy} href="/admin/drops/" tone="down" /> : null,

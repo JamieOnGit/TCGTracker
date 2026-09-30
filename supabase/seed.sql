@@ -1372,3 +1372,13 @@ update public.cards c set counterpart_card_id = (select id from public.cards whe
  where c.lang='jp' and c.number='201';
 refresh materialized view public.market_cap_rankings;
 insert into public.rrp_reference (game, product_type, rrp_aud) values ('pokemon','elite-trainer-box',89.95),('pokemon','booster-box',219),('one-piece','booster-box',199);
+
+-- Release calendar (local preview only; production entries are added in Admin → Releases).
+insert into public.release_events (game, lang, slug, title, kind, release_date, date_precision, confidence, products, retailer_slugs, summary, source_name)
+values
+  ('pokemon', 'en', 'local-preview-expansion', 'Local preview Pokémon expansion', 'set_release', current_date + 21, 'day', 'official',
+   '[{"name":"Elite Trainer Box","type":"etb","rrp_aud":89.95},{"name":"Booster Bundle","type":"booster-bundle","rrp_aud":49.95}]',
+   array['jb-hi-fi','big-w','kmart','target-au'], 'Local seed entry used to preview release pages.', 'Local seed'),
+  ('one-piece', 'en', 'local-preview-booster', 'Local preview One Piece booster', 'set_release', date_trunc('month', current_date + 60)::date, 'month', 'retailer',
+   '[{"name":"Booster box (24 packs)","type":"booster-box","rrp_aud":null}]',
+   array['eb-games'], 'Local seed entry with month precision.', 'Local seed');

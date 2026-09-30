@@ -48,6 +48,14 @@ class Env:
     smtp_ssl: bool = False
     # Alert plumbing.
     discord_drops_webhook_url: str | None = None
+    # Public Storage URLs (sighting photos in alerts): https://<ref>.supabase.co
+    supabase_url: str | None = None
+    # Web push (tcgworkers.drops.push). Both unset = push deliveries are skipped.
+    vapid_private_key: str | None = None
+    vapid_subject: str | None = None
+    # eBay Browse API (tcgworkers.sources.ebay_deals), client-credentials OAuth.
+    ebay_client_id: str | None = None
+    ebay_client_secret: str | None = None
     admin_alert_email: str | None = None
     healthcheck_url: str | None = None
     # PriceCharting (tcgworkers.sources.pricing.pricecharting).
@@ -81,6 +89,12 @@ class Env:
             smtp_starttls=_flag(e.get("SMTP_STARTTLS"), default=not smtp_ssl),
             smtp_ssl=smtp_ssl,
             discord_drops_webhook_url=e.get("DISCORD_DROPS_WEBHOOK_URL") or None,
+            supabase_url=(e.get("SUPABASE_URL") or e.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+            or None,
+            vapid_private_key=e.get("VAPID_PRIVATE_KEY") or None,
+            vapid_subject=e.get("VAPID_SUBJECT") or None,
+            ebay_client_id=e.get("EBAY_CLIENT_ID") or None,
+            ebay_client_secret=e.get("EBAY_CLIENT_SECRET") or None,
             admin_alert_email=e.get("ADMIN_ALERT_EMAIL") or None,
             healthcheck_url=e.get("HEALTHCHECK_URL") or None,
             pricecharting_token=e.get("PRICECHARTING_TOKEN") or None,

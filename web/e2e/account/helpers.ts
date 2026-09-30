@@ -39,6 +39,15 @@ export async function rest<T = unknown>(method: string, pathAndQuery: string, bo
   return (text ? JSON.parse(text) : null) as T
 }
 
+/** Auth user id for an email (service-role Admin API). */
+export async function authUserId(email: string): Promise<string> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } })
+  const body = (await res.json()) as { users?: { id: string; email?: string }[] }
+  const u = body.users?.find((x) => x.email === email)
+  if (!u) throw new Error(`No auth user for ${email}`)
+  return u.id
+}
+
 async function waitForMagicLink(email: string, after: number): Promise<string> {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {

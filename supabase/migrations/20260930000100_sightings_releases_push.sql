@@ -103,7 +103,7 @@ alter table public.sightings add constraint sightings_drop_event_fk
 -- Denormalised retailer and game on every event, so feeds can filter one
 -- column whether the event came from a monitor or a member.
 alter table public.drop_events
-  add column if not exists retailer_id uuid references public.retailers (id),
+  add column if not exists retailer_id uuid references public.retailers (id) on delete cascade,
   add column if not exists game text references public.games (code);
 update public.drop_events e set retailer_id = p.retailer_id, game = p.game
 from public.retail_products p where p.id = e.retail_product_id and e.retailer_id is null;
@@ -437,7 +437,10 @@ alter table public.drop_alert_filters add constraint drop_alert_filters_keywords
 create table public.push_subscriptions (
   id bigint generated always as identity primary key,
   user_id uuid not null references public.profiles (id) on delete cascade,
-  endpoint text not null unique check (endpoint ~ '^https://' and char_length(endpoint) <= 1000),
+  -- Only real browser push services, so the workers never POST to an arbitrary host.
+  endpoint text not null unique check (
+    endpoint ~ '^https://(fcm\.googleapis\.com|android\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9.-]+\.notify\.windows\.com)/'
+    and char_length(endpoint) <= 1000),
   p256dh text not null check (char_length(p256dh) <= 200),
   auth text not null check (char_length(auth) <= 100),
   user_agent text check (char_length(user_agent) <= 300),

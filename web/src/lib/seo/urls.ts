@@ -43,8 +43,9 @@ export function slugify(input: string): string {
 }
 
 export const homePath = () => '/'
+/** All games = the homepage (/market-cap/ 301s there); per game/lang/set under /market-cap/. */
 export const marketCapPath = (game?: Game, lang?: Lang, setSlug?: string) =>
-  '/market-cap/' + [game, lang, setSlug].filter(Boolean).map((s) => `${s}/`).join('')
+  game ? '/market-cap/' + [game, lang, setSlug].filter(Boolean).map((s) => `${s}/`).join('') : '/'
 export const cardsPath = (game?: Game, lang?: Lang) => '/cards/' + [game, lang].filter(Boolean).map((s) => `${s}/`).join('')
 export const setPath = (s: SetRef) => `/cards/${s.game}/${s.lang}/${s.slug}/`
 export const cardPath = (c: CardRef) => `/cards/${c.game}/${c.lang}/${c.setSlug}/${c.slug}/`
@@ -94,3 +95,6 @@ export function siteName(): string {
 }
 
 export const NEWS_CATEGORIES = ['pokemon', 'one-piece', 'market', 'drops', 'guides', 'grading'] as const
+
+/** Share image for pages without their own (web/public/og-default.png, 1200×630). */
+export const DEFAULT_OG_IMAGE = '/og-default.png'

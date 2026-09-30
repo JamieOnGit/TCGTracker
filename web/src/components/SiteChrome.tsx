@@ -6,8 +6,8 @@ export const NAV = [
   { href: '/', label: 'Market', match: ['/', '/market-cap/'] },
   { href: '/cards/', label: 'Cards', match: ['/cards/', '/releases/'] },
   { href: '/marketplace/', label: 'Marketplace', match: ['/marketplace/', '/sellers/'] },
-  { href: '/drops/', label: 'Drops', match: ['/drops/'] },
-  { href: '/news/', label: 'News', match: ['/news/'] },
+  { href: '/drops/', label: 'Drops', match: ['/drops/', '/deals/'] },
+  { href: '/news/', label: 'News', match: ['/news/', '/guides/'] },
   { href: '/premium/', label: 'Premium', match: ['/premium/'] },
 ]
 
@@ -38,9 +38,9 @@ export function SiteHeader() {
 export function SiteFooter() {
   const cols: { title: string; links: [string, string][] }[] = [
     { title: 'Market', links: [['Market cap', '/'], ['Pokémon', '/market-cap/pokemon/'], ['One Piece', '/market-cap/one-piece/'], ['Methodology', '/methodology/'], ['Data & API', '/data/']] },
-    { title: 'Cards', links: [['Pokémon English', '/cards/pokemon/en/'], ['Pokémon Japanese', '/cards/pokemon/jp/'], ['One Piece English', '/cards/one-piece/en/'], ['One Piece Japanese', '/cards/one-piece/jp/'], ['Release calendar', '/releases/pokemon/']] },
-    { title: 'Buy & sell', links: [['Marketplace', '/marketplace/'], ['Sell a card', '/account/listings/new/'], ['Retail drops', '/drops/'], ['JB Hi-Fi restocks', '/drops/jb-hi-fi/'], ['Premium', '/premium/']] },
-    { title: 'TCG Trade', links: [['About', '/about/'], ['Contact', '/contact/'], ['News', '/news/'], ['Terms', '/terms/'], ['Privacy', '/privacy/']] },
+    { title: 'Cards', links: [['Pokémon English', '/cards/pokemon/en/'], ['Pokémon Japanese', '/cards/pokemon/jp/'], ['One Piece English', '/cards/one-piece/en/'], ['One Piece Japanese', '/cards/one-piece/jp/'], ['Release calendar', '/releases/']] },
+    { title: 'Buy & sell', links: [['Marketplace', '/marketplace/'], ['Sell a card', '/account/listings/new/'], ['Retail drops', '/drops/'], ['eBay deals', '/deals/'], ['Premium', '/premium/']] },
+    { title: 'TCG Trade', links: [['About', '/about/'], ['Contact', '/contact/'], ['News', '/news/'], ['Guides', '/guides/'], ['Terms', '/terms/'], ['Privacy', '/privacy/']] },
   ]
   return (
     <footer className="site-footer">

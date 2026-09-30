@@ -83,6 +83,10 @@ Wireframes: open `wireframes/index.html` in a browser. See `wireframes/README.md
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_STARTTLS`, `SMTP_SSL` | workers | When `EMAIL_PROVIDER=smtp`. Local Mailpit: `127.0.0.1`, `54325`, `SMTP_STARTTLS=false`. SES: `email-smtp.ap-southeast-2.amazonaws.com`, `587`, SMTP credentials, STARTTLS on (the default). |
 | `EMAIL_FROM` | workers | Optional override for the sender. The default is the `email.from` site setting (`TCG Trade <alerts@tcgtrade.com.au>`). |
 | `ADMIN_ALERT_EMAIL` | workers | Receives admin alerts: a retailer monitor failing or returning nothing, emails or drop deliveries that exhausted their retries. Each alert is deduplicated per cause for 6 hours. |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | web (build variable) | Web push public key (`npx web-push generate-vapid-keys`). Without it the push toggle shows "being set up". |
+| `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | workers | Web push signing key and contact (`mailto:hello@tcgtrade.com.au`). Without them push deliveries are skipped, never retried forever. |
+| `SUPABASE_URL` | workers | Public Supabase URL, used to build sighting photo links in alerts. |
+| `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` | workers | eBay Browse API keys for the deal finder (`deals.enabled` must also be on). Budget-capped under eBay's 5,000 calls a day. |
 | `DISCORD_DROPS_WEBHOOK_URL` | workers | Premium Discord channel webhook. The bot posts once per drop event. |
 | `HEALTHCHECK_URL` | workers | Dead man's switch, e.g. `https://hc-ping.com/<uuid>`. Pinged every minute while every job and retailer monitor is healthy. When something isn't, it pings `/fail` with the reasons. |
 | `WORKER_USER_AGENT` | workers | Honest bot UA with a contact URL |

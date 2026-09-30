@@ -368,3 +368,6 @@ body {
 .bubble { max-width: min(80%, 560px); padding: 10px 14px; font-size: var(--text-base); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 .bubble-me { margin-left: auto; background: var(--accent-strong); color: #fff; }
 .bubble-them { background: var(--surface); border: 1px solid var(--line); }
+
+/* Buy column: small text links still get 24px touch targets (WCAG 2.2 target size). */
+.buy-links > a { display: inline-flex; align-items: center; min-height: 24px; padding: 0 4px; }

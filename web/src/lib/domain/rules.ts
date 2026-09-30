@@ -28,6 +28,70 @@ export interface Rules {
   freeDropDelayMinutes: number
   rankByPriceUntilPopulation: boolean
   ebay: EbaySettings
+  sightings: SightingRules
+}
+
+/**
+ * Member sightings and scout rewards (`sightings.*` / `scouts.*` in
+ * site_settings; seeded in 20260930000100_sightings_releases_push.sql).
+ */
+export interface SightingRules {
+  enabled: boolean
+  confirmationsNeeded: number
+  confirmationsWithPhoto: number
+  trustedAfter: number
+  trustedMaxRejectPct: number
+  dailyLimit: number
+  mergeWindowMinutes: number
+  pendingExpiryMinutes: number
+  goneVotesToClose: number
+  rewardEvery: number
+  rewardDays: number
+}
+
+export const DEFAULT_SIGHTING_RULES: SightingRules = {
+  enabled: true,
+  confirmationsNeeded: 2,
+  confirmationsWithPhoto: 1,
+  trustedAfter: 5,
+  trustedMaxRejectPct: 10,
+  dailyLimit: 10,
+  mergeWindowMinutes: 180,
+  pendingExpiryMinutes: 360,
+  goneVotesToClose: 2,
+  rewardEvery: 10,
+  rewardDays: 30,
+}
+
+const SIGHTING_KEYS: Record<string, keyof SightingRules> = {
+  'sightings.enabled': 'enabled',
+  'sightings.confirmations_needed': 'confirmationsNeeded',
+  'sightings.confirmations_with_photo': 'confirmationsWithPhoto',
+  'sightings.trusted_after': 'trustedAfter',
+  'sightings.trusted_max_reject_pct': 'trustedMaxRejectPct',
+  'sightings.daily_limit': 'dailyLimit',
+  'sightings.merge_window_minutes': 'mergeWindowMinutes',
+  'sightings.pending_expiry_minutes': 'pendingExpiryMinutes',
+  'sightings.gone_votes_to_close': 'goneVotesToClose',
+  'scouts.reward_every': 'rewardEvery',
+  'scouts.reward_days': 'rewardDays',
+}
+
+/** Sighting settings from site_settings rows. Bad values (non-numeric, negative) keep the default. */
+export function sightingRulesFromRows(rows: { key: string; value: unknown }[]): SightingRules {
+  const out: SightingRules = { ...DEFAULT_SIGHTING_RULES }
+  for (const { key, value } of rows) {
+    const field = SIGHTING_KEYS[key]
+    if (field === undefined) continue
+    if (field === 'enabled') {
+      if (typeof value === 'boolean') out.enabled = value
+      else if (value === 'true' || value === 'false') out.enabled = value === 'true'
+      continue
+    }
+    const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN
+    if (Number.isInteger(n) && n >= 0) out[field] = n
+  }
+  return out
 }
 
 export const DEFAULT_RULES: Rules = {
@@ -50,6 +114,7 @@ export const DEFAULT_RULES: Rules = {
   freeDropDelayMinutes: 1440,
   rankByPriceUntilPopulation: true,
   ebay: DEFAULT_EBAY,
+  sightings: DEFAULT_SIGHTING_RULES,
 }
 
 const KEY_MAP: Record<string, keyof Rules> = {
@@ -81,6 +146,7 @@ export function rulesFromSettings(rows: { key: string; value: unknown }[]): Rule
     if (field !== undefined) (rules as unknown as Record<string, unknown>)[field] = value
   }
   rules.ebay = ebaySettingsFromRows(rows)
+  rules.sightings = sightingRulesFromRows(rows)
   return rules
 }
 

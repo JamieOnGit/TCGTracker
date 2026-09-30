@@ -191,12 +191,14 @@ function mkListing(id: number, seller: string, cardId: string, grader: string, g
 }
 
 const RETAILERS: RetailerRow[] = [
-  { slug: 'premium-bandai-au', name: 'Premium Bandai AU', baseUrl: 'https://p-bandai.com/au', enabled: false },
-  { slug: 'jb-hi-fi', name: 'JB Hi-Fi', baseUrl: 'https://www.jbhifi.com.au', enabled: false },
-  { slug: 'eb-games', name: 'EB Games', baseUrl: 'https://www.ebgames.com.au', enabled: false },
-  { slug: 'big-w', name: 'BIG W', baseUrl: 'https://www.bigw.com.au', enabled: false },
-  { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false },
-  { slug: 'target-au', name: 'Target', baseUrl: 'https://www.target.com.au', enabled: false },
+  { slug: 'premium-bandai-au', name: 'Premium Bandai AU', baseUrl: 'https://p-bandai.com/au', enabled: false, monitored: true },
+  { slug: 'jb-hi-fi', name: 'JB Hi-Fi', baseUrl: 'https://www.jbhifi.com.au', enabled: false, monitored: true },
+  { slug: 'eb-games', name: 'EB Games', baseUrl: 'https://www.ebgames.com.au', enabled: false, monitored: true },
+  { slug: 'big-w', name: 'BIG W', baseUrl: 'https://www.bigw.com.au', enabled: false, monitored: true },
+  { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false, monitored: true },
+  { slug: 'target-au', name: 'Target', baseUrl: 'https://www.target.com.au', enabled: false, monitored: true },
+  { slug: 'toymate', name: 'Toymate', baseUrl: 'https://www.toymate.com.au', enabled: false, monitored: false },
+  { slug: 'local-game-store', name: 'Independent game store', baseUrl: 'https://tcgtrade.com.au', enabled: false, monitored: false },
 ]
 
 const DROPS: DropRow[] = [
@@ -409,6 +411,17 @@ export const demoRepository: Repository = {
   },
   async releases(filter) {
     return sortReleases(RELEASES.filter((r) => (!filter?.game || r.game === filter.game) && (!filter?.from || !r.releaseDate || r.releaseDate >= filter.from)))
+  },
+  async deals() {
+    const card = CARDS[0]
+    if (!card) return []
+    return [
+      {
+        id: 1, itemId: 'demo-1', card, gradeKey: 'psa-10', title: `${card.name} ${card.number} PSA 10 (demo deal)`, buyingOption: 'FIXED_PRICE',
+        priceAud: 720, shippingAud: 12, marketAud: 1000, discountPct: 28, bidCount: null, endTime: null,
+        url: 'https://www.ebay.com.au/', imageUrl: null, foundAt: '2026-09-26T09:00:00Z', goneAt: null,
+      },
+    ]
   },
   async getRelease(game, slug) {
     return RELEASES.find((r) => r.game === game && r.slug === slug) ?? null

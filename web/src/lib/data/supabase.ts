@@ -228,8 +228,8 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toListing)
     },
     async retailers() {
-      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled').order('name')
-      return (data ?? []).map((r: any) => ({ slug: r.slug, name: r.name, baseUrl: r.base_url, enabled: r.enabled }))
+      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored').order('name')
+      return (data ?? []).map((r: any) => ({ slug: r.slug, name: r.name, baseUrl: r.base_url, enabled: r.enabled, monitored: r.monitored !== false }))
     },
     async drops(filter) {
       // Anonymous client: RLS only returns events past their public_at delay.
@@ -254,6 +254,32 @@ export function supabaseRepository(): Repository {
       if (filter?.from) q = q.or(`release_date.gte.${filter.from},release_date.is.null`)
       const { data } = await q
       return sortReleases((data ?? []).map(toRelease))
+    },
+    async deals(filter) {
+      const { data } = await sb
+        .from('ebay_deals')
+        .select(`*,cards!inner(${CARD_SELECT})`)
+        .is('gone_at', null)
+        .order('found_at', { ascending: false })
+        .limit(filter?.limit ?? 50)
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        itemId: r.item_id,
+        card: toCard(r.cards),
+        gradeKey: r.grade_key,
+        title: r.title,
+        buyingOption: r.buying_option,
+        priceAud: Number(r.price_aud),
+        shippingAud: r.shipping_aud === null ? null : Number(r.shipping_aud),
+        marketAud: Number(r.market_aud),
+        discountPct: Number(r.discount_pct),
+        bidCount: r.bid_count,
+        endTime: r.end_time,
+        url: r.url,
+        imageUrl: r.image_url,
+        foundAt: r.found_at,
+        goneAt: r.gone_at,
+      }))
     },
     async getRelease(game, slug) {
       const { data } = await sb.from('release_events').select(RELEASE_SELECT).eq('game', game).eq('slug', slug).maybeSingle()

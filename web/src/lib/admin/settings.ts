@@ -68,6 +68,33 @@ export const SETTING_GROUPS: SettingGroup[] = [
     ],
   },
   {
+    id: 'sightings',
+    title: 'Member sightings',
+    fields: [
+      { key: 'sightings.enabled', label: 'Members can report sightings', kind: { type: 'bool' } },
+      { key: 'sightings.confirmations_needed', label: 'Confirmations needed', hint: 'Other members who must confirm before the alert goes out. Set to 1 at launch while the community is small.', kind: { type: 'int', min: 1, max: 10 } },
+      { key: 'sightings.confirmations_with_photo', label: 'Confirmations needed with a photo', kind: { type: 'int', min: 0, max: 10 } },
+      { key: 'sightings.trusted_after', label: 'Trusted scout after', hint: 'Confirmed sightings before a scout’s reports alert without confirmation.', kind: { type: 'int', min: 1, max: 1000, unit: 'sightings' } },
+      { key: 'sightings.trusted_max_reject_pct', label: 'Trusted scouts: max rejected', kind: { type: 'int', min: 0, max: 100, unit: '%' } },
+      { key: 'sightings.daily_limit', label: 'Reports per member per day', kind: { type: 'int', min: 1, max: 100 } },
+      { key: 'sightings.pending_expiry_minutes', label: 'Unconfirmed reports expire after', kind: { type: 'int', min: 30, max: 2880, unit: 'minutes' } },
+      { key: 'sightings.gone_votes_to_close', label: '"Sold out" votes to close', kind: { type: 'int', min: 1, max: 10 } },
+      { key: 'scouts.reward_every', label: 'Premium reward every', hint: 'Confirmed sightings per reward. 0 turns rewards off.', kind: { type: 'int', min: 0, max: 1000, unit: 'sightings' } },
+      { key: 'scouts.reward_days', label: 'Premium reward length', kind: { type: 'int', min: 1, max: 365, unit: 'days' } },
+    ],
+  },
+  {
+    id: 'deals',
+    title: 'eBay deals',
+    fields: [
+      { key: 'deals.enabled', label: 'Find eBay deals', hint: 'Needs the eBay developer keys on the workers (see YOUR-NEXT-STEPS.md).', kind: { type: 'bool' } },
+      { key: 'deals.min_discount_pct', label: 'Buy It Now deals: at least', kind: { type: 'int', min: 5, max: 90, unit: '% under value' } },
+      { key: 'deals.auction_ending_minutes', label: 'Auctions ending within', kind: { type: 'int', min: 15, max: 1440, unit: 'minutes' } },
+      { key: 'deals.max_cards_per_run', label: 'Cards checked per run', kind: { type: 'int', min: 10, max: 1000 } },
+      { key: 'deals.public_delay_minutes', label: 'Free members see deals after', kind: { type: 'int', min: 0, max: 10080, unit: 'minutes' } },
+    ],
+  },
+  {
     id: 'features',
     title: 'Features',
     fields: [

@@ -43,6 +43,22 @@ Owner decisions applied (2026-09-28): brand **TCG Trade**, domain **tcgtrade.com
 | Premium Bandai, EB Games | ❌ terms ban bots |
 | `/account/drops/` preference page, Discord account linking | ⏳ (drop filters are in the schema; drops page has the live panel) |
 
+## Community alerts (added 30 Sep 2026, from the Lowkey / PokéMafia / DropZone research in `research/08-alert-groups.md`)
+| Item | Status | Where |
+|---|---|---|
+| Member sightings: report in store (retailer, state, suburb, store, product, price, quantity, purchase limit, photo, note) or online (retailer link required) | ✅ SQL + e2e | `/account/sightings/`, `report_sighting()` |
+| Verification: 2 member confirmations (1 with a photo), merge duplicate reports, trusted scouts, staff instant, sold-out votes, fake flags, 6 h expiry, daily limit, banned words | ✅ SQL tested | `20260930000100_sightings_releases_push.sql` |
+| A confirmed sighting is a normal drop event: Premium instant, Free +24 h, public history delayed, email / on-site / Discord / push | ✅ e2e (report → confirm → worker → alert) | dispatcher |
+| Moderation queue: confirm, reject (withdraws the alert), mark sold out | ✅ | `/admin/sightings/` |
+| Scout rewards (10 confirmed = 30 days Premium) and public leaderboard | ✅ SQL tested | `/drops/scouts/` |
+| Alert setup wizard: games, retailers, states, keywords, follow sets, max price, RRP only, member reports, channels, test alert | ✅ e2e | `/account/alerts/drops/` |
+| Web push (phone and desktop, no app; iPhone via Home Screen) | ✅; 🟡 needs VAPID keys | `sw.js`, `PushToggle`, `push.py` |
+| State pages (`/drops/vic/` …) and sightings-only retailers (Toymate, Myer, Amazon, Costco, Officeworks, Zing, Woolworths, Coles, independent stores) | ✅ | `/drops/[slug]/` |
+| Release calendar: hub, per game, per release, reminders, `.ics` feeds, admin editor | ✅; 🟡 Jamie to enter releases | `/releases/`, `/admin/releases/` |
+| eBay deal finder (official Browse API): BIN under value, auctions ending soon, strict matching, wishlist alerts, EPN links | ✅ fixture-tested; 🟡 needs eBay developer keys | `/deals/`, `ebay_deals.py` |
+| Guides: 8 Australian evergreen guides | ✅ | `/guides/` |
+| Giveaways | Not built: chance-based giveaways are trade-promotion lotteries (ACT/SA permits) | |
+
 ## SEO (Australia)
 Canonical, lowercase, trailing-slash URLs with 301s in middleware; redirects table without chains; filter pages `noindex,follow`; self-canonical pagination; `en-AU` + AUD everywhere; titles say "in AUD"; JSON-LD (Organization, WebSite, Breadcrumbs, Product/Offer, Dataset, FAQPage on Premium); split sitemaps; robots.txt; llms.txt. ✅ Crawl check: 400 pages, 124 sitemap URLs, no errors. Plan in `docs/SEO-STRATEGY-AU.md`.
 
@@ -58,7 +74,9 @@ Stripe Checkout + portal + webhooks (source of truth, 7-day grace). ✅ unit tes
 Web on Cloudflare Workers (OpenNext, build verified with `wrangler dev`); workers on Fly.io `syd`; Supabase Sydney. Budget similar to beforeyoufly.
 
 ## Tests
-SQL/RLS ~75 assertions · Python 236 (ruff + mypy strict clean) · TS 76 unit · Playwright: 9 public, 6 account, 6 admin (against live local Supabase) · SEO crawl · Cloudflare build. All green in `.github/workflows/ci.yml`.
+30 Sep 2026: SQL/RLS suite (122 assertions) · Python 309 · TS 118 unit · Playwright: 18 public, 10 account, 6 admin against live local Supabase · SEO crawl 500 pages / 138 sitemap URLs (live data) and 143 (demo), 0 errors · Cloudflare build OK · Lighthouse: accessibility, best practices and SEO 100; performance 92–98 (homepage 81–92 across runs).
+
+Earlier (28 Sep): SQL/RLS ~75 assertions · Python 236 (ruff + mypy strict clean) · TS 76 unit · Playwright: 9 public, 6 account, 6 admin (against live local Supabase) · SEO crawl · Cloudflare build. All green in `.github/workflows/ci.yml`.
 
 ## Legal
 Terms, privacy, marketplace rules are drafts marked `noindex`; **need an Australian lawyer** before launch. Non-affiliation footer in place.

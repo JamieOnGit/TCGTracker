@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const me = await staffUser()
   if (!me) redirect((await currentUserWithRole()) ? '/' : '/login/?next=%2Fadmin%2F')
   const counts = await overviewCounts(await supabaseForRequest(), me.role)
-  const badge: Record<string, number | null> = { listings: counts.pending, reports: counts.reports, mapping: counts.mapping, emails: counts.failedEmails }
+  const badge: Record<string, number | null> = { listings: counts.pending, reports: counts.reports, mapping: counts.mapping, emails: counts.failedEmails, sightings: counts.sightings }
   const items = sectionsFor(me.role).map((s) => ({ href: s.href, label: s.label, badge: badge[s.key] ?? null }))
   return (
     <div className="container-x admin-shell">

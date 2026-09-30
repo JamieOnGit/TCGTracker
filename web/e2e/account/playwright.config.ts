@@ -6,7 +6,6 @@ import { defineConfig, devices } from '@playwright/test'
  * Uses its own dev server on :3401 (NEXT_DIST_DIR=.next-account) so it doesn't clash with others.
  */
 const PORT = Number(process.env.E2E_ACCOUNT_PORT ?? 3401)
-const chromium = process.env.PW_CHROMIUM_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 
 export default defineConfig({
   testDir: '.',
@@ -18,7 +17,8 @@ export default defineConfig({
   outputDir: '../../test-results/account',
   use: {
     baseURL: `http://localhost:${PORT}`,
-    launchOptions: { executablePath: chromium },
+    // CI installs Playwright's own Chromium; locally, point PW_CHROMIUM_PATH at a preinstalled one.
+    launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

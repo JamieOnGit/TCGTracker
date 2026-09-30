@@ -72,24 +72,6 @@ export async function savePreferences(_prev: ActionResult | null, form: FormData
   return error ? { ok: false, error: friendlyError(error.message) } : { ok: true, message: 'Preferences saved.' }
 }
 
-const dropFilterSchema = z.object({
-  games: z.array(z.enum(['pokemon', 'one-piece'])).min(1),
-  retailerSlugs: z.array(z.string().max(40)).nullable(),
-  onlyAtOrBelowRrp: z.boolean(),
-})
-
-export async function saveDropFilters(input: unknown): Promise<ActionResult> {
-  const parsed = dropFilterSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: 'Pick at least one game.' }
-  const { sb, id } = await uid()
-  if (!id) return { ok: false, error: 'Sign in again.' }
-  const { error } = await sb.from('drop_alert_filters').upsert({
-    user_id: id, games: parsed.data.games, retailer_slugs: parsed.data.retailerSlugs, only_at_or_below_rrp: parsed.data.onlyAtOrBelowRrp, updated_at: new Date().toISOString(),
-  })
-  revalidatePath('/account/alerts/')
-  return error ? { ok: false, error: friendlyError(error.message) } : { ok: true, message: 'Drop alerts updated.' }
-}
-
 export async function markNotificationsRead(): Promise<void> {
   const { sb, id } = await uid()
   if (id) await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', id).is('read_at', null)

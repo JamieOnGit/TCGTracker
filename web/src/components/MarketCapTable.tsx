@@ -44,7 +44,7 @@ function BuyCell({ row, rules, stats }: { row: MarketRow; rules: Rules; stats: P
     )
   }
   return (
-    <span data-buy="none" className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
+    <span data-buy="none" className="buy-links flex flex-wrap items-center justify-end gap-x-2 text-xs">
       {buy.external && (
         <a href={buy.external.href} rel="sponsored nofollow noopener" target="_blank" className="prose-link" data-buy="ebay">
           eBay ↗

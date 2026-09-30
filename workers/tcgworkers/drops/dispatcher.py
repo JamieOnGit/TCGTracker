@@ -12,6 +12,14 @@ drop event, so each event's content is built once, then:
 * ``discord`` -> one post per event to the Premium channel webhook
   (DISCORD_DROPS_WEBHOOK_URL). Free members' Discord deliveries are skipped:
   that channel is Premium-only.
+* ``push``    -> a web push to each of the member's browsers / phones
+  (``drops.push``; VAPID_PRIVATE_KEY + VAPID_SUBJECT). Free members get push
+  too, on the Free schedule.
+
+Events come from a retailer monitor (``retail_product_id``) or a confirmed
+member sighting (``sighting_id``, no retail product): sightings carry the
+store's location, quantity, purchase limit, photo and how many members
+confirmed them, and every channel says it is a member report.
 
 Each delivery ends ``sent``, ``skipped`` (with the reason), or stays
 ``queued`` with exponential back-off after a failure; after
@@ -30,19 +38,25 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Protocol
+from urllib.parse import quote
 
 import httpx
 import psycopg
 
 from tcgworkers.alerts import queue_admin_alert
 from tcgworkers.config import DEFAULT_SITE_URL
+from tcgworkers.drops.push import PushGone, PushSender, PushSubscription, push_payload
 from tcgworkers.email.templates import (
     FREE_DELAY_LINE,
     PREMIUM_PATH,
     absolute_url,
+    confirmed_label,
     drop_event_label,
     format_aud,
+    limit_label,
+    quantity_label,
     rrp_label,
+    sighting_headline,
 )
 
 log = logging.getLogger(__name__)
@@ -52,6 +66,20 @@ Conn = psycopg.Connection[dict[str, Any]]
 MAX_DELIVERY_ATTEMPTS = 6
 BASE_BACKOFF_SECONDS = 30
 CLAIM_LIMIT = 500
+PUSH_NOT_CONFIGURED = "push not configured"
+SIGHTING_PHOTO_BUCKET = "sighting-photos"
+
+# Embed colours per event type (Discord wants an int).
+EVENT_COLOURS: dict[str, int] = {
+    "IN_STOCK": 0x3DDC97,
+    "PREORDER_OPEN": 0x6D5DF6,
+    "NEW_LISTING": 0x3EC6FF,
+    "PRICE_CHANGE": 0xFFB84D,
+    "QUEUE_LIVE": 0xFF6AD5,
+}
+DEFAULT_COLOUR = 0x9D8CFF
+
+_push_warned = False
 
 
 def delivery_backoff(attempts: int) -> timedelta:
@@ -74,7 +102,7 @@ class EventInfo:
     product_title: str
     retailer: str
     retailer_slug: str
-    url: str
+    url: str | None  # the product page (monitors, online sightings); None in store
     price_aud: Decimal | None
     occurred_at: datetime
     previous_price_aud: Decimal | None = None
@@ -84,6 +112,42 @@ class EventInfo:
     game: str | None = None
     suppressed: bool = False
     discord_posted: bool = False
+    # Member sightings only (source = 'member').
+    source: str = "monitor"
+    sighting_id: int | None = None
+    channel: str | None = None  # in_store | online
+    state: str | None = None
+    suburb: str | None = None
+    store_name: str | None = None
+    quantity: str | None = None  # few | some | plenty
+    purchase_limit: int | None = None
+    photo_url: str | None = None
+    note: str | None = None
+    confirm_count: int = 0
+
+    @property
+    def is_sighting(self) -> bool:
+        return self.source == "member"
+
+    @property
+    def in_store(self) -> bool:
+        return self.is_sighting and self.channel == "in_store"
+
+    @property
+    def place(self) -> str:
+        """'Kmart Chadstone, VIC' in store; the retailer's name otherwise."""
+        if self.in_store and self.suburb:
+            return f"{self.retailer} {self.suburb}" + (f", {self.state}" if self.state else "")
+        return self.retailer
+
+    @property
+    def site_path(self) -> str:
+        """Where the bell / push notification opens on the site."""
+        if self.in_store and self.state:
+            return f"/drops/{self.state.lower()}/"
+        if self.is_sighting:
+            return f"/drops/{self.retailer_slug}/"
+        return "/drops/"
 
 
 @dataclass(frozen=True)
@@ -107,6 +171,12 @@ class DispatchStore(Protocol):
     def mark(self, deliveries: list[Delivery], status: str, error: str | None = None) -> None: ...
     def mark_retry(self, delivery: Delivery, error: str, deliver_at: datetime) -> None: ...
     def mark_discord_posted(self, event_id: int) -> None: ...
+    def push_subscriptions(self, user_ids: list[str]) -> dict[str, list[PushSubscription]]: ...
+    def push_result(self, subscription: PushSubscription, ok: bool) -> None:
+        """ok: last_success_at = now, failures = 0; else failures + 1."""
+        ...
+
+    def delete_push_subscription(self, subscription: PushSubscription) -> None: ...
     def mark_alerted(self, event_ids: Iterable[int]) -> None: ...
     def admin_alert(self, key: str, title: str, body: str, details: dict[str, Any]) -> None: ...
     def commit(self) -> None: ...
@@ -116,6 +186,15 @@ class DispatchStore(Protocol):
 
 
 DiscordPoster = Callable[[str, dict[str, Any]], None]
+
+
+def sighting_photo_url(supabase_url: str | None, path: str | None) -> str | None:
+    """Public URL of a sighting photo (Storage bucket ``sighting-photos``)."""
+    if not supabase_url or not path:
+        return None
+    return (
+        f"{supabase_url.rstrip('/')}/storage/v1/object/public/{SIGHTING_PHOTO_BUCKET}/{quote(path, safe='/')}"
+    )
 
 
 def post_discord(webhook_url: str, payload: dict[str, Any]) -> None:
@@ -133,9 +212,10 @@ class DispatchResult:
     failed: int = 0
     emails_queued: int = 0
     discord_posts: int = 0
+    pushes: int = 0
 
     def merge(self, other: DispatchResult) -> None:
-        for name in ("sent", "skipped", "retried", "failed", "emails_queued", "discord_posts"):
+        for name in ("sent", "skipped", "retried", "failed", "emails_queued", "discord_posts", "pushes"):
             setattr(self, name, getattr(self, name) + getattr(other, name))
 
 
@@ -144,13 +224,21 @@ def _dec(value: Decimal | None) -> str | None:
     return None if value is None else str(value)
 
 
+def headline(event: EventInfo) -> str:
+    """'IN STOCK: <product>' for monitors; 'In store: <product> at Kmart
+    Chadstone, VIC' / 'Online: <product> at Kmart' for member sightings."""
+    if event.is_sighting:
+        return sighting_headline(event.channel, event.product_title, event.place)
+    return f"{drop_event_label(event.event_type)}: {event.product_title}"
+
+
 def email_data(event: EventInfo, tier: str) -> dict[str, Any]:
     """The ``data`` for a ``drop`` email_outbox row (see templates._drop)."""
-    return {
+    data: dict[str, Any] = {
         "drop_event_id": event.id,
         "event_type": event.event_type,
         "product_title": event.product_title,
-        "title": f"{drop_event_label(event.event_type)}: {event.product_title}",
+        "title": headline(event),
         "retailer": event.retailer,
         "retailer_slug": event.retailer_slug,
         "price_aud": _dec(event.price_aud),
@@ -162,32 +250,79 @@ def email_data(event: EventInfo, tier: str) -> dict[str, Any]:
         "occurred_at": event.occurred_at.isoformat(),
         "game": event.game,
         "tier": tier,
+        "source": event.source,
     }
+    if event.is_sighting:
+        data.update(
+            {
+                "sighting_id": event.sighting_id,
+                "channel": event.channel,
+                "state": event.state,
+                "suburb": event.suburb,
+                "store_name": event.store_name,
+                "place": event.place,
+                "quantity": event.quantity,
+                "purchase_limit": event.purchase_limit,
+                "confirm_count": event.confirm_count,
+                "photo_url": event.photo_url,
+                "note": event.note,
+                "drops_path": event.site_path,
+            }
+        )
+    return data
 
 
 def summary_line(event: EventInfo) -> str:
-    parts = [event.retailer, format_aud(event.price_aud)]
+    """Monitors: 'JB Hi-Fi · A$89.00 · ABOVE RRP (+12.5%)'. Sightings add
+    stock, limit and confirmations: 'A$45.00 · AT RRP · Some in stock ·
+    Limit 2 per customer · Confirmed by 3 members'."""
+    parts = [] if event.is_sighting else [event.retailer]
+    if not event.is_sighting or event.price_aud is not None:
+        parts.append(format_aud(event.price_aud))
     tag = rrp_label(event.rrp_tag, event.rrp_delta_pct)
     if tag:
         parts.append(tag)
+    if event.is_sighting:
+        stock = quantity_label(event.quantity)
+        if stock:
+            parts.append(stock)
+        limit = limit_label(event.purchase_limit)
+        if limit:
+            parts.append(limit)
+        parts.append(confirmed_label(event.confirm_count))
     return " · ".join(parts)
 
 
 def notification(event: EventInfo, tier: str, site_url: str) -> tuple[str, str, str, dict[str, Any]]:
-    title = f"{drop_event_label(event.event_type)}: {event.product_title}"[:200]
+    title = headline(event)[:200]
     body = summary_line(event)
     if tier != "premium":
         body += ". " + FREE_DELAY_LINE.format(url=absolute_url(site_url, PREMIUM_PATH))
-    data = {
+    data: dict[str, Any] = {
         "drop_event_id": event.id,
         "retailer_url": event.url,
         "event_type": event.event_type,
         "tier": tier,
     }
-    return title, body, "/drops/", data
+    if event.is_sighting:
+        data.update({"source": "member", "sighting_id": event.sighting_id, "photo_url": event.photo_url})
+    return title, body, event.site_path, data
 
 
-def discord_payload(event: EventInfo) -> dict[str, Any]:
+def push_message(event: EventInfo, tier: str) -> dict[str, Any]:
+    """The web push payload: short, no links in the text (the tap opens url)."""
+    body = summary_line(event)
+    if event.is_sighting:
+        body = f"{body} · Member sighting"
+    if tier != "premium":
+        body += " · Premium members got this 24 hours earlier"
+    return push_payload(headline(event), body, event.site_path, f"drop-{event.id}")
+
+
+def discord_payload(event: EventInfo, site_url: str = DEFAULT_SITE_URL) -> dict[str, Any]:
+    """One alert card: what, where, price vs RRP, stock, limit, source, when,
+    a link (the product page, or the state's sightings page in store) and
+    the member's photo when there is one."""
     label = drop_event_label(event.event_type)
     fields = [
         {"name": "Retailer", "value": event.retailer[:1024], "inline": True},
@@ -195,19 +330,43 @@ def discord_payload(event: EventInfo) -> dict[str, Any]:
     ]
     tag = rrp_label(event.rrp_tag, event.rrp_delta_pct)
     if tag:
-        fields.append({"name": "RRP", "value": tag, "inline": True})
+        rrp = f"{format_aud(event.rrp_aud)} · {tag}" if event.rrp_aud is not None else tag
+        fields.append({"name": "RRP", "value": rrp[:1024], "inline": True})
+    if event.in_store:
+        where = event.place if not event.store_name else f"{event.store_name} ({event.place})"
+        fields.append({"name": "Store", "value": where[:1024], "inline": False})
+    stock = quantity_label(event.quantity)
+    if stock:
+        fields.append({"name": "Stock", "value": stock, "inline": True})
+    limit = limit_label(event.purchase_limit)
+    if limit:
+        fields.append({"name": "Limit", "value": limit, "inline": True})
+    source = (
+        f"Member sighting · {confirmed_label(event.confirm_count).lower()}"
+        if event.is_sighting
+        else "Retailer monitor"
+    )
+    fields.append({"name": "Source", "value": source, "inline": True})
+    fields.append({"name": "Seen", "value": f"<t:{int(event.occurred_at.timestamp())}:R>", "inline": True})
+    embed: dict[str, Any] = {
+        "title": headline(event)[:256] if event.is_sighting else event.product_title[:256],
+        "url": event.url or absolute_url(site_url, event.site_path),
+        "color": EVENT_COLOURS.get(event.event_type, DEFAULT_COLOUR),
+        "fields": fields,
+        "timestamp": event.occurred_at.isoformat(),
+        "footer": {"text": "TCG Trade · Premium instant alert"},
+    }
+    if event.note:
+        embed["description"] = f"“{event.note[:500]}”"
+    if event.photo_url:
+        embed["image"] = {"url": event.photo_url}
+    content = f"**{'IN STORE' if event.in_store else label}** {event.product_title}"
+    if event.in_store:
+        content += f" — {event.place}"
     return {
         "username": "TCG Trade Drops",
-        "content": f"**{label}** {event.product_title}"[:2000],
-        "embeds": [
-            {
-                "title": event.product_title[:256],
-                "url": event.url,
-                "fields": fields,
-                "timestamp": event.occurred_at.isoformat(),
-                "footer": {"text": "TCG Trade · Premium instant alert"},
-            }
-        ],
+        "content": content[:2000],
+        "embeds": [embed],
         "allowed_mentions": {"parse": []},
     }
 
@@ -219,9 +378,12 @@ def dispatch_due(
     site_url: str = DEFAULT_SITE_URL,
     discord_webhook_url: str | None = None,
     poster: DiscordPoster = post_discord,
+    push_sender: PushSender | None = None,
     now: datetime | None = None,
     limit: int = CLAIM_LIMIT,
 ) -> DispatchResult:
+    """``push_sender`` None means VAPID isn't configured: push deliveries are
+    skipped (not retried)."""
     now = now or datetime.now(UTC)
     result = DispatchResult()
     deliveries = store.claim(limit)
@@ -250,7 +412,16 @@ def dispatch_due(
         try:
             with store.event_scope():
                 delivered = _dispatch_event(
-                    store, partial, event, group, people, site_url, discord_webhook_url, poster, now
+                    store,
+                    partial,
+                    event,
+                    group,
+                    people,
+                    site_url,
+                    discord_webhook_url,
+                    poster,
+                    now,
+                    push_sender=push_sender,
                 )
             result.merge(partial)
             if delivered:
@@ -264,7 +435,7 @@ def dispatch_due(
         store.mark_alerted(delivered_events)
     store.commit()
     log.info(
-        "drops dispatch: claimed=%d sent=%d skipped=%d retry=%d failed=%d emails=%d discord=%d",
+        "drops dispatch: claimed=%d sent=%d skipped=%d retry=%d failed=%d emails=%d discord=%d push=%d",
         result.claimed,
         result.sent,
         result.skipped,
@@ -272,6 +443,7 @@ def dispatch_due(
         result.failed,
         result.emails_queued,
         result.discord_posts,
+        result.pushes,
     )
     return result
 
@@ -311,10 +483,13 @@ def _dispatch_event(
     discord_webhook_url: str | None,
     poster: DiscordPoster,
     now: datetime,
+    *,
+    push_sender: PushSender | None = None,
 ) -> bool:
     emails: list[tuple[Delivery, str, dict[str, Any]]] = []
     notes: list[tuple[Delivery, str, str, str, dict[str, Any]]] = []
     discord_premium: list[Delivery] = []
+    pushes: list[tuple[Delivery, str]] = []  # (delivery, tier)
     sent: list[Delivery] = []
     skipped: dict[str, list[Delivery]] = defaultdict(list)
 
@@ -341,6 +516,11 @@ def _dispatch_event(
                 skipped["DISCORD_DROPS_WEBHOOK_URL is not set"].append(d)
             else:
                 discord_premium.append(d)
+        elif d.channel == "push":
+            if push_sender is None:
+                skipped[PUSH_NOT_CONFIGURED].append(d)
+            else:
+                pushes.append((d, who.tier))
         else:
             skipped[f"unknown channel {d.channel}"].append(d)
 
@@ -356,7 +536,7 @@ def _dispatch_event(
             sent.extend(discord_premium)  # already in the channel
         else:
             try:
-                poster(discord_webhook_url, discord_payload(event))
+                poster(discord_webhook_url, discord_payload(event, site_url))
             except Exception as exc:
                 log.warning("drop dispatch: Discord post for event %s failed: %s", event.id, exc)
                 for d in discord_premium:
@@ -365,6 +545,17 @@ def _dispatch_event(
                 store.mark_discord_posted(event.id)
                 result.discord_posts += 1
                 sent.extend(discord_premium)
+    if pushes and push_sender is not None:
+        subs = store.push_subscriptions(sorted({d.user_id for d, _ in pushes}))
+        for d, tier in pushes:
+            outcome = _push(store, push_sender, subs.get(d.user_id, []), push_message(event, tier))
+            if outcome is None:
+                sent.append(d)
+                result.pushes += 1
+            elif outcome.startswith("skip:"):
+                skipped[outcome.removeprefix("skip:")].append(d)
+            else:
+                _retry_or_fail(store, result, d, outcome, now)
 
     if sent:
         store.mark(sent, "sent")
@@ -372,8 +563,43 @@ def _dispatch_event(
     for reason, ds in skipped.items():
         if reason.startswith("DISCORD_DROPS_WEBHOOK_URL"):
             log.warning("drop dispatch: %d Discord deliveries skipped: %s", len(ds), reason)
+        if reason == PUSH_NOT_CONFIGURED:
+            _warn_push_not_configured()
         _skip(store, result, ds, reason)
     return bool(sent)
+
+
+def _warn_push_not_configured() -> None:
+    global _push_warned
+    if not _push_warned:
+        _push_warned = True
+        log.warning("drop dispatch: push deliveries skipped: set VAPID_PRIVATE_KEY and VAPID_SUBJECT")
+
+
+def _push(
+    store: DispatchStore, sender: PushSender, subs: list[PushSubscription], payload: dict[str, Any]
+) -> str | None:
+    """Sends one push delivery to every device of the member. None = sent to
+    at least one; 'skip:<reason>' = nothing left to send to; otherwise the
+    error to retry with."""
+    delivered = 0
+    errors: list[str] = []
+    for sub in subs:
+        try:
+            sender(sub, payload)
+        except PushGone:
+            store.delete_push_subscription(sub)  # unsubscribed / expired in the browser
+        except Exception as exc:
+            store.push_result(sub, ok=False)
+            errors.append(f"{type(exc).__name__}: {exc}")
+        else:
+            store.push_result(sub, ok=True)
+            delivered += 1
+    if delivered:
+        return None
+    if errors:
+        return "push: " + "; ".join(errors)[:900]
+    return "skip:member has no push subscriptions"
 
 
 # ------------------------------------------------------------------ postgres
@@ -381,9 +607,12 @@ class PostgresDispatchStore:
     """All work happens in one transaction: the claim's row locks are held
     until ``commit()``, so two dispatchers can never send the same delivery."""
 
-    def __init__(self, conn: Conn, *, admin_email: str | None = None) -> None:
+    def __init__(
+        self, conn: Conn, *, admin_email: str | None = None, supabase_url: str | None = None
+    ) -> None:
         self.conn = conn
         self.admin_email = admin_email
+        self.supabase_url = supabase_url
         self._alerts: list[tuple[str, str, str, dict[str, Any]]] = []
 
     def claim(self, limit: int) -> list[Delivery]:
@@ -399,14 +628,20 @@ class PostgresDispatchStore:
         ]
 
     def events(self, ids: list[int]) -> dict[int, EventInfo]:
+        # A monitor event has a retail product; a member sighting has none, so
+        # the retailer comes from drop_events.retailer_id (filled by trigger).
         rows = self.conn.execute(
             """select e.id, e.event_type::text as event_type, e.price_aud, e.previous_price_aud, e.rrp_aud,
                       e.rrp_tag::text as rrp_tag, e.rrp_delta_pct, e.occurred_at, e.suppressed,
                       e.discord_posted_at is not null as discord_posted,
-                      p.title, p.url, p.game, r.name as retailer, r.slug as retailer_slug
+                      coalesce(p.title, s.product) as title, coalesce(p.url, s.url) as url,
+                      coalesce(e.game, p.game, s.game) as game, r.name as retailer, r.slug as retailer_slug,
+                      s.id as sighting_id, s.channel, s.state::text as state, s.suburb, s.store_name,
+                      s.quantity, s.purchase_limit, s.photo_path, s.note, s.confirm_count
                  from public.drop_events e
-                 join public.retail_products p on p.id = e.retail_product_id
-                 join public.retailers r on r.id = p.retailer_id
+                 left join public.retail_products p on p.id = e.retail_product_id
+                 left join public.sightings s on s.id = e.sighting_id
+                 join public.retailers r on r.id = coalesce(e.retailer_id, p.retailer_id, s.retailer_id)
                 where e.id = any(%s)""",
             (ids,),
         ).fetchall()
@@ -427,6 +662,17 @@ class PostgresDispatchStore:
                 game=r["game"],
                 suppressed=r["suppressed"],
                 discord_posted=r["discord_posted"],
+                source="member" if r["sighting_id"] is not None else "monitor",
+                sighting_id=r["sighting_id"],
+                channel=r["channel"],
+                state=r["state"],
+                suburb=r["suburb"],
+                store_name=r["store_name"],
+                quantity=r["quantity"],
+                purchase_limit=r["purchase_limit"],
+                photo_url=sighting_photo_url(self.supabase_url, r["photo_path"]),
+                note=r["note"],
+                confirm_count=r["confirm_count"] or 0,
             )
             for r in rows
         }
@@ -438,7 +684,8 @@ class PostgresDispatchStore:
                       coalesce(pp.status::text, 'active') = 'active' as active,
                       public.wants_notification(u.id, 'drop', 'email') as w_email,
                       public.wants_notification(u.id, 'drop', 'onsite') as w_onsite,
-                      public.wants_notification(u.id, 'drop', 'discord') as w_discord
+                      public.wants_notification(u.id, 'drop', 'discord') as w_discord,
+                      public.wants_notification(u.id, 'drop', 'push') as w_push
                  from unnest(%s::uuid[]) as u(id)
                  left join public.profile_private pp on pp.user_id = u.id""",
             (user_ids,),
@@ -449,7 +696,12 @@ class PostgresDispatchStore:
                 tier=r["tier"] or "free",
                 email=r["email"],
                 active=bool(r["active"]),
-                wants={"email": r["w_email"], "onsite": r["w_onsite"], "discord": r["w_discord"]},
+                wants={
+                    "email": r["w_email"],
+                    "onsite": r["w_onsite"],
+                    "discord": r["w_discord"],
+                    "push": r["w_push"],
+                },
             )
             for r in rows
         }
@@ -496,6 +748,34 @@ class PostgresDispatchStore:
             "update public.drop_events set discord_posted_at = now() where id = %s", (event_id,)
         )
 
+    def push_subscriptions(self, user_ids: list[str]) -> dict[str, list[PushSubscription]]:
+        rows = self.conn.execute(
+            """select id, user_id::text as user_id, endpoint, p256dh, auth
+                 from public.push_subscriptions where user_id = any(%s::uuid[]) order by id""",
+            (user_ids,),
+        ).fetchall()
+        out: dict[str, list[PushSubscription]] = defaultdict(list)
+        for r in rows:
+            out[r["user_id"]].append(
+                PushSubscription(r["id"], r["user_id"], r["endpoint"], r["p256dh"], r["auth"])
+            )
+        return dict(out)
+
+    def push_result(self, subscription: PushSubscription, ok: bool) -> None:
+        if ok:
+            self.conn.execute(
+                "update public.push_subscriptions set last_success_at = now(), failures = 0 where id = %s",
+                (subscription.id,),
+            )
+        else:
+            self.conn.execute(
+                "update public.push_subscriptions set failures = failures + 1 where id = %s",
+                (subscription.id,),
+            )
+
+    def delete_push_subscription(self, subscription: PushSubscription) -> None:
+        self.conn.execute("delete from public.push_subscriptions where id = %s", (subscription.id,))
+
     def mark_alerted(self, event_ids: Iterable[int]) -> None:
         self.conn.execute(
             "update public.drop_events set alerted_at = now() where id = any(%s) and alerted_at is null",
@@ -523,10 +803,18 @@ def run_dispatcher(
     discord_webhook_url: str | None,
     admin_email: str | None,
     poster: DiscordPoster = post_discord,
+    push_sender: PushSender | None = None,
+    supabase_url: str | None = None,
 ) -> DispatchResult:
-    store = PostgresDispatchStore(conn, admin_email=admin_email)
+    store = PostgresDispatchStore(conn, admin_email=admin_email, supabase_url=supabase_url)
     try:
-        return dispatch_due(store, site_url=site_url, discord_webhook_url=discord_webhook_url, poster=poster)
+        return dispatch_due(
+            store,
+            site_url=site_url,
+            discord_webhook_url=discord_webhook_url,
+            poster=poster,
+            push_sender=push_sender,
+        )
     except Exception:
         conn.rollback()
         raise

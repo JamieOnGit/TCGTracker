@@ -8,6 +8,7 @@ import { saveUserOverridesForm, setUserStatus, suspendUserForm } from '@/lib/act
 import { can } from '@/lib/admin/access'
 import { userDetail } from '@/lib/admin/data'
 import { requireSection } from '@/lib/admin/guard'
+import { effectiveTier, type StripeStatus } from '@/lib/domain/tier'
 
 export const metadata = { title: 'Member' }
 
@@ -19,7 +20,12 @@ export default async function AdminUser({ params }: { params: Promise<{ id: stri
   const u = await userDetail(sb, id, isAdmin)
   if (!u) notFound()
   const { profile, priv } = u
-  const effectiveTier = priv?.tier_override ?? (u.sub && ['active', 'trialing'].includes(u.sub.status) ? 'premium' : isAdmin ? 'free' : null)
+  // Same rules as public.effective_tier(); moderators can't read subscriptions, so they only see override / scout-reward Premium.
+  const premiumUntil = priv?.premium_until ? new Date(priv.premium_until) : null
+  const rewardActive = Boolean(premiumUntil && premiumUntil > new Date())
+  const tier = isAdmin || priv?.tier_override || rewardActive
+    ? effectiveTier({ status: (u.sub?.status ?? 'none') as StripeStatus, graceUntil: u.sub?.grace_until ? new Date(u.sub.grace_until) : null, tierOverride: priv?.tier_override ?? null, premiumUntil })
+    : null
   const self = me.id === id
 
   return (
@@ -37,7 +43,7 @@ export default async function AdminUser({ params }: { params: Promise<{ id: stri
             <dt>State</dt><dd>{profile.location_state ?? '—'}</dd>
             <dt>Role</dt><dd>{priv?.role ?? 'user'}</dd>
             <dt>Status</dt><dd><StatusBadge status={priv?.status ?? 'active'} />{priv?.suspended_until && <span className="muted ml-2 text-xs">until {fmtDate(priv.suspended_until)}</span>}</dd>
-            <dt>Tier</dt><dd>{effectiveTier ?? '—'}{priv?.tier_override && <span className="muted ml-1 text-xs">(override)</span>}</dd>
+            <dt>Tier</dt><dd>{tier ?? '—'}{priv?.tier_override && <span className="muted ml-1 text-xs">(override)</span>}{rewardActive && premiumUntil && <span className="muted ml-1 text-xs">(scout reward until {fmtDate(premiumUntil.toISOString())})</span>}</dd>
             {u.sub && <><dt>Subscription</dt><dd>{u.sub.status}{u.sub.current_period_end ? ` · renews ${fmtDate(u.sub.current_period_end)}` : ''}{u.sub.cancel_at_period_end ? ' · cancels at period end' : ''}</dd></>}
             <dt>Quota</dt><dd className="num">{u.quota.used ?? '—'} of {u.quota.limit ?? '—'} used this period{priv?.quota_override !== null && priv?.quota_override !== undefined ? ' (override)' : ''}</dd>
             <dt>Trusted seller</dt><dd>{priv?.trusted_seller ? 'yes' : 'no'}</dd>

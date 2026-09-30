@@ -11,6 +11,9 @@
 | listing_expiring | hourly                         | renewal reminders (listings.expiry_warning_days) |
 | email       | every 20s                           | email_outbox sender (tcgworkers.email)  |
 | drops_dispatch | every 15s                        | drop alert fan-out (drops.dispatcher)   |
+| expire_sightings | every 5 min                     | pending member sightings expire (6h)    |
+| release_reminders | daily 08:00 Australia/Sydney   | "out tomorrow" release reminders        |
+| deals       | every 30 min                        | eBay Browse API deal finder (deals.enabled + EBAY_CLIENT_*) |
 
 The drop monitors themselves are not scheduled jobs: they run continuously
 in tcgworkers.drops.runner (one thread per enabled retailer).
@@ -29,7 +32,9 @@ import psycopg
 
 from tcgworkers.config import Env
 from tcgworkers.db import pipeline_run
+from tcgworkers.drops.push import PushSender, sender_from_env
 from tcgworkers.email.providers import EmailProvider, provider_from_env
+from tcgworkers.sources.ebay_deals import RUN_EVERY_MINUTES, BrowseClient, DealFinder
 from tcgworkers.sources.fx.rba import F11_URL, parse_f11
 from tcgworkers.sources.population.base import SourceNotApproved
 
@@ -46,6 +51,9 @@ class Job:
     run: Callable[[Conn, Env], object]
     every_seconds: float | None = None  # sub-hour jobs (email, drop dispatch)
     heartbeat_max_age: float | None = None  # seconds without success before the heartbeat fails
+    # Fixed time of day instead of an interval: APScheduler cron fields, e.g.
+    # {"hour": 8, "minute": 0, "timezone": "Australia/Sydney"}.
+    cron: dict[str, Any] | None = None
 
 
 def refresh_fx(conn: Conn, user_agent: str) -> None:
@@ -211,6 +219,8 @@ def dispatch_drops(conn: Conn, env: Env) -> object:
         site_url=env.site_url,
         discord_webhook_url=env.discord_drops_webhook_url,
         admin_email=env.admin_alert_email,
+        push_sender=push_sender(env),
+        supabase_url=env.supabase_url,
     )
     if result.emails_queued:
         # Premium alerts are instant: send now rather than waiting for the
@@ -223,6 +233,53 @@ def dispatch_drops(conn: Conn, env: Env) -> object:
 def email_provider(env: Env) -> EmailProvider:
     """One provider per process (the SMTP/HTTP settings don't change)."""
     return provider_from_env(env)
+
+
+@functools.lru_cache(maxsize=4)
+def push_sender(env: Env) -> PushSender | None:
+    """None until VAPID_PRIVATE_KEY and VAPID_SUBJECT are set."""
+    return sender_from_env(env.vapid_private_key, env.vapid_subject)
+
+
+def expire_sightings(conn: Conn, env: Env) -> int:
+    """Pending member sightings nobody confirmed expire after
+    sightings.pending_expiry_minutes (6h). Runs every 5 minutes, so it is
+    logged only when something expired rather than recorded in pipeline_runs."""
+    row = conn.execute("select public.expire_sightings() as n").fetchone()
+    conn.commit()
+    n = int(row["n"]) if row else 0
+    if n:
+        log.info("expire_sightings: %d pending sightings expired", n)
+    return n
+
+
+def send_release_reminders(conn: Conn, env: Env) -> None:
+    """Reminders for releases out tomorrow (on-site + email template
+    ``release``, per each member's preferences). Idempotent: each reminder
+    row is marked sent."""
+    with pipeline_run(conn, "release_reminders") as stats:
+        row = conn.execute("select public.send_release_reminders() as n").fetchone()
+        stats["sent"] = int(row["n"]) if row else 0
+
+
+@functools.lru_cache(maxsize=4)
+def deal_finder(env: Env) -> DealFinder | None:
+    """One per process: keeps the eBay OAuth token and miss counts."""
+    if not env.ebay_client_id or not env.ebay_client_secret:
+        return None
+    return DealFinder(BrowseClient(env.ebay_client_id, env.ebay_client_secret))
+
+
+def find_ebay_deals(conn: Conn, env: Env) -> object:
+    from tcgworkers.sources.ebay_deals import DealStore, ready_settings
+
+    finder = deal_finder(env)
+    settings = ready_settings(conn, finder)
+    if settings is None or finder is None:
+        return None
+    with pipeline_run(conn, "deals") as stats:
+        stats.update(finder.run(DealStore(conn), settings))
+    return stats
 
 
 def prices_job(conn: Conn, env: Env) -> None:
@@ -255,4 +312,14 @@ JOBS: tuple[Job, ...] = (
     Job("listing_expiring", None, 1, _ua(warn_expiring_listings)),
     Job("email", None, 0, send_emails, every_seconds=20, heartbeat_max_age=300),
     Job("drops_dispatch", None, 0, dispatch_drops, every_seconds=15, heartbeat_max_age=300),
+    Job("expire_sightings", None, 0, expire_sightings, every_seconds=300),
+    Job(
+        "release_reminders",
+        None,
+        24,
+        send_release_reminders,
+        cron={"hour": 8, "minute": 0, "timezone": "Australia/Sydney"},
+    ),
+    # The call budget in sources/ebay_deals.py assumes this cadence.
+    Job("deals", None, RUN_EVERY_MINUTES / 60, find_ebay_deals),
 )

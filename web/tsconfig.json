@@ -42,7 +42,17 @@
     ".next-account/types/**/*.ts",
     ".next-account/dev/types/**/*.ts",
     ".next-ci/types/**/*.ts",
-    ".next-ci/dev/types/**/*.ts"
+    ".next-ci/dev/types/**/*.ts",
+    ".next-seo/types/**/*.ts",
+    ".next-seo/dev/types/**/*.ts",
+    ".next-b3/types/**/*.ts",
+    ".next-b3/dev/types/**/*.ts",
+    ".next-seo-dev/types/**/*.ts",
+    ".next-seo-dev/dev/types/**/*.ts",
+    ".next-prod/types/**/*.ts",
+    ".next-prod/dev/types/**/*.ts",
+    ".next-demo/types/**/*.ts",
+    ".next-demo/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -2,7 +2,7 @@
  * Structured data builders (brief 7.3). Each returns a plain object rendered by
  * <JsonLd>. Keep them honest: only mark up what is visible on the page.
  */
-import { absoluteUrl, siteName, siteUrl } from './urls'
+import { absoluteUrl, DEFAULT_OG_IMAGE, siteName, siteUrl } from './urls'
 
 type Thing = Record<string, unknown>
 const CTX = 'https://schema.org'
@@ -14,7 +14,7 @@ export function organization(): Thing {
     '@id': `${siteUrl()}/#organization`,
     name: siteName(),
     url: siteUrl() + '/',
-    logo: absoluteUrl('/icon.png'),
+    logo: absoluteUrl('/icon-512.png'),
     areaServed: 'AU',
   }
 }
@@ -139,8 +139,72 @@ export function newsArticle(input: { headline: string; path: string; datePublish
     mainEntityOfPage: absoluteUrl(input.path),
     datePublished: input.datePublished,
     dateModified: input.dateModified,
-    ...(input.image ? { image: [input.image] } : {}),
+    image: [input.image ?? absoluteUrl(DEFAULT_OG_IMAGE)],
     author: input.author ? { '@type': 'Person', name: input.author } : { '@id': `${siteUrl()}/#organization` },
     publisher: { '@id': `${siteUrl()}/#organization` },
+  }
+}
+
+/** Article (evergreen guides): author and publisher are the site organisation. */
+export function article(input: { headline: string; description: string; path: string; datePublished: string; dateModified: string }): Thing {
+  return {
+    '@context': CTX,
+    '@type': 'Article',
+    headline: input.headline,
+    description: input.description,
+    mainEntityOfPage: absoluteUrl(input.path),
+    url: absoluteUrl(input.path),
+    datePublished: input.datePublished,
+    dateModified: input.dateModified,
+    inLanguage: 'en-AU',
+    author: { '@type': 'Organization', '@id': `${siteUrl()}/#organization`, name: siteName(), url: siteUrl() + '/' },
+    publisher: { '@type': 'Organization', '@id': `${siteUrl()}/#organization`, name: siteName(), logo: { '@type': 'ImageObject', url: absoluteUrl('/icon-512.png') } },
+  }
+}
+
+/** FAQPage: only for questions and answers that are visible on the page. */
+export function faqPage(faqs: { q: string; a: string }[]): Thing {
+  return {
+    '@context': CTX,
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  }
+}
+
+/**
+ * Event for a release date in Australia. startDate only when the day is known
+ * (a month or quarter isn't a date); past releases stay EventScheduled, which is
+ * what schema.org expects for events that went ahead.
+ */
+export function releaseEvent(input: {
+  name: string
+  description: string
+  path: string
+  startDate: string | null
+  organizer: string
+  image?: string | null
+}): Thing {
+  return {
+    '@context': CTX,
+    '@type': 'Event',
+    name: input.name,
+    description: input.description,
+    url: absoluteUrl(input.path),
+    ...(input.startDate ? { startDate: input.startDate, endDate: input.startDate } : {}),
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
+    location: { '@type': 'Place', name: 'Australian retailers', address: { '@type': 'PostalAddress', addressCountry: 'AU' } },
+    organizer: { '@type': 'Organization', name: input.organizer },
+    ...(input.image ? { image: [input.image] } : {}),
+    inLanguage: 'en-AU',
+  }
+}
+
+/** ItemList of URLs for hub pages (guides, release calendars). */
+export function itemList(items: { name: string; path: string }[]): Thing {
+  return {
+    '@context': CTX,
+    '@type': 'ItemList',
+    itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, url: absoluteUrl(it.path) })),
   }
 }

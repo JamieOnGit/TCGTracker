@@ -1,5 +1,7 @@
 # Setting up TCG Trade: step by step for Jamie
 
+> **Start with [YOUR-NEXT-STEPS.md](YOUR-NEXT-STEPS.md).** It's the current, complete checklist, including web push keys, eBay deal keys and the community launch steps. This file keeps the original account-by-account notes.
+
 Do these in order. Each step says what to click and which value to send back, if any. **Never paste passwords or secret keys into chat.** Put them into the dashboards named below (Cloudflare, Fly.io, GitHub), and Claude reads them from there.
 
 Rough monthly cost, similar to beforeyoufly.com.au:

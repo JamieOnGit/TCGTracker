@@ -4,8 +4,10 @@ One process runs everything (brief 11: an always-on host, not Vercel or
 GitHub Actions, because drop polling is sub-5-minute):
 
 * APScheduler jobs from ``jobs.registry.JOBS``: fx, population, prices,
-  floors, snapshots, expiry, listing_expiring (hourly), email (every 20s) and
-  drops_dispatch (every 15s);
+  floors, snapshots, expiry, listing_expiring (hourly), email (every 20s),
+  drops_dispatch (every 15s), expire_sightings (every 5 minutes), deals
+  (eBay deal finder, every 30 minutes) and release_reminders (daily at
+  08:00 Sydney time);
 * the 24/7 drop monitor runner (``drops.runner``), one thread per enabled
   retailer, hot-reloading retailer config from the DB every 5 minutes;
 * a heartbeat to HEALTHCHECK_URL every minute while all of the above are
@@ -99,7 +101,19 @@ def main(argv: list[str] | None = None) -> int:
         rules = load_rules(conn)
     scheduler = BlockingScheduler(timezone="Australia/Melbourne")
     for job in JOBS:
-        if job.every_seconds:
+        if job.cron:
+            scheduler.add_job(
+                _run,
+                "cron",
+                args=(job, env, heartbeat),
+                id=job.name,
+                name=job.name,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=3600,
+                **job.cron,
+            )
+        elif job.every_seconds:
             scheduler.add_job(
                 _run,
                 "interval",

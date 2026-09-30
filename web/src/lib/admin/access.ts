@@ -1,6 +1,6 @@
 /**
  * Which admin sections each staff role may use (brief 10: admin → all,
- * moderator → listings and reports (plus suspending users), editor → news).
+ * moderator → listings, reports and member sightings (plus suspending users), editor → news and the release calendar).
  * Pure so the nav, the layout gate and the unit tests share one table.
  * RLS still decides what each role can actually read or write.
  */
@@ -19,6 +19,8 @@ export type SectionKey =
   | 'audit'
   | 'subscriptions'
   | 'news'
+  | 'sightings'
+  | 'releases'
 
 export interface Section {
   key: SectionKey
@@ -32,6 +34,7 @@ export const SECTIONS: Section[] = [
   { key: 'listings', label: 'Listings', href: '/admin/listings/', roles: ['admin', 'moderator'] },
   { key: 'reports', label: 'Reports', href: '/admin/reports/', roles: ['admin', 'moderator'] },
   { key: 'users', label: 'Users', href: '/admin/users/', roles: ['admin', 'moderator'] },
+  { key: 'sightings', label: 'Sightings', href: '/admin/sightings/', roles: ['admin', 'moderator'] },
   { key: 'mapping', label: 'Card mapping', href: '/admin/mapping/', roles: ['admin'] },
   { key: 'drops', label: 'Drops', href: '/admin/drops/', roles: ['admin'] },
   { key: 'emails', label: 'Emails', href: '/admin/emails/', roles: ['admin'] },
@@ -39,6 +42,7 @@ export const SECTIONS: Section[] = [
   { key: 'settings', label: 'Settings', href: '/admin/settings/', roles: ['admin'] },
   { key: 'audit', label: 'Audit log', href: '/admin/audit/', roles: ['admin'] },
   { key: 'news', label: 'News', href: '/admin/news/', roles: ['admin', 'editor'] },
+  { key: 'releases', label: 'Releases', href: '/admin/releases/', roles: ['admin', 'editor'] },
 ]
 
 export function isStaff(role: string | null | undefined): role is StaffRole {

@@ -7,6 +7,7 @@ const ITEMS = [
   { href: '/account/listings/', label: 'Listings' },
   { href: '/messages/', label: 'Messages' },
   { href: '/account/alerts/', label: 'Alerts' },
+  { href: '/account/sightings/', label: 'Sightings' },
   { href: '/account/notifications/', label: 'Notifications' },
   { href: '/account/settings/', label: 'Settings' },
   { href: '/account/billing/', label: 'Billing' },

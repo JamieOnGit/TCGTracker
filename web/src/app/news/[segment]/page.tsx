@@ -15,7 +15,14 @@ const isCategory = (s: string) => (NEWS_CATEGORIES as readonly string[]).include
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { segment } = await params
   if (!isCategory(segment)) return {}
-  return buildMetadata({ path: newsPath(segment), title: `${segment.replace('-', ' ')} news`.replace(/^./, (c) => c.toUpperCase()), description: `Latest ${segment.replace('-', ' ')} news and analysis for Australian TCG collectors.` })
+  const empty = (await getRepo().articles({ category: segment, limit: 1 })).length === 0
+  const label = segment.replace('-', ' ')
+  return buildMetadata({
+    path: newsPath(segment),
+    title: `${label} news`.replace(/^./, (c) => c.toUpperCase()),
+    description: `Latest ${label} news, market analysis and release updates for Australian Pokémon and One Piece TCG collectors, in AUD.`,
+    noindex: empty, // no thin, empty category pages in the index
+  })
 }
 
 export default async function NewsCategory({ params }: Props) {

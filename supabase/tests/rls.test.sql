@@ -605,10 +605,12 @@ select tests.ok((select status = 'expired' from public.sightings where id = (sel
 -- Web push: owner-only subscriptions; drop alerts queue a push delivery.
 set role authenticated;
 select tests.login('00000000-0000-0000-0000-00000000000e');
-insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://push.example/abc', 'k', 'a');
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://fcm.googleapis.com/fcm/send/abc', 'k', 'a');
+select tests.throws($$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://evil.example/hook', 'k', 'a')$$,
+  'check constraint', 'push endpoints must be a real browser push service');
 select tests.login('00000000-0000-0000-0000-00000000000a');
 select tests.ok(not exists (select 1 from public.push_subscriptions), 'push subscriptions are private');
-select tests.throws($$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('00000000-0000-0000-0000-00000000000e', 'https://push.example/x', 'k', 'a')$$,
+select tests.throws($$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('00000000-0000-0000-0000-00000000000e', 'https://fcm.googleapis.com/fcm/send/x', 'k', 'a')$$,
   'row-level security', 'nobody can add a push subscription for someone else');
 select tests.login('00000000-0000-0000-0000-00000000000d');
 create temp table s6 as select * from public.report_sighting('jb-hi-fi', 'online', 'pokemon', 'Destined Rivals booster bundle', p_url => 'https://www.jbhifi.com.au/products/x');
@@ -641,5 +643,32 @@ select tests.ok(public.send_release_reminders() = 1, 'release reminders are sent
 select tests.ok(public.send_release_reminders() = 0, '...once');
 select tests.ok(exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-00000000000a' and type = 'release'),
   'the reminder appears in the member''s notifications');
+
+
+-- ------------------------------------------------ retailers + eBay deals
+select tests.throws($$update public.retailers set enabled = true where slug = 'toymate'$$,
+  'retailers_enable_needs_adapter', 'stores without a monitor cannot be switched on');
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000b');
+select tests.throws($$select * from public.report_sighting('local-game-store', 'in_store', 'pokemon', 'Booster box', 'SA', 'Adelaide')$$,
+  'store name', 'independent store reports need the store name');
+reset role;
+insert into public.wishlist_items (user_id, card_id, grade_key) values
+  ('00000000-0000-0000-0000-00000000000e', '20000000-0000-0000-0000-000000000001', 'psa-10'),
+  ('00000000-0000-0000-0000-00000000000a', '20000000-0000-0000-0000-000000000001', null);
+insert into public.ebay_deals (item_id, card_id, grade_key, title, buying_option, price_aud, market_aud, discount_pct, url)
+values ('v1|123|0', '20000000-0000-0000-0000-000000000001', 'psa-10', 'Charizard ex 199/165 PSA 10', 'FIXED_PRICE', 700, 1000, 30, 'https://www.ebay.com.au/itm/123');
+select tests.ok((select count(*) from public.notifications where type = 'wishlist' and data ->> 'deal_id' is not null) = 2,
+  'wishlist watchers are told about an eBay deal');
+select tests.ok((select send_after <= now() from public.email_outbox where template = 'deal' and user_id = '00000000-0000-0000-0000-00000000000e'),
+  'Premium watchers get the deal email straight away');
+select tests.ok((select send_after > now() + interval '23 hours' from public.email_outbox where template = 'deal' and user_id = '00000000-0000-0000-0000-00000000000a'),
+  'Free watchers get it after the public delay');
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok(not exists (select 1 from public.ebay_deals), 'Free members cannot see live deals');
+select tests.login('00000000-0000-0000-0000-00000000000e');
+select tests.ok(exists (select 1 from public.ebay_deals), 'Premium members see deals live');
+reset role;
 
 \echo 'All database tests passed'

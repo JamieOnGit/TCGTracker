@@ -57,14 +57,16 @@ export async function latestPipelineRuns(sb: SupabaseClient): Promise<PipelineRu
 export async function overviewCounts(sb: SupabaseClient, role: string) {
   const isAdmin = role === 'admin'
   const isMod = isAdmin || role === 'moderator'
-  const [pending, reports, mapping, failedEmails, drafts] = await Promise.all([
+  const [pending, reports, mapping, failedEmails, drafts, sightings] = await Promise.all([
     isMod ? count(sb.from('listings').select('id', { count: 'exact', head: true }).eq('status', 'pending_review')) : Promise.resolve(null),
     isMod ? count(sb.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open')) : Promise.resolve(null),
     isAdmin ? count(sb.from('mapping_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending')) : Promise.resolve(null),
     isAdmin ? count(sb.from('email_outbox').select('id', { count: 'exact', head: true }).eq('status', 'failed')) : Promise.resolve(null),
     role === 'editor' || isAdmin ? count(sb.from('articles').select('id', { count: 'exact', head: true }).in('status', ['draft', 'in_review'])) : Promise.resolve(null),
+    // Member sightings waiting on a person: pending, or flagged as fake while still live.
+    isMod ? count(sb.from('sightings').select('id', { count: 'exact', head: true }).or('status.eq.pending,and(flag_count.gt.0,status.eq.confirmed,gone_at.is.null)')) : Promise.resolve(null),
   ])
-  return { pending, reports, mapping, failedEmails, drafts }
+  return { pending, reports, mapping, failedEmails, drafts, sightings }
 }
 
 // ------------------------------------------------------------------ retailers
@@ -300,7 +302,7 @@ export async function searchUsers(sb: SupabaseClient, q: string | undefined): Pr
 export async function userDetail(sb: SupabaseClient, id: string, isAdmin: boolean) {
   const [{ data: profile }, { data: priv }, sub, { data: listings }, emails, quotaUsed, quotaLimit] = await Promise.all([
     sb.from('profiles').select('id,username,display_name,location_state,bio,created_at').eq('id', id).maybeSingle(),
-    sb.from('profile_private').select('role,status,suspended_until,tier_override,quota_override,trusted_seller,timezone,staff_notes').eq('user_id', id).maybeSingle(),
+    sb.from('profile_private').select('role,status,suspended_until,tier_override,quota_override,trusted_seller,timezone,staff_notes,premium_until').eq('user_id', id).maybeSingle(),
     isAdmin ? sb.from('subscriptions').select('tier,status,current_period_end,cancel_at_period_end,grace_until').eq('user_id', id).maybeSingle() : Promise.resolve({ data: null }),
     sb.from('listings').select('id,title,status,price_aud,lang,grade_key,submitted_at,rejection_reason').eq('seller_id', id).order('created_at', { ascending: false }).limit(30),
     emailsFor([id]),
@@ -315,7 +317,7 @@ export async function userDetail(sb: SupabaseClient, id: string, isAdmin: boolea
   ])
   return {
     profile: profile as { id: string; username: string; display_name: string | null; location_state: string | null; bio: string | null; created_at: string },
-    priv: priv as { role: string; status: string; suspended_until: string | null; tier_override: 'free' | 'premium' | null; quota_override: number | null; trusted_seller: boolean; timezone: string; staff_notes: string | null } | null,
+    priv: priv as { role: string; status: string; suspended_until: string | null; tier_override: 'free' | 'premium' | null; quota_override: number | null; trusted_seller: boolean; timezone: string; staff_notes: string | null; premium_until: string | null } | null,
     sub: sub.data as { tier: string; status: string; current_period_end: string | null; cancel_at_period_end: boolean; grace_until: string | null } | null,
     email: emails.get(id) ?? null,
     listings: (listings ?? []) as unknown as { id: number; title: string; status: string; price_aud: number; lang: string; grade_key: string; submitted_at: string | null; rejection_reason: string | null }[],

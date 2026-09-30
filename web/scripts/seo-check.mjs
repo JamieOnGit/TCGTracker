@@ -8,18 +8,30 @@
  *  - a sitemap that doesn't build, or lists a URL that isn't a 200,
  *    indexable, self-canonical page
  *  - URL normalisation that isn't a 301 (trailing slash, uppercase)
+ *  - key routes (releases, guides, drops by state, scouts) missing, not
+ *    indexable or without their structured data; .ics feeds with the wrong
+ *    content type or a trailing-slash redirect; unknown slugs that aren't 404
+ * Warns (doesn't fail) on titles over 70 characters and descriptions outside
+ * 70–170 characters, since Google truncates them in results.
  *
  * Usage: BASE_URL=http://localhost:3000 node scripts/seo-check.mjs
  */
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 const MAX_PAGES = Number(process.env.MAX_PAGES ?? 400)
 const errors = []
+const warnings = []
 const fail = (msg) => errors.push(msg)
+const warn = (msg) => warnings.push(msg)
+
+// Always crawled, even if nothing links to them yet.
+const PRIVATE = ['/account/', '/messages/', '/admin/', '/login/', '/report/']
+const SEEDS = ['/', '/releases/', '/releases/pokemon/', '/releases/one-piece/', '/guides/', '/drops/', '/drops/vic/', '/drops/scouts/']
 
 async function get(path) {
   const res = await fetch(BASE + path, { redirect: 'manual' })
-  const body = res.headers.get('content-type')?.includes('text') || res.headers.get('content-type')?.includes('xml') ? await res.text() : ''
-  return { status: res.status, location: res.headers.get('location'), body }
+  const type = res.headers.get('content-type') ?? ''
+  const body = type.includes('text') || type.includes('xml') ? await res.text() : ''
+  return { status: res.status, location: res.headers.get('location'), body, type, headers: res.headers }
 }
 
 const attr = (tag, name) => new RegExp(`${name}="([^"]*)"`, 'i').exec(tag)?.[1]
@@ -48,9 +60,10 @@ const seenDescriptions = new Map()
 const pageInfo = new Map()
 
 async function checkPage(path) {
-  const { status, location, body } = await get(path)
+  const { status, location, body, type } = await get(path)
   if (status >= 300 && status < 400) return { redirect: location, status }
   if (status !== 200) return { status }
+  if (!type.includes('text/html')) return { status, links: [], file: true } // feeds, text files
   const p = parse(body)
   const indexable = !/noindex/i.test(p.robots)
   const hasQuery = path.includes('?')
@@ -72,6 +85,8 @@ async function checkPage(path) {
     const canonicalPath = p.canonical?.replace(/^https?:\/\/[^/]+/, '')
     if (canonicalPath !== path) fail(`${path}: canonical is ${p.canonical ?? 'missing'} (expected self)`)
     if (!p.jsonld.some((j) => j.includes('"BreadcrumbList"'))) fail(`${path}: no BreadcrumbList JSON-LD`)
+    if (p.title.length > 70) warn(`${path}: title is ${p.title.length} chars (may be truncated): "${p.title}"`)
+    if (p.description && (p.description.length < 70 || p.description.length > 170)) warn(`${path}: description is ${p.description.length} chars`)
     if (p.title) {
       if (seenTitles.has(p.title)) fail(`${path}: duplicate title with ${seenTitles.get(p.title)}: "${p.title}"`)
       else seenTitles.set(p.title, path)
@@ -81,12 +96,12 @@ async function checkPage(path) {
       else seenDescriptions.set(p.description, path)
     }
   }
-  pageInfo.set(path, { indexable, canonical: p.canonical })
+  pageInfo.set(path, { indexable, canonical: p.canonical, jsonld: p.jsonld.join('\n') })
   return { status, links: p.links }
 }
 
 async function crawl() {
-  const queue = ['/']
+  const queue = [...SEEDS]
   const done = new Set()
   while (queue.length && done.size < MAX_PAGES) {
     const path = queue.shift()
@@ -103,6 +118,8 @@ async function crawl() {
     }
     for (const { href } of res.links) {
       const p = internalPath(href)
+      // Private areas are robots-disallowed and linked rel=nofollow; they redirect to /login/ by design.
+      if (p && PRIVATE.some((x) => p.startsWith(x))) continue
       if (p && !done.has(p) && !queue.includes(p)) queue.push(p)
     }
   }
@@ -134,8 +151,17 @@ async function checkNormalisation() {
   const cases = [
     ['/cards', '/cards/'],
     ['/Cards/', '/cards/'],
-    ['/marketplace/listing/100001/', '/marketplace/listing/100001-charizard-ex-199-en-psa-10/'],
-    ['/cards/pokemon/en/151/199-charizard/', '/cards/pokemon/en/151/199-charizard-ex/'],
+    ['/releases', '/releases/'],
+    ['/guides/Buy-Pokemon-Cards-At-RRP-Australia/', '/guides/buy-pokemon-cards-at-rrp-australia/'],
+    ['/market-cap/', '/'],
+    ['/releases/calendar.ics/', '/releases/calendar.ics'],
+    // Demo-data fixtures (a renamed card slug, a listing with a short slug); set DEMO_FIXTURES=0 for a live-data crawl.
+    ...(process.env.DEMO_FIXTURES === '0'
+      ? []
+      : [
+          ['/marketplace/listing/100001/', '/marketplace/listing/100001-charizard-ex-199-en-psa-10/'],
+          ['/cards/pokemon/en/151/199-charizard/', '/cards/pokemon/en/151/199-charizard-ex/'],
+        ]),
   ]
   for (const [from, to] of cases) {
     const r = await get(from)
@@ -146,12 +172,50 @@ async function checkNormalisation() {
   if (robots.status !== 200 || !/Disallow: \/account\//.test(robots.body) || !/Sitemap:/.test(robots.body)) fail('/robots.txt: missing disallow rules or sitemap')
   const llms = await get('/llms.txt')
   if (llms.status !== 200 || !llms.body.includes('/methodology/')) fail('/llms.txt: missing')
+  for (const section of ['/releases/', '/guides/', '/deals/']) if (!llms.body.includes(section)) fail(`/llms.txt: no ${section} section`)
+}
+
+async function checkNewRoutes() {
+  // Hubs and state/scout pages must be indexable pages in their own right.
+  for (const path of SEEDS) {
+    const info = pageInfo.get(path)
+    if (!info) fail(`${path}: not a 200 page`)
+    else if (!info.indexable) fail(`${path}: expected indexable`)
+  }
+  // Release detail pages carry Event JSON-LD; guides carry Article JSON-LD.
+  const crawledPaths = [...pageInfo.keys()]
+  const releases = crawledPaths.filter((p) => /^\/releases\/[a-z-]+\/[a-z0-9-]+\/$/.test(p))
+  if (!releases.length) warn('no release detail pages found to check (empty calendar?)')
+  for (const p of releases) if (!pageInfo.get(p).jsonld.includes('"Event"')) fail(`${p}: release page without Event JSON-LD`)
+  const guides = crawledPaths.filter((p) => /^\/guides\/[a-z0-9-]+\/$/.test(p))
+  if (!guides.length) fail('no guide pages reachable from /guides/')
+  for (const p of guides) if (!pageInfo.get(p).jsonld.includes('"Article"')) fail(`${p}: guide without Article JSON-LD`)
+  // Calendar feeds: files, so no trailing slash and no redirect.
+  for (const path of ['/releases/calendar.ics', '/releases/pokemon/calendar.ics', '/releases/one-piece/calendar.ics']) {
+    const r = await get(path)
+    if (r.status !== 200) fail(`${path}: HTTP ${r.status} (expected 200 without a redirect)`)
+    else {
+      if (!r.type.startsWith('text/calendar')) fail(`${path}: content-type ${r.type} (expected text/calendar)`)
+      if (!r.body.startsWith('BEGIN:VCALENDAR\r\n')) fail(`${path}: not an iCalendar body with CRLF line endings`)
+      if (!/noindex/i.test(r.headers.get('x-robots-tag') ?? '')) fail(`${path}: missing X-Robots-Tag: noindex`)
+    }
+  }
+  // A file URL with a trailing slash is a duplicate; it should 301 to the file (or 404).
+  const slashed = await get('/releases/calendar.ics/')
+  if (slashed.status === 200) warn('/releases/calendar.ics/: served as 200; should 301 to /releases/calendar.ics (middleware)')
+  // Unknown slugs are real 404s, not soft 404s.
+  for (const path of ['/releases/pokemon/no-such-release-xyz/', '/guides/no-such-guide-xyz/', '/releases/not-a-game/']) {
+    const r = await get(path)
+    if (r.status !== 404) fail(`${path}: expected 404, got ${r.status}`)
+  }
 }
 
 const crawled = await crawl()
 const listed = await checkSitemaps()
 await checkNormalisation()
+await checkNewRoutes()
 console.log(`Crawled ${crawled} pages; ${listed} sitemap URLs; ${seenTitles.size} indexable pages.`)
+if (warnings.length) console.warn(`\n${warnings.length} warning(s):\n - ${warnings.join('\n - ')}`)
 if (errors.length) {
   console.error(`\n${errors.length} SEO problem(s):\n - ${errors.join('\n - ')}`)
   process.exit(1)

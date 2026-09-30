@@ -140,7 +140,28 @@ export interface RetailerRow {
   slug: string
   name: string
   baseUrl: string
-  enabled: boolean
+  enabled: boolean // our monitor is running
+  monitored: boolean // a monitor exists (false = member sightings only)
+}
+
+/** An eBay listing well under market value (found via eBay's Browse API). */
+export interface DealRow {
+  id: number
+  itemId: string
+  card: CardRow
+  gradeKey: string
+  title: string
+  buyingOption: 'FIXED_PRICE' | 'AUCTION'
+  priceAud: number
+  shippingAud: number | null
+  marketAud: number
+  discountPct: number
+  bidCount: number | null
+  endTime: string | null
+  url: string // affiliate-tracked when EPN is configured
+  imageUrl: string | null
+  foundAt: string
+  goneAt: string | null
 }
 
 export const AU_STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'] as const
@@ -282,6 +303,8 @@ export interface Repository {
   /** Published release calendar entries, soonest first; TBC last. */
   releases(filter?: { game?: Game; from?: string }): Promise<ReleaseRow[]>
   getRelease(game: Game, slug: string): Promise<ReleaseRow | null>
+  /** eBay deals, newest first. Anonymous/Free readers only get deals past their public delay (RLS). */
+  deals(filter?: { limit?: number }): Promise<DealRow[]>
   articles(filter?: { category?: string; limit?: number }): Promise<ArticleRow[]>
   getArticle(year: number, slug: string): Promise<ArticleRow | null>
   articlesForCard(cardId: string): Promise<ArticleRow[]>
