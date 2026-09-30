@@ -7,10 +7,12 @@
 import { DEFAULT_RULES } from '@/lib/domain/rules'
 import type { ListingStats } from '@/lib/domain/buyButton'
 import { slugify, type Game, type Lang } from '@/lib/seo/urls'
+import { sortReleases } from './drops'
 import type {
   ArticleRow,
   CardRow,
   DropRow,
+  ReleaseRow,
   GradeRow,
   HistoryPoint,
   ListingRow,
@@ -189,16 +191,44 @@ function mkListing(id: number, seller: string, cardId: string, grader: string, g
 }
 
 const RETAILERS: RetailerRow[] = [
-  { slug: 'premium-bandai-au', name: 'Premium Bandai AU', baseUrl: 'https://p-bandai.com/au', enabled: false },
-  { slug: 'jb-hi-fi', name: 'JB Hi-Fi', baseUrl: 'https://www.jbhifi.com.au', enabled: false },
-  { slug: 'eb-games', name: 'EB Games', baseUrl: 'https://www.ebgames.com.au', enabled: false },
-  { slug: 'big-w', name: 'BIG W', baseUrl: 'https://www.bigw.com.au', enabled: false },
-  { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false },
+  { slug: 'premium-bandai-au', name: 'Premium Bandai AU', baseUrl: 'https://p-bandai.com/au', enabled: false, monitored: true },
+  { slug: 'jb-hi-fi', name: 'JB Hi-Fi', baseUrl: 'https://www.jbhifi.com.au', enabled: false, monitored: true },
+  { slug: 'eb-games', name: 'EB Games', baseUrl: 'https://www.ebgames.com.au', enabled: false, monitored: true },
+  { slug: 'big-w', name: 'BIG W', baseUrl: 'https://www.bigw.com.au', enabled: false, monitored: true },
+  { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false, monitored: true },
+  { slug: 'target-au', name: 'Target', baseUrl: 'https://www.target.com.au', enabled: false, monitored: true },
+  { slug: 'toymate', name: 'Toymate', baseUrl: 'https://www.toymate.com.au', enabled: false, monitored: false },
+  { slug: 'local-game-store', name: 'Independent game store', baseUrl: 'https://tcgtracker.com.au', enabled: false, monitored: false },
 ]
 
 const DROPS: DropRow[] = [
-  { id: 1, retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Mega Evolutions Elite Trainer Box', url: 'https://www.jbhifi.com.au/', eventType: 'IN_STOCK', priceAud: 89.95, rrpAud: 89.95, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T21:02:00Z' },
-  { id: 2, retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster PRB-02', url: 'https://p-bandai.com/au', eventType: 'PREORDER_OPEN', priceAud: 229, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 4.6, game: 'one-piece', occurredAt: '2026-09-25T01:00:00Z' },
+  { id: 1, source: 'monitor', retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Mega Evolutions Elite Trainer Box', url: 'https://www.jbhifi.com.au/', eventType: 'IN_STOCK', priceAud: 89.95, rrpAud: 89.95, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T21:02:00Z', sighting: null },
+  {
+    id: 3, source: 'member', retailerSlug: 'kmart', retailerName: 'Kmart', title: 'Pokémon TCG booster bundles (demo sighting)', url: null, eventType: 'IN_STOCK', priceAud: 39, rrpAud: 39, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T08:40:00Z',
+    sighting: { id: 1, channel: 'in_store', state: 'VIC', suburb: 'Chadstone', storeName: null, quantity: 'some', purchaseLimit: 2, photoUrl: null, note: 'Restocked in the toy aisle end cap.', confirmations: 3, goneAt: null, reporter: null },
+  },
+  {
+    id: 4, source: 'member', retailerSlug: 'big-w', retailerName: 'BIG W', title: 'One Piece Card Game booster box (demo sighting)', url: null, eventType: 'IN_STOCK', priceAud: 199, rrpAud: 199, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'one-piece', occurredAt: '2026-09-25T23:15:00Z',
+    sighting: { id: 2, channel: 'in_store', state: 'NSW', suburb: 'Parramatta', storeName: 'Westfield Parramatta', quantity: 'few', purchaseLimit: 1, photoUrl: null, note: null, confirmations: 2, goneAt: '2026-09-26T02:00:00Z', reporter: null },
+  },
+  { id: 2, source: 'monitor', retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster PRB-02', url: 'https://p-bandai.com/au', eventType: 'PREORDER_OPEN', priceAud: 229, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 4.6, game: 'one-piece', occurredAt: '2026-09-25T01:00:00Z', sighting: null },
+]
+
+const RELEASES: ReleaseRow[] = [
+  {
+    id: 'rel-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-pokemon-expansion', title: 'Demo Pokémon TCG expansion', kind: 'set_release',
+    releaseDate: '2026-11-06', datePrecision: 'day', confidence: 'official', set: null,
+    products: [{ name: 'Booster box (36 packs)', type: 'booster-box', rrpAud: null }, { name: 'Elite Trainer Box', type: 'etb', rrpAud: 89.95 }],
+    retailerSlugs: ['jb-hi-fi', 'big-w', 'kmart', 'target-au'], summary: 'Demo entry showing how a release looks on the calendar.', bodyMd: null,
+    sourceName: 'Demo data', sourceUrl: null, updatedAt: '2026-09-28T00:00:00Z',
+  },
+  {
+    id: 'rel-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-one-piece-booster', title: 'Demo One Piece Card Game booster', kind: 'set_release',
+    releaseDate: '2026-11-01', datePrecision: 'month', confidence: 'retailer', set: null,
+    products: [{ name: 'Booster box (24 packs)', type: 'booster-box', rrpAud: null }],
+    retailerSlugs: ['eb-games', 'premium-bandai-au'], summary: 'Demo entry with month precision.', bodyMd: null,
+    sourceName: 'Demo data', sourceUrl: null, updatedAt: '2026-09-28T00:00:00Z',
+  },
 ]
 
 const ARTICLES: ArticleRow[] = [
@@ -273,6 +303,7 @@ export const demoRepository: Repository = {
           floorAud: d.floorAud,
           basis: LISTINGS.some((l) => l.cardId === card.id && l.gradeKey === gradeKey && l.status === 'active') ? 'marketplace_ask' : 'external_ask',
           marketCapAud: d.marketCapAud,
+          spark7d: history(card.id + gradeKey + 'sp', d.floorAud, 8).map((h) => h.value),
           change1d: Math.round((rand(card.id + 'd1') - 0.5) * 60) / 10,
           change7d: Math.round((rand(card.id + 'd7') - 0.5) * 200) / 10,
           change30d: Math.round((rand(card.id + 'd30') - 0.5) * 400) / 10,
@@ -280,11 +311,11 @@ export const demoRepository: Repository = {
         } satisfies MarketRow
       }),
     )
-    rows.sort((a, b) => b.marketCapAud - a.marketCapAud)
+    rows.sort((a, b) => (b.marketCapAud ?? b.floorAud) - (a.marketCapAud ?? a.floorAud))
     rows = rows.map((r, i) => ({ ...r, rank: i + 1 }))
     const key: Record<MarketQuery['sort'], (r: MarketRow) => number> = {
-      market_cap: (r) => r.marketCapAud,
-      population: (r) => r.population,
+      market_cap: (r) => r.marketCapAud ?? r.floorAud,
+      population: (r) => r.population ?? -1,
       floor: (r) => r.floorAud,
       change_7d: (r) => r.change7d ?? 0,
       change_30d: (r) => r.change30d ?? 0,
@@ -308,6 +339,10 @@ export const demoRepository: Repository = {
   async marketCapHistory(cardId, gradeKey) {
     const card = CARDS.find((c) => c.id === cardId)
     return card ? history(cardId + 'mc', gradeData(card, gradeKey).marketCapAud) : []
+  },
+  async valueHistory(cardId, gradeKey) {
+    const card = CARDS.find((c) => c.id === cardId)
+    return card ? history(cardId + 'val' + gradeKey, gradeData(card, gradeKey).floorAud, 90) : []
   },
   async listingStats(cardIds) {
     const out = new Map<string, ListingStats>()
@@ -360,7 +395,36 @@ export const demoRepository: Repository = {
     return RETAILERS
   },
   async drops(filter) {
-    return DROPS.filter((d) => !filter?.retailerSlug || d.retailerSlug === filter.retailerSlug).slice(0, filter?.limit ?? 50)
+    return DROPS.filter(
+      (d) =>
+        (!filter?.retailerSlug || d.retailerSlug === filter.retailerSlug) &&
+        (!filter?.state || d.sighting?.state === filter.state) &&
+        (!filter?.game || d.game === filter.game) &&
+        (!filter?.source || d.source === filter.source),
+    ).slice(0, filter?.limit ?? 50)
+  },
+  async scoutLeaderboard() {
+    return [
+      { username: 'demo-scout', confirmed: 12, states: ['VIC'] },
+      { username: 'sydney-pulls', confirmed: 7, states: ['NSW'] },
+    ]
+  },
+  async releases(filter) {
+    return sortReleases(RELEASES.filter((r) => (!filter?.game || r.game === filter.game) && (!filter?.from || !r.releaseDate || r.releaseDate >= filter.from)))
+  },
+  async deals() {
+    const card = CARDS[0]
+    if (!card) return []
+    return [
+      {
+        id: 1, itemId: 'demo-1', card, gradeKey: 'psa-10', title: `${card.name} ${card.number} PSA 10 (demo deal)`, buyingOption: 'FIXED_PRICE',
+        priceAud: 720, shippingAud: 12, marketAud: 1000, discountPct: 28, bidCount: null, endTime: null,
+        url: 'https://www.ebay.com.au/', imageUrl: null, foundAt: '2026-09-26T09:00:00Z', goneAt: null,
+      },
+    ]
+  },
+  async getRelease(game, slug) {
+    return RELEASES.find((r) => r.game === game && r.slug === slug) ?? null
   },
   async articles(filter) {
     return ARTICLES.filter((a) => !filter?.category || a.category === filter.category).slice(0, filter?.limit ?? 50)

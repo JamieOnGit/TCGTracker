@@ -75,6 +75,22 @@ describe('tier gating', () => {
     expect(r.freeQuota).toBe(7)
     expect(r.premiumMonthlyCents).toBe(999)
   })
+  it('reads sighting and scout settings, keeping defaults for bad values', () => {
+    expect(DEFAULT_RULES.sightings).toMatchObject({ confirmationsNeeded: 2, confirmationsWithPhoto: 1, trustedAfter: 5, rewardEvery: 10, rewardDays: 30 })
+    const r = rulesFromSettings([
+      { key: 'sightings.confirmations_needed', value: 3 },
+      { key: 'scouts.reward_every', value: '12' },
+      { key: 'scouts.reward_days', value: -1 },
+      { key: 'sightings.trusted_after', value: 'lots' },
+      { key: 'sightings.enabled', value: false },
+    ])
+    expect(r.sightings.confirmationsNeeded).toBe(3)
+    expect(r.sightings.rewardEvery).toBe(12)
+    expect(r.sightings.rewardDays).toBe(30)
+    expect(r.sightings.trustedAfter).toBe(5)
+    expect(r.sightings.enabled).toBe(false)
+    expect(DEFAULT_RULES.sightings.enabled).toBe(true)
+  })
 })
 
 describe('billing webhook reducer', () => {
@@ -136,7 +152,7 @@ describe('Buy button', () => {
   it('links to the card marketplace page sorted by price when listings exist', () => {
     const b = resolveBuyButton({ card, gradeKey: 'psa-10', stats, externalFallback: false })
     expect(b).toMatchObject({ kind: 'listings', count: 2, fromAud: 4650, href: '/marketplace/pokemon/en/151/199-charizard-ex/?sort=price-asc&grade=psa-10' })
-    expect(b.label).toBe('Buy · 2 from $4,650')
+    expect(b.label).toBe('Buy · 2 from $4,650') // component renders it with A$
   })
   it('all grades sums across grades', () => {
     expect(resolveBuyButton({ card, gradeKey: null, stats, externalFallback: false })).toMatchObject({ count: 3, fromAud: 1450 })
@@ -151,5 +167,28 @@ describe('Buy button', () => {
   it('never counts another card (JP and EN are different card_ids)', () => {
     const jp: CardRef = { ...card, id: 'c1-jp', lang: 'jp' }
     expect(resolveBuyButton({ card: jp, gradeKey: 'psa-10', stats, externalFallback: false }).kind).toBe('none')
+  })
+})
+
+describe('eBay links', async () => {
+  const { ebaySearchUrl, ebaySearchQuery, DEFAULT_EBAY } = await import('@/lib/domain/ebay')
+  const q = { cardId: 'c1', name: 'Charizard ex', number: '199', setName: '151', lang: 'en' as const, game: 'pokemon' as const, gradeKey: 'psa-10' }
+  it('searches eBay Australia for the exact card, grade and language', () => {
+    expect(ebaySearchQuery(q)).toBe('Charizard ex 199 151 PSA 10')
+    expect(ebaySearchQuery({ ...q, lang: 'jp', number: '095' })).toBe('Charizard ex 95 151 Japanese PSA 10')
+    const url = new URL(ebaySearchUrl(q)!)
+    expect(url.host).toBe('www.ebay.com.au')
+    expect(url.searchParams.get('_sacat')).toBe('183454')
+    expect(url.searchParams.get('campid')).toBeNull()
+  })
+  it('applies EPN tracking to every card once a valid campaign id is saved', () => {
+    const url = new URL(ebaySearchUrl(q, { ...DEFAULT_EBAY, affiliateEnabled: true, campaignId: '5338123456' })!)
+    expect(url.searchParams.get('campid')).toBe('5338123456')
+    expect(url.searchParams.get('mkrid')).toBe('705-53470-19255-0')
+    expect(url.searchParams.get('customid')).toBe('tcgtracker-c1')
+  })
+  it('ignores an invalid campaign id and respects the off switch', () => {
+    expect(new URL(ebaySearchUrl(q, { ...DEFAULT_EBAY, affiliateEnabled: true, campaignId: 'abc' })!).searchParams.get('campid')).toBeNull()
+    expect(ebaySearchUrl(q, { ...DEFAULT_EBAY, enabled: false })).toBeNull()
   })
 })

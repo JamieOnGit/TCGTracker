@@ -3,43 +3,45 @@ import { JsonLd } from '@/components/JsonLd'
 import { dataset } from '@/lib/seo/jsonld'
 import { StaticPage, staticMeta } from '@/lib/staticPage'
 
-export const metadata = staticMeta('/methodology/', 'Methodology – How We Calculate Graded Card Market Cap', 'Exactly how market cap, floor price, outliers, FX and refresh times are calculated, with sources and attribution.')
+export const metadata = staticMeta('/methodology/', 'Methodology – How TCGTracker Calculates Card Values & Market Cap in AUD', 'Exactly how TCGTracker calculates graded card values, market cap, price changes and AUD conversion, where the data comes from, and how often it updates.')
 
-// Keep in step with workers/tcgworkers/market/floor.py and market_cap.py.
+// Keep in step with workers/tcgworkers/market/floor.py, market_cap.py and sources/pricing/pricecharting.py.
 export default function Methodology() {
   return (
-    <StaticPage path="/methodology/" h1="Methodology">
+    <StaticPage path="/methodology/" h1="Methodology" eyebrow="How the numbers work" lead="Every figure on TCGTracker comes from a documented rule. Here they are.">
       <h2>Market cap</h2>
-      <p><code>market cap (card, grade) = graded population (card, grade) × floor price (card, grade)</code></p>
-      <p>The default view is PSA 10: PSA 10 population × PSA 10 floor price. We also show per-grade market caps for other grades we have data for, and a card total (the sum across grades) as a secondary figure. Japanese and English versions of a card are separate cards with separate populations, prices and market caps.</p>
-      <h2>Floor price</h2>
-      <p>The floor is the lowest current asking price for that exact card, language and grade. Every floor carries its source, the time it was observed and how many asks it was drawn from.</p>
+      <p><code>market cap (card, grade) = graded population (card, grade) × value (card, grade)</code></p>
+      <p>We show PSA 10 by default, with other grades on each card page. Japanese and English printings are separate cards with their own populations, values and market caps. Until licensed PSA population data is connected, rankings are ordered by PSA 10 value and the market-cap column shows “—”.</p>
+      <h2>Value (the floor)</h2>
+      <p>The value of a card in a grade is the lowest current asking price for that exact card, language and grade:</p>
       <ol>
-        <li>If there are active, approved listings on our marketplace, the floor is the lowest of them.</li>
-        <li>Otherwise it is the lowest current ask from our approved external pricing source. Asks older than 7 days are ignored.</li>
-        <li>If there is no valid ask, we use the most recent sale and label it &quot;last sale&quot;.</li>
-        <li>If there is no data at all we show &quot;—&quot; and leave the card out of the ranking.</li>
+        <li>If there are live, approved listings on TCGTracker, it is the lowest of them.</li>
+        <li>Otherwise it is the current market value from our pricing partner, PriceCharting, converted to AUD.</li>
+        <li>If there is no current price, we use the most recent sale and label it “last sale”.</li>
+        <li>With no data at all we show “—” and leave the card out of the rankings.</li>
       </ol>
+      <p>PriceCharting’s PSA 10 figure is PSA-specific. Its grade 9 figure combines PSA 9 and BGS 9 sales, so we label it “Grade 9”.</p>
       <h2>Outliers</h2>
-      <p>Asks below 50% of the card&apos;s 30-day median sold price are ignored as likely errors or scams, once there are at least 3 sales in that window. Staff can also exclude individual data points; excluded points are logged.</p>
-      <h2>Currency</h2>
-      <p>Everything is shown in Australian dollars. Prices in other currencies are converted with the Reserve Bank of Australia&apos;s daily indicative rate (table F11.1). We store the original price, currency and the rate and date used.</p>
-      <h2>Refresh times</h2>
+      <p>Asks below 50% of a card’s 30-day median sale price are ignored as likely errors or scams, once there are at least 3 sales in that window. Staff can exclude individual data points; every exclusion is logged.</p>
+      <h2>Australian dollars</h2>
+      <p>All prices are in AUD. USD prices are converted with the Reserve Bank of Australia’s daily indicative rate (table F11.1, CC BY 4.0). We store the original price, currency and the rate and date used.</p>
+      <h2>How often it updates</h2>
       <ul>
-        <li>Floor prices: every 4 hours</li>
-        <li>Population: daily (or as often as the source allows)</li>
-        <li>FX rates: daily</li>
-        <li>Market cap snapshots: daily, used for 7-day and 30-day changes</li>
+        <li>Values: every 4 hours</li>
+        <li>Population: daily, once a licensed source is connected</li>
+        <li>Exchange rates: daily</li>
+        <li>History and 7/30-day changes: one snapshot per day (Melbourne time)</li>
+        <li>Retail drops: every 1–2 minutes for watched products, every 5 minutes for discovery, 24/7</li>
       </ul>
-      <h2>Sources and attribution</h2>
+      <h2>Sources</h2>
       <ul>
-        <li>Population: PSA — licence pending, not yet live.</li>
-        <li>External prices: pending selection and approval.</li>
-        <li>Marketplace asks and sales: this site.</li>
-        <li>FX: Reserve Bank of Australia, CC BY 4.0.</li>
+        <li>Prices: PriceCharting (with permission), and the TCGTracker marketplace</li>
+        <li>Population: PSA (licence pending)</li>
+        <li>Exchange rates: Reserve Bank of Australia</li>
+        <li>Retail availability: the retailers’ own public product pages</li>
       </ul>
-      <p>Data licence and downloads: <Link href="/data/">/data/</Link>. API: <Link href="/api/">/api/</Link>.</p>
-      <JsonLd data={dataset({ name: 'Graded card market cap methodology', description: 'Definitions for market cap, floor price, outliers and FX.', path: '/methodology/', dateModified: '2026-09-27' })} />
+      <p>Downloads and licence: <Link href="/data/">Data</Link>. API: <Link href="/api/">API</Link>. Values are indicative, not financial advice.</p>
+      <JsonLd data={dataset({ name: 'TCGTracker methodology', description: 'Definitions for card value, market cap, outliers and AUD conversion.', path: '/methodology/', dateModified: '2026-09-28' })} />
     </StaticPage>
   )
 }

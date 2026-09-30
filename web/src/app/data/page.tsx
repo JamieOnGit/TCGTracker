@@ -6,7 +6,7 @@ export const metadata = staticMeta('/data/', 'Open Data – Daily Graded Card Ma
 
 export default function Data() {
   return (
-    <StaticPage path="/data/" h1="Data downloads">
+    <StaticPage path="/data/" h1="Data downloads" eyebrow="TCGTracker">
       <p>Daily market cap snapshots and set summaries, as CSV and JSON. Downloads open once our data sources are live and their licences confirm redistribution is allowed. Third-party data is only included where its terms permit.</p>
       <h2>Licence</h2>
       <p>Our own data (marketplace asks and sales, derived market caps where upstream terms allow) will be published under CC BY 4.0: credit this site with a link back.</p>

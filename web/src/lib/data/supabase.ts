@@ -2,7 +2,8 @@ import 'server-only'
 import { rulesFromSettings } from '@/lib/domain/rules'
 import { supabasePublic } from '@/lib/supabase/server'
 import type { Game, Lang } from '@/lib/seo/urls'
-import type { ArticleRow, CardRow, DropRow, GradeRow, ListingRow, MarketRow, Repository, SetRow } from './types'
+import { DROP_SELECT, RELEASE_SELECT, sortReleases, toDrop, toRelease } from './drops'
+import type { ArticleRow, CardRow, GradeRow, ListingRow, MarketRow, Repository, SetRow } from './types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come from PostgREST as loosely typed JSON;
    generate types with `supabase gen types typescript` once the project exists and tighten this. */
@@ -114,14 +115,18 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toCard)
     },
     async marketCap(query) {
-      const sortCol = { market_cap: 'market_cap_aud', population: 'population', floor: 'floor_aud', change_7d: 'market_cap_7d_ago', change_30d: 'market_cap_30d_ago' }[query.sort]
+      const sortCol = { market_cap: 'rank_value', population: 'population', floor: 'floor_aud', change_7d: 'floor_7d_ago', change_30d: 'floor_30d_ago' }[query.sort]
       let q = sb.from('market_cap_rankings').select('*', { count: 'exact' })
       if (query.gradeKey !== 'all') q = q.eq('grade_key', query.gradeKey)
       if (query.game) q = q.eq('game', query.game)
       if (query.lang) q = q.eq('lang', query.lang)
       if (query.setId) q = q.eq('set_id', query.setId)
       const from = (query.page - 1) * query.pageSize
-      const { data, count } = await q.order(sortCol, { ascending: query.order === 'asc' }).range(from, from + query.pageSize - 1)
+      if (query.q) {
+        const matches = await this.searchCards(query.q, 200)
+        q = q.in('card_id', matches.map((c) => c.id))
+      }
+      const { data, count } = await q.order(sortCol, { ascending: query.order === 'asc', nullsFirst: false }).range(from, from + query.pageSize - 1)
       const rows = data ?? []
       const cards = await this.getCardsByIds(rows.map((r: any) => r.card_id))
       const byId = new Map(cards.map((c) => [c.id, c]))
@@ -134,10 +139,12 @@ export function supabaseRepository(): Repository {
           population: r.population,
           floorAud: Number(r.floor_aud),
           basis: r.basis,
-          marketCapAud: Number(r.market_cap_aud),
-          change1d: pct(Number(r.market_cap_aud), r.market_cap_1d_ago && Number(r.market_cap_1d_ago)),
-          change7d: pct(Number(r.market_cap_aud), r.market_cap_7d_ago && Number(r.market_cap_7d_ago)),
-          change30d: pct(Number(r.market_cap_aud), r.market_cap_30d_ago && Number(r.market_cap_30d_ago)),
+          marketCapAud: r.market_cap_aud === null ? null : Number(r.market_cap_aud),
+          spark7d: (r.spark_7d ?? []).map(Number),
+          // Value change (the floor) — the honest measure while population is missing.
+          change1d: pct(Number(r.floor_aud), r.floor_1d_ago && Number(r.floor_1d_ago)),
+          change7d: pct(Number(r.floor_aud), r.floor_7d_ago && Number(r.floor_7d_ago)),
+          change30d: pct(Number(r.floor_aud), r.floor_30d_ago && Number(r.floor_30d_ago)),
           asOf: r.as_of,
         }))
       return { rows: out, total: count ?? out.length, page: query.page, pageSize: query.pageSize, asOf: rows[0]?.as_of ?? null }
@@ -173,6 +180,10 @@ export function supabaseRepository(): Repository {
     async marketCapHistory(cardId, gradeKey) {
       const { data } = await sb.from('market_cap_snapshots').select('date,market_cap_aud').match({ card_id: cardId, grade_key: gradeKey }).order('date')
       return (data ?? []).map((r: any) => ({ date: r.date, value: Number(r.market_cap_aud) }))
+    },
+    async valueHistory(cardId, gradeKey) {
+      const { data } = await sb.from('market_cap_snapshots').select('date,floor_aud').match({ card_id: cardId, grade_key: gradeKey }).order('date')
+      return (data ?? []).map((r: any) => ({ date: r.date, value: Number(r.floor_aud) }))
     },
     async listingStats(cardIds) {
       if (!cardIds.length) return []
@@ -217,32 +228,62 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toListing)
     },
     async retailers() {
-      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled').order('name')
-      return (data ?? []).map((r: any) => ({ slug: r.slug, name: r.name, baseUrl: r.base_url, enabled: r.enabled }))
+      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored').order('name')
+      return (data ?? []).map((r: any) => ({ slug: r.slug, name: r.name, baseUrl: r.base_url, enabled: r.enabled, monitored: r.monitored !== false }))
     },
     async drops(filter) {
       // Anonymous client: RLS only returns events past their public_at delay.
-      let q = sb
-        .from('drop_events')
-        .select('id,event_type,price_aud,rrp_aud,rrp_tag,rrp_delta_pct,occurred_at,retail_products!inner(title,url,game,retailers!inner(slug,name))')
-        .order('occurred_at', { ascending: false })
-        .limit(filter?.limit ?? 50)
-      if (filter?.retailerSlug) q = q.eq('retail_products.retailers.slug', filter.retailerSlug)
+      let select = DROP_SELECT
+      if (filter?.state || filter?.source === 'member') select = select.replace('sightings!drop_events_sighting_id_fkey(', 'sightings!drop_events_sighting_id_fkey!inner(')
+      if (filter?.retailerSlug) select = select.replace('retailers(', 'retailers!inner(')
+      let q = sb.from('drop_events').select(select).order('occurred_at', { ascending: false }).limit(filter?.limit ?? 50)
+      if (filter?.retailerSlug) q = q.eq('retailers.slug', filter.retailerSlug)
+      if (filter?.state) q = q.eq('sightings.state', filter.state)
+      if (filter?.game) q = q.eq('game', filter.game)
+      if (filter?.source === 'monitor') q = q.is('sighting_id', null)
       const { data } = await q
-      return (data ?? []).map((r: any): DropRow => ({
+      return (data ?? []).map(toDrop)
+    },
+    async scoutLeaderboard(days, limit = 20) {
+      const { data } = await sb.rpc('scout_leaderboard', { p_days: days, p_limit: limit })
+      return (data ?? []).map((r: any) => ({ username: r.username, confirmed: r.confirmed, states: r.states ?? [] }))
+    },
+    async releases(filter) {
+      let q = sb.from('release_events').select(RELEASE_SELECT).limit(500)
+      if (filter?.game) q = q.eq('game', filter.game)
+      if (filter?.from) q = q.or(`release_date.gte.${filter.from},release_date.is.null`)
+      const { data } = await q
+      return sortReleases((data ?? []).map(toRelease))
+    },
+    async deals(filter) {
+      const { data } = await sb
+        .from('ebay_deals')
+        .select(`*,cards!inner(${CARD_SELECT})`)
+        .is('gone_at', null)
+        .order('found_at', { ascending: false })
+        .limit(filter?.limit ?? 50)
+      return (data ?? []).map((r: any) => ({
         id: r.id,
-        retailerSlug: r.retail_products.retailers.slug,
-        retailerName: r.retail_products.retailers.name,
-        title: r.retail_products.title,
-        url: r.retail_products.url,
-        eventType: r.event_type,
-        priceAud: r.price_aud === null ? null : Number(r.price_aud),
-        rrpAud: r.rrp_aud === null ? null : Number(r.rrp_aud),
-        rrpTag: r.rrp_tag,
-        rrpDeltaPct: r.rrp_delta_pct === null ? null : Number(r.rrp_delta_pct),
-        game: r.retail_products.game as Game | null,
-        occurredAt: r.occurred_at,
+        itemId: r.item_id,
+        card: toCard(r.cards),
+        gradeKey: r.grade_key,
+        title: r.title,
+        buyingOption: r.buying_option,
+        priceAud: Number(r.price_aud),
+        shippingAud: r.shipping_aud === null ? null : Number(r.shipping_aud),
+        marketAud: Number(r.market_aud),
+        discountPct: Number(r.discount_pct),
+        bidCount: r.bid_count,
+        endTime: r.end_time,
+        url: r.url,
+        imageUrl: r.image_url,
+        foundAt: r.found_at,
+        goneAt: r.gone_at,
       }))
+    },
+    async getRelease(game, slug) {
+      const { data } = await sb.from('release_events').select(RELEASE_SELECT).eq('game', game).eq('slug', slug).maybeSingle()
+      return data ? toRelease(data) : null
     },
     async articles(filter) {
       let q = sb.from('articles').select('*, article_tags(*)').eq('status', 'published').order('published_at', { ascending: false }).limit(filter?.limit ?? 50)

@@ -1,0 +1,50 @@
+name: Deploy database
+
+# Applies supabase/migrations/ to the production Supabase project.
+# Run it from GitHub: Actions -> "Deploy database" -> Run workflow -> type "deploy".
+# Needs three repository secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_ACCESS_TOKEN  personal access token (supabase.com/dashboard/account/tokens)
+#   SUPABASE_PROJECT_REF   Project ID (Project Settings -> General)
+#   SUPABASE_DB_PASSWORD   the database password chosen when the project was created
+# Only migrations are applied; supabase/seed.sql is local preview data and is never pushed.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to apply the migrations to production'
+        required: true
+        default: ''
+
+concurrency:
+  group: deploy-database
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Apply migrations to production
+    if: github.event.inputs.confirm == 'deploy'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Check the secrets are set
+        run: |
+          missing=0
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF; do
+            if [ -z "${!v}" ]; then echo "::error::Repository secret $v is not set"; missing=1; fi
+          done
+          exit $missing
+      - name: Link the project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Show what will be applied
+        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+      - name: Apply migrations
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+      - name: Migration status
+        run: supabase migration list --password "$SUPABASE_DB_PASSWORD"

@@ -1,58 +1,80 @@
 import Link from 'next/link'
 import { siteName } from '@/lib/seo/urls'
+import { AccountArea, HeaderScroll, MobileMenu, NavLinks, TabBar, ThemeToggle } from './ChromeClient'
 
-const NAV = [
-  { href: '/', label: 'Home' },
-  { href: '/marketplace/', label: 'Marketplace' },
-  { href: '/drops/', label: 'Drops' },
-  { href: '/news/', label: 'News' },
-  { href: '/cards/', label: 'Cards' },
-  { href: '/premium/', label: 'Premium' },
+export const NAV = [
+  { href: '/', label: 'Market', match: ['/', '/market-cap/'] },
+  { href: '/cards/', label: 'Cards', match: ['/cards/', '/releases/'] },
+  { href: '/marketplace/', label: 'Marketplace', match: ['/marketplace/', '/sellers/'] },
+  { href: '/drops/', label: 'Drops', match: ['/drops/', '/deals/'] },
+  { href: '/news/', label: 'News', match: ['/news/', '/guides/'] },
+  { href: '/premium/', label: 'Premium', match: ['/premium/'] },
 ]
 
 export function SiteHeader() {
   return (
-    <header className="site-header">
-      <Link href="/" className="logo">{siteName()}</Link>
-      <nav aria-label="Primary">
-        <ul>
-          {NAV.map((n) => (
-            <li key={n.href}><Link href={n.href}>{n.label}</Link></li>
-          ))}
-        </ul>
-      </nav>
-      <form action="/search/" role="search">
-        <label htmlFor="site-q" className="sr-only">Search cards</label>
-        <input id="site-q" name="q" type="search" placeholder="Search cards" />
-      </form>
-      <nav aria-label="Account">
-        <ul>
-          <li><Link href="/account/">Dashboard</Link></li>
-          <li><Link href="/account/listings/">My Listings</Link></li>
-          <li><Link href="/messages/">Messages</Link></li>
-          <li><Link href="/account/alerts/">Alerts</Link></li>
-          <li><Link href="/account/settings/">Settings</Link></li>
-        </ul>
-      </nav>
+    <header className="site-header" id="site-header">
+      <HeaderScroll />
+      <div className="container-x flex h-full items-center gap-6">
+        <Link href="/" className="wordmark" aria-label={`${siteName()} home`}>
+          <span className="holo-text">TCG</span>Tracker
+        </Link>
+        <nav aria-label="Primary" className="hidden flex-1 justify-center gap-7 lg:flex">
+          <NavLinks items={NAV} />
+        </nav>
+        <div className="ml-auto flex items-center gap-3 lg:ml-0">
+          <form action="/search/" role="search" className="hidden w-60 md:block">
+            <label htmlFor="site-q" className="sr-only">Search cards</label>
+            <input id="site-q" name="q" type="search" className="search-field" placeholder="Search cards, sets" autoComplete="off" />
+          </form>
+          <AccountArea />
+          <MobileMenu items={NAV} />
+        </div>
+      </div>
     </header>
   )
 }
 
 export function SiteFooter() {
+  const cols: { title: string; links: [string, string][] }[] = [
+    { title: 'Market', links: [['Market cap', '/'], ['Pokémon', '/market-cap/pokemon/'], ['One Piece', '/market-cap/one-piece/'], ['Methodology', '/methodology/'], ['Data & API', '/data/']] },
+    { title: 'Cards', links: [['Pokémon English', '/cards/pokemon/en/'], ['Pokémon Japanese', '/cards/pokemon/jp/'], ['One Piece English', '/cards/one-piece/en/'], ['One Piece Japanese', '/cards/one-piece/jp/'], ['Release calendar', '/releases/']] },
+    { title: 'Buy & sell', links: [['Marketplace', '/marketplace/'], ['Sell a card', '/account/listings/new/'], ['Retail drops', '/drops/'], ['eBay deals', '/deals/'], ['Premium', '/premium/']] },
+    { title: 'TCGTracker', links: [['About', '/about/'], ['Contact', '/contact/'], ['News', '/news/'], ['Guides', '/guides/'], ['Terms', '/terms/'], ['Privacy', '/privacy/']] },
+  ]
   return (
     <footer className="site-footer">
-      <nav aria-label="Footer">
-        <ul>
-          {['methodology', 'data', 'api', 'about', 'contact', 'terms', 'privacy'].map((p) => (
-            <li key={p}><Link href={`/${p}/`}>{p === 'api' ? 'API' : p[0]!.toUpperCase() + p.slice(1)}</Link></li>
+      <div className="container-x">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="wordmark">TCGTracker</Link>
+            <p className="muted mt-4 text-sm">Australia&apos;s graded Pokémon and One Piece card market, in AUD.</p>
+          </div>
+          {cols.map((c) => (
+            <nav key={c.title} aria-label={c.title}>
+              <p className="eyebrow">{c.title}</p>
+              <ul>
+                {c.links.map(([label, href]) => (
+                  <li key={href}><Link href={href}>{label}</Link></li>
+                ))}
+              </ul>
+            </nav>
           ))}
-        </ul>
-      </nav>
-      <p>
-        Pokémon and One Piece are trademarks of their respective owners (Nintendo, Creatures, GAME FREAK, The Pokémon
-        Company; Eiichiro Oda, Shueisha, Toei Animation, Bandai). {siteName()} is an independent Australian site and is not
-        affiliated with, endorsed or sponsored by any of them. Names are used descriptively.
-      </p>
+        </div>
+        <div className="legal">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p>© {new Date().getFullYear()} TCGTracker · Australia · All prices in AUD, GST inclusive where applicable.</p>
+            <ThemeToggle />
+          </div>
+          <p>
+            Market data is indicative and not financial advice. Pokémon is a trademark of Nintendo, Creatures and GAME FREAK (The Pokémon Company); One
+            Piece is a trademark of Eiichiro Oda, Shueisha and Toei Animation, and the One Piece Card Game is published by Bandai. TCGTracker is independent
+            and not affiliated with, endorsed or sponsored by any of them.
+          </p>
+        </div>
+      </div>
     </footer>
   )
 }
+
+export { TabBar }

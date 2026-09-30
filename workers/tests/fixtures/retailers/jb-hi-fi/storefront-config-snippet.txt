@@ -1,0 +1,29 @@
+# JB Hi-Fi storefront Algolia config snippet. Fetched 2026-09-28 from https://www.jbhifi.com.au/collections/pokemon-trading-cards_1eld66jvxxoxw0ae4rjd36
+# Trimmed: only the lines relevant to runtime discovery are kept. Theme id 535 and the bundle hash change on every theme deploy.
+# --- (1) HTML: theme bundle script tags (the config lived in bundle.86cb2b098f20e475.js on this date) ---
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.runtime.js?v=158456335798430404791790125215"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.d7482c8249cf7df3.js?v=133787839973610367421790125154"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.add07444715519cb.js?v=116456404461550133991790125494"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.2f05c0bbde66d399.js?v=33039650803530867221790125319"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.1b1e91e2fc54fe7e.js?v=147611083975228482801790125512"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.ebafabd48973f894.js?v=38691782384076838561790125155"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.126ea8ae074b69c6.js?v=152962145155369581041790125462"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.aa77d9793556d8c0.js?v=64868428596696879381790125382"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.02ad429b4db54f57.js?v=134762032816384576861790125278"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.86cb2b098f20e475.js?v=150078594321987360061790125568"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.e5452f77fed0c3a3.js?v=139334069777844185011790125343"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.e51de83fe9697a63.js?v=4819314220086832191790125584"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.46e730d3ff989168.js?v=93016616333626639581790125282"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.b3dfdbfc444c8505.js?v=172097272319483476181790125189"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.8ea1fcaaee2a467c.js?v=95454081468639811341790125344"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.4f06019e9bcd4aa4.js?v=15966693249795351541790125408"></script>
+<script src="//www.jbhifi.com.au/cdn/shop/t/535/assets/bundle.template.collection.enhanced.js?v=18479429460205209351790125389"></script>
+# --- (2) HTML: inline feature flags + collection filter ---
+window.featureFlags.searchProvider = "algolia";
+var handle = 'pokemon-trading-cards_1eld66jvxxoxw0ae4rjd36';
+var filters = '("facets.Game type": "Trading card games" OR "category_hierarchy":"Trading card games") AND ("facets.Brands": "Pokemon TCG" OR "facets.Primary franchise": "Pokemon")';
+var googleFilters = 'attributes.categoryHierarchy: ANY("Trading card games") AND (attributes.Brands: ANY("Pokemon TCG") OR attributes.Primary_20franchise: ANY("Pokemon"))';
+var query = '';
+# --- (3) JS: webpack module in bundle.86cb2b098f20e475.js (excerpt, truncated after index names) ---
+76099(e,t,r){r.d(t,{_:()=>i,j:()=>o});let i={app_id:"VTVKM5URPX",search_api_key:"a0c0108d737ad5ab54a0e2da900bf040",index_prefix:"shopify_",index_products:"shopify_products_families",index_suggested_keywords:"shopify_products_families_query_suggestions",index_suggested_categories:"shopify_collections",index_collections:"shopify_collections",index_category_order:"shopify_products_families_facets"
+,sort_orders:[...]

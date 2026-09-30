@@ -43,8 +43,9 @@ export function slugify(input: string): string {
 }
 
 export const homePath = () => '/'
+/** All games = the homepage (/market-cap/ 301s there); per game/lang/set under /market-cap/. */
 export const marketCapPath = (game?: Game, lang?: Lang, setSlug?: string) =>
-  '/market-cap/' + [game, lang, setSlug].filter(Boolean).map((s) => `${s}/`).join('')
+  game ? '/market-cap/' + [game, lang, setSlug].filter(Boolean).map((s) => `${s}/`).join('') : '/'
 export const cardsPath = (game?: Game, lang?: Lang) => '/cards/' + [game, lang].filter(Boolean).map((s) => `${s}/`).join('')
 export const setPath = (s: SetRef) => `/cards/${s.game}/${s.lang}/${s.slug}/`
 export const cardPath = (c: CardRef) => `/cards/${c.game}/${c.lang}/${c.setSlug}/${c.slug}/`
@@ -56,7 +57,16 @@ export const listingPath = (id: number | string, title: string) => {
 }
 export const sellerPath = (username: string) => `/sellers/${username.toLowerCase()}/`
 export const dropsPath = (retailerSlug?: string) => (retailerSlug ? `/drops/${retailerSlug}/` : '/drops/')
+/** Drops by state: /drops/vic/ (state codes never collide with retailer slugs). */
+export const dropsStatePath = (state: string) => `/drops/${state.toLowerCase()}/`
+export const scoutsPath = () => '/drops/scouts/'
+export const releasesHubPath = () => '/releases/'
 export const releasesPath = (game: Game) => `/releases/${game}/`
+export const releasePath = (game: Game, slug: string) => `/releases/${game}/${slug}/`
+export const releasesIcsPath = (game?: Game) => (game ? `/releases/${game}/calendar.ics` : '/releases/calendar.ics')
+export const guidesPath = (slug?: string) => (slug ? `/guides/${slug}/` : '/guides/')
+export const accountSightingsPath = () => '/account/sightings/'
+export const accountDropAlertsPath = () => '/account/alerts/drops/'
 export const newsPath = (category?: string) => (category ? `/news/${category}/` : '/news/')
 export const articlePath = (publishedAt: Date, slug: string) => `/news/${publishedAt.getUTCFullYear()}/${slug}/`
 export const sellPath = (opts: { cardId?: string; gradeKey?: string | null } = {}) => {
@@ -81,7 +91,10 @@ export function absoluteUrl(path: string): string {
   return `${siteUrl()}${path.startsWith('/') ? path : `/${path}`}`
 }
 export function siteName(): string {
-  return process.env.NEXT_PUBLIC_SITE_NAME ?? 'BRAND'
+  return process.env.NEXT_PUBLIC_SITE_NAME ?? 'TCGTracker'
 }
 
 export const NEWS_CATEGORIES = ['pokemon', 'one-piece', 'market', 'drops', 'guides', 'grading'] as const
+
+/** Share image for pages without their own (web/public/og-default.png, 1200×630). */
+export const DEFAULT_OG_IMAGE = '/og-default.png'

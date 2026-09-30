@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { breadcrumbs, cardProduct, listingProduct } from '@/lib/seo/jsonld'
-import { buildMetadata, isFiltered, titles } from '@/lib/seo/metadata'
-import { cardMarketplacePath, cardPath, listingPath, marketCapPath, parseListingSegment, slugify } from '@/lib/seo/urls'
+import { buildMetadata, isFiltered, titles, clampDescription } from '@/lib/seo/metadata'
+import { cardMarketplacePath, cardPath, listingPath, marketCapPath, parseListingSegment, siteName, slugify } from '@/lib/seo/urls'
 
 process.env.NEXT_PUBLIC_SITE_URL = 'https://example.com.au'
 process.env.NEXT_PUBLIC_SITE_NAME = 'Brand'
@@ -12,7 +12,7 @@ describe('URLs (brief 7.1)', () => {
     expect(cardPath(card)).toBe('/cards/one-piece/jp/op-05/op05-119-monkey-d-luffy-manga/')
     expect(cardMarketplacePath(card)).toBe('/marketplace/one-piece/jp/op-05/op05-119-monkey-d-luffy-manga/')
     expect(marketCapPath('pokemon', 'en', '151')).toBe('/market-cap/pokemon/en/151/')
-    expect(marketCapPath()).toBe('/market-cap/')
+    expect(marketCapPath()).toBe('/')
   })
   it('slugifies like the database', () => {
     expect(slugify('Monkey.D.Luffy (Manga)')).toBe('monkey-d-luffy-manga')
@@ -48,7 +48,7 @@ describe('metadata (brief 7.2)', () => {
   })
   it('card title follows the brief pattern', () => {
     expect(titles.card({ name: 'Charizard ex', number: '199', printedTotal: '165', setName: '151', lang: 'en' })).toBe(
-      'Charizard ex 199/165 (151) PSA 10 Price, Population & Market Cap',
+      'Charizard ex 199/165 (151) PSA 10 Price in AUD',
     )
   })
 })
@@ -66,5 +66,19 @@ describe('JSON-LD', () => {
   it('listing Offer marks sold items SoldOut', () => {
     const p = listingProduct({ name: 'L', path: '/l/', priceAud: 5, sold: true, sellerName: 's', condition: 'used' }) as { offers: { availability: string } }
     expect(p.offers.availability).toBe('https://schema.org/SoldOut')
+  })
+})
+
+describe('snippet lengths', () => {
+  it('keeps the brand suffix only when the title fits in ~60 characters', () => {
+    expect(buildMetadata({ path: '/x/', title: 'Short title', description: 'd' }).title).toEqual({ absolute: `Short title | ${siteName()}` })
+    const long = 'Pikachu with Grey Felt Hat SVP 085 (Scarlet & Violet Black Star Promos) PSA 10 Price in AUD'
+    expect(buildMetadata({ path: '/x/', title: long, description: 'd' }).title).toEqual({ absolute: long })
+  })
+  it('trims long descriptions at a word boundary', () => {
+    const d = clampDescription('word '.repeat(60))
+    expect(d.length).toBeLessThanOrEqual(160)
+    expect(d.endsWith('word…')).toBe(true)
+    expect(clampDescription('short')).toBe('short')
   })
 })

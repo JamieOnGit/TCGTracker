@@ -20,6 +20,8 @@ export interface SubscriptionState {
   status: StripeStatus
   graceUntil: Date | null
   tierOverride?: Tier | null
+  /** Premium earned without a subscription (scout rewards): profile_private.premium_until. */
+  premiumUntil?: Date | null
 }
 
 export function effectiveTier(sub: SubscriptionState | null | undefined, now: Date = new Date()): Tier {
@@ -27,6 +29,7 @@ export function effectiveTier(sub: SubscriptionState | null | undefined, now: Da
   if (sub.tierOverride) return sub.tierOverride
   if (sub.status === 'active' || sub.status === 'trialing') return 'premium'
   if (sub.status === 'past_due' && sub.graceUntil && sub.graceUntil > now) return 'premium'
+  if (sub.premiumUntil && sub.premiumUntil > now) return 'premium'
   return 'free'
 }
 

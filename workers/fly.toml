@@ -1,0 +1,42 @@
+# Fly.io config for the TCGTracker workers (one always-on machine in Sydney).
+#
+#   cd workers
+#   fly launch --no-deploy --copy-config --name tcgtracker-workers --region syd
+#   fly secrets set DATABASE_URL=... EMAIL_PROVIDER=resend RESEND_API_KEY=... \
+#       ADMIN_ALERT_EMAIL=... HEALTHCHECK_URL=https://hc-ping.com/<uuid> \
+#       DISCORD_DROPS_WEBHOOK_URL=... SENTRY_DSN=... PRICECHARTING_TOKEN=... \
+#       SUPABASE_URL=https://<ref>.supabase.co VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:hello@tcgtracker.com.au \
+#       EBAY_CLIENT_ID=... EBAY_CLIENT_SECRET=... \
+#       PRICECHARTING_CSV_URL_TEMPLATE='https://www.pricecharting.com/...?t={token}&category={category}'
+#   (JB Hi-Fi's Algolia key is discovered at runtime; JB_ALGOLIA_* are optional.)
+#   fly deploy
+#   fly scale count 1          # exactly one machine: the scheduler must not run twice
+#
+# There is no HTTP service, so Fly never auto-stops the machine. Liveness is
+# watched externally: the process pings HEALTHCHECK_URL (healthchecks.io)
+# every minute only while the scheduler jobs and every drop monitor are
+# healthy, and pings <url>/fail with the reasons otherwise. Configure the
+# check with a 1 minute period and a 3-5 minute grace.
+
+app = "tcgtracker-workers"
+primary_region = "syd"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SITE_URL = "https://tcgtracker.com.au"
+  EMAIL_PROVIDER = "resend"
+  TZ = "Australia/Melbourne"
+
+# Restart the process whenever it exits, for any reason.
+[[restart]]
+  policy = "always"
+  retries = 10
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1

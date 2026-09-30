@@ -4,6 +4,8 @@
  * supabase/migrations/20260927000100_foundations.sql and are only used when the
  * database isn't configured (demo mode, unit tests).
  */
+import { DEFAULT_EBAY, ebaySettingsFromRows, type EbaySettings } from './ebay'
+
 export type QuotaPeriod = 'calendar_month' | 'rolling_30_days'
 
 export interface Rules {
@@ -23,6 +25,73 @@ export interface Rules {
   dropsPublicDelayMinutes: number
   freeDelayedDropAlerts: boolean
   primaryGrade: string
+  freeDropDelayMinutes: number
+  rankByPriceUntilPopulation: boolean
+  ebay: EbaySettings
+  sightings: SightingRules
+}
+
+/**
+ * Member sightings and scout rewards (`sightings.*` / `scouts.*` in
+ * site_settings; seeded in 20260930000100_sightings_releases_push.sql).
+ */
+export interface SightingRules {
+  enabled: boolean
+  confirmationsNeeded: number
+  confirmationsWithPhoto: number
+  trustedAfter: number
+  trustedMaxRejectPct: number
+  dailyLimit: number
+  mergeWindowMinutes: number
+  pendingExpiryMinutes: number
+  goneVotesToClose: number
+  rewardEvery: number
+  rewardDays: number
+}
+
+export const DEFAULT_SIGHTING_RULES: SightingRules = {
+  enabled: true,
+  confirmationsNeeded: 2,
+  confirmationsWithPhoto: 1,
+  trustedAfter: 5,
+  trustedMaxRejectPct: 10,
+  dailyLimit: 10,
+  mergeWindowMinutes: 180,
+  pendingExpiryMinutes: 360,
+  goneVotesToClose: 2,
+  rewardEvery: 10,
+  rewardDays: 30,
+}
+
+const SIGHTING_KEYS: Record<string, keyof SightingRules> = {
+  'sightings.enabled': 'enabled',
+  'sightings.confirmations_needed': 'confirmationsNeeded',
+  'sightings.confirmations_with_photo': 'confirmationsWithPhoto',
+  'sightings.trusted_after': 'trustedAfter',
+  'sightings.trusted_max_reject_pct': 'trustedMaxRejectPct',
+  'sightings.daily_limit': 'dailyLimit',
+  'sightings.merge_window_minutes': 'mergeWindowMinutes',
+  'sightings.pending_expiry_minutes': 'pendingExpiryMinutes',
+  'sightings.gone_votes_to_close': 'goneVotesToClose',
+  'scouts.reward_every': 'rewardEvery',
+  'scouts.reward_days': 'rewardDays',
+}
+
+/** Sighting settings from site_settings rows. Bad values (non-numeric, negative) keep the default. */
+export function sightingRulesFromRows(rows: { key: string; value: unknown }[]): SightingRules {
+  const out: SightingRules = { ...DEFAULT_SIGHTING_RULES }
+  for (const { key, value } of rows) {
+    const field = SIGHTING_KEYS[key]
+    if (field === undefined) continue
+    if (field === 'enabled') {
+      if (typeof value === 'boolean') out.enabled = value
+      else if (value === 'true' || value === 'false') out.enabled = value === 'true'
+      continue
+    }
+    const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN
+    if (Number.isInteger(n) && n >= 0) out[field] = n
+  }
+  return out
 }
 
 export const DEFAULT_RULES: Rules = {
@@ -38,10 +107,14 @@ export const DEFAULT_RULES: Rules = {
   listingExpiryDays: 60,
   soldVisibleDays: 90,
   minPhotos: 2,
-  externalBuyFallback: false,
-  dropsPublicDelayMinutes: 30,
-  freeDelayedDropAlerts: false,
+  externalBuyFallback: true,
+  dropsPublicDelayMinutes: 1440,
+  freeDelayedDropAlerts: true,
   primaryGrade: 'psa-10',
+  freeDropDelayMinutes: 1440,
+  rankByPriceUntilPopulation: true,
+  ebay: DEFAULT_EBAY,
+  sightings: DEFAULT_SIGHTING_RULES,
 }
 
 const KEY_MAP: Record<string, keyof Rules> = {
@@ -61,6 +134,8 @@ const KEY_MAP: Record<string, keyof Rules> = {
   'drops.public_delay_minutes': 'dropsPublicDelayMinutes',
   'drops.free_delayed_alerts': 'freeDelayedDropAlerts',
   'market.primary_grade': 'primaryGrade',
+  'drops.free_delay_minutes': 'freeDropDelayMinutes',
+  'market.rank_by_price_until_population': 'rankByPriceUntilPopulation',
 }
 
 /** Build Rules from site_settings rows ({key, value}). Unknown keys are ignored. */
@@ -70,6 +145,8 @@ export function rulesFromSettings(rows: { key: string; value: unknown }[]): Rule
     const field = KEY_MAP[key]
     if (field !== undefined) (rules as unknown as Record<string, unknown>)[field] = value
   }
+  rules.ebay = ebaySettingsFromRows(rows)
+  rules.sightings = sightingRulesFromRows(rows)
   return rules
 }
 

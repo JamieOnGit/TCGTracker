@@ -1,0 +1,503 @@
+{
+  "href": "https://api.ebay.com/buy/browse/v1/item_summary/search?q=Charizard+ex+199+PSA+10&limit=50",
+  "total": 11,
+  "limit": 50,
+  "offset": 0,
+  "itemSummaries": [
+    {
+      "itemId": "v1|336000000001|0",
+      "title": "Pokemon Charizard ex 199/165 SIR Scarlet & Violet 151 PSA 10 GEM MINT",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc1/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller1",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000001",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000001?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "700.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000002|0",
+      "title": "Charizard ex 199/165 Special Illustration Rare 151 PSA 10",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc2/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller2",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000002",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000002?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "795.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000003|0",
+      "title": "Charizard ex 199/165 151 SIR PSA 10 candidate pack fresh",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc3/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller3",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000003",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000003?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "300.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000004|0",
+      "title": "Charizard ex 199/165 151 SIR PSA 9 MINT",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc4/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller4",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000004",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000004?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "400.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000005|0",
+      "title": "Charizard ex 201/165 SAR Pokemon Card 151 Japanese PSA 10",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc5/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller5",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000005",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000005?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "500.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000006|0",
+      "title": "PSA 10 Charizard ex #199 151 Special Illustration Rare",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc6/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller6",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "AUCTION"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000006",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000006?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "currentBidPrice": {
+        "value": "500.00",
+        "currency": "AUD"
+      },
+      "bidCount": 14,
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "12.00",
+            "currency": "AUD"
+          }
+        }
+      ],
+      "itemEndDate": "2026-10-01T01:00:00.000Z"
+    },
+    {
+      "itemId": "v1|336000000007|0",
+      "title": "Charizard ex 199/165 151 PSA 10 - no reserve",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc7/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller7",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "AUCTION"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000007",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000007?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "currentBidPrice": {
+        "value": "300.00",
+        "currency": "AUD"
+      },
+      "bidCount": 3,
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ],
+      "itemEndDate": "2026-10-01T05:00:00.000Z"
+    },
+    {
+      "itemId": "v1|336000000008|0",
+      "title": "Charizard ex 199/165 151 PSA10",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc8/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller8",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000008",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000008?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "600.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "CALCULATED"
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000009|0",
+      "title": "Charizard ex 199/165 151 PSA 10 Gem Mint",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc9/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller9",
+        "feedbackPercentage": "90.1",
+        "feedbackScore": 40
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000009",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000009?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "600.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000010|0",
+      "title": "Charizard ex 199 PSA 10 custom proxy slab",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc10/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller10",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000010",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "itemAffiliateWebUrl": "https://www.ebay.com.au/itm/336000000010?mkcid=1&mkrid=705-53470-19255-0&siteid=15&campid=5338000000&customid=tcgtracker-20000000-0000-0000-0000-000000000001&toolid=10001&mkevt=1",
+      "price": {
+        "value": "50.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "10.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    },
+    {
+      "itemId": "v1|336000000011|0",
+      "title": "Charizard ex 199/165 SV 151 PSA 10 GEM MT",
+      "leafCategoryIds": [
+        "183454"
+      ],
+      "categories": [
+        {
+          "categoryId": "183454",
+          "categoryName": "CCG Individual Cards"
+        }
+      ],
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/abc11/s-l225.jpg"
+      },
+      "seller": {
+        "username": "seller11",
+        "feedbackPercentage": "99.8",
+        "feedbackScore": 512
+      },
+      "condition": "Graded",
+      "conditionId": "2750",
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com.au/itm/336000000011",
+      "itemLocation": {
+        "postalCode": "3000",
+        "country": "AU"
+      },
+      "price": {
+        "value": "750.00",
+        "currency": "AUD"
+      },
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "AUD"
+          }
+        }
+      ]
+    }
+  ]
+}

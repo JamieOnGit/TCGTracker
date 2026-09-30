@@ -1,13 +1,37 @@
 import 'server-only'
+import { GUIDES } from '@/content/guides'
+import { RETAILER_COPY, STATE_COPY } from '@/content/drops-copy'
 import { getRepo } from '@/lib/data'
-import { articlePath, cardMarketplacePath, cardPath, cardsPath, dropsPath, GAMES, LANGS, listingPath, marketCapPath, newsPath, NEWS_CATEGORIES, releasesPath, setPath, absoluteUrl, siteName } from './urls'
+import { AU_STATES, type DropFilter } from '@/lib/data/types'
+import {
+  absoluteUrl,
+  articlePath,
+  cardMarketplacePath,
+  cardPath,
+  cardsPath,
+  dropsPath,
+  dropsStatePath,
+  GAMES,
+  guidesPath,
+  LANGS,
+  listingPath,
+  marketCapPath,
+  newsPath,
+  NEWS_CATEGORIES,
+  releasePath,
+  releasesHubPath,
+  releasesPath,
+  scoutsPath,
+  setPath,
+  siteName,
+} from './urls'
 
 export interface SitemapEntry {
   path: string
   lastmod?: string | null
 }
 
-export const SITEMAP_TYPES = ['static', 'sets', 'cards', 'listings', 'news'] as const
+export const SITEMAP_TYPES = ['static', 'drops', 'releases', 'guides', 'sets', 'cards', 'listings', 'news'] as const
 export type SitemapType = (typeof SITEMAP_TYPES)[number]
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -26,27 +50,62 @@ export function sitemapIndex(files: { path: string; lastmod?: string | null }[])
 
 const latest = (xs: (string | null | undefined)[]) => xs.filter(Boolean).sort().at(-1) ?? null
 
+/** Drops pages with thin history are noindex (the page applies the same rule), so they stay out of the sitemap. */
+export const DROPS_INDEX_WINDOW_DAYS = 90
+
+/** Latest public event for a filter: one row, so this stays cheap. */
+async function lastDrop(filter: DropFilter): Promise<string | null> {
+  const [row] = await getRepo().drops({ ...filter, limit: 1 })
+  return row?.occurredAt ?? null
+}
+
+/** A retailer/state page is listed when it has an event in the window or hand-written copy. */
+export function dropsPageIndexable(lastEvent: string | null, hasCopy: boolean, now = new Date()): boolean {
+  if (hasCopy) return true
+  return lastEvent !== null && now.getTime() - new Date(lastEvent).getTime() <= DROPS_INDEX_WINDOW_DAYS * 86_400_000
+}
+
 export async function entriesFor(type: SitemapType): Promise<SitemapEntry[]> {
   const repo = getRepo()
   switch (type) {
     case 'static': {
-      const retailers = await repo.retailers()
       return [
         { path: '/' },
-        { path: '/market-cap/' },
         ...GAMES.flatMap((g) => [{ path: marketCapPath(g) }, ...LANGS.map((l) => ({ path: marketCapPath(g, l) }))]),
         { path: '/cards/' },
         ...GAMES.flatMap((g) => [{ path: cardsPath(g) }, ...LANGS.map((l) => ({ path: cardsPath(g, l) }))]),
         { path: '/marketplace/' },
         ...GAMES.map((g) => ({ path: `/marketplace/${g}/` })),
-        { path: dropsPath() },
-        ...retailers.map((r) => ({ path: dropsPath(r.slug) })),
-        ...GAMES.map((g) => ({ path: releasesPath(g) })),
+        { path: '/deals/' },
         { path: newsPath() },
-        ...NEWS_CATEGORIES.map((c) => ({ path: newsPath(c) })),
+        ...(await Promise.all(NEWS_CATEGORIES.map(async (c) => ((await repo.articles({ category: c, limit: 1 })).length ? [{ path: newsPath(c) }] : [])))).flat(),
         ...['premium', 'methodology', 'data', 'api', 'about', 'contact'].map((p) => ({ path: `/${p}/` })),
       ]
     }
+    case 'drops': {
+      const now = new Date()
+      const [all, retailers, states] = await Promise.all([
+        lastDrop({}),
+        Promise.all((await repo.retailers()).map(async (r) => ({ path: dropsPath(r.slug), last: await lastDrop({ retailerSlug: r.slug }), copy: r.slug in RETAILER_COPY }))),
+        Promise.all(AU_STATES.map(async (st) => ({ path: dropsStatePath(st), last: await lastDrop({ state: st }), copy: st in STATE_COPY }))),
+      ])
+      return [
+        { path: dropsPath(), lastmod: all },
+        { path: scoutsPath() },
+        ...[...retailers, ...states].filter((x) => dropsPageIndexable(x.last, x.copy, now)).map((x) => ({ path: x.path, lastmod: x.last })),
+      ]
+    }
+    case 'releases': {
+      const rows = await repo.releases()
+      const newest = latest(rows.map((r) => r.updatedAt))
+      return [
+        { path: releasesHubPath(), lastmod: newest },
+        ...GAMES.map((g) => ({ path: releasesPath(g), lastmod: latest(rows.filter((r) => r.game === g).map((r) => r.updatedAt)) })),
+        ...rows.map((r) => ({ path: releasePath(r.game, r.slug), lastmod: r.updatedAt })),
+      ]
+    }
+    case 'guides':
+      return [{ path: guidesPath(), lastmod: latest(GUIDES.map((g) => g.updated)) }, ...GUIDES.map((g) => ({ path: guidesPath(g.slug), lastmod: g.updated }))]
     case 'sets': {
       const sets = await repo.listSets()
       return sets.flatMap((s) => [

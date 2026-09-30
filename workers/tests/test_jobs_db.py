@@ -10,7 +10,7 @@ import psycopg
 import pytest
 from psycopg.rows import dict_row
 
-from tcgworkers.jobs.registry import refresh_floors, snapshot_market_caps
+from tcgworkers.jobs.registry import refresh_floors, snapshot_market_caps, warn_expiring_listings
 
 URL = os.environ.get("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL not set")
@@ -25,15 +25,14 @@ def conn():
         yield c
 
 
-def test_prices_and_population_become_a_ranked_market_cap(conn):
-    cards = {r["lang"] + r["game"]: r["id"] for r in conn.execute("select id, game, lang from public.cards")}
-    assert len(cards) == 4, "run supabase/tests/run.sh first"
-    for i, card in enumerate(cards.values()):
-        conn.execute(
-            """insert into public.population_snapshots (card_id, grader, grade, population, source)
-               values (%s, 'PSA', 10, %s, 'test')""",
-            (card, 100 * (i + 1)),
-        )
+def _seed(conn, cards, *, without_population=()):
+    for i, (key, card) in enumerate(cards.items()):
+        if key not in without_population:
+            conn.execute(
+                """insert into public.population_snapshots (card_id, grader, grade, population, source)
+                   values (%s, 'PSA', 10, %s, 'test')""",
+                (card, 100 * (i + 1)),
+            )
         conn.execute(
             """insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
                  price_aud, source, observed_at)
@@ -42,13 +41,24 @@ def test_prices_and_population_become_a_ranked_market_cap(conn):
         )
     conn.commit()
 
+
+def _cards(conn):
+    cards = {r["lang"] + r["game"]: r["id"] for r in conn.execute("select id, game, lang from public.cards")}
+    assert len(cards) == 4, "run supabase/tests/run.sh first"
+    return cards
+
+
+def test_prices_and_population_become_a_ranked_market_cap(conn):
+    cards = _cards(conn)
+    _seed(conn, cards)
+
     refresh_floors(conn, "test")
     snapshot_market_caps(conn, "test")
     conn.commit()
 
     rows = conn.execute(
-        "select card_id, grade_key, lang, population, floor_aud, basis, market_cap_aud "
-        "from public.market_cap_rankings where grade_key = 'psa-10' order by market_cap_aud desc"
+        "select card_id, grade_key, lang, population, floor_aud, basis, market_cap_aud, rank_value "
+        "from public.market_cap_rankings where grade_key = 'psa-10' order by rank_value desc"
     ).fetchall()
     assert len(rows) == 4
     # EN Charizard has an active marketplace listing in the fixture DB -> marketplace ask wins.
@@ -57,5 +67,96 @@ def test_prices_and_population_become_a_ranked_market_cap(conn):
     others = [r for r in rows if r["card_id"] != cards["enpokemon"]]
     assert all(r["basis"] == "external_ask" and r["floor_aud"] == D("1500.00") for r in others)
     assert all(r["market_cap_aud"] == r["population"] * r["floor_aud"] for r in rows)
+    assert all(r["rank_value"] == r["market_cap_aud"] for r in rows)
     runs = conn.execute("select job, status from public.pipeline_runs where job in ('floors','snapshots')")
     assert {(r["job"], r["status"]) for r in runs} >= {("floors", "succeeded"), ("snapshots", "succeeded")}
+
+
+def test_cards_without_population_rank_by_price_until_population_exists(conn):
+    cards = _cards(conn)
+    no_pop = next(k for k in cards if k != "enpokemon")
+    _seed(conn, cards, without_population={no_pop})
+
+    refresh_floors(conn, "test")
+    snapshot_market_caps(conn, "test")
+    conn.commit()
+
+    snap = conn.execute(
+        "select population, market_cap_aud, floor_aud from public.market_cap_snapshots "
+        "where card_id = %s and grade_key = 'psa-10'",
+        (cards[no_pop],),
+    ).fetchone()
+    assert snap["population"] is None and snap["market_cap_aud"] is None and snap["floor_aud"] == D("1500.00")
+
+    rows = {
+        r["card_id"]: r
+        for r in conn.execute(
+            "select card_id, population, market_cap_aud, floor_aud, rank_value "
+            "from public.market_cap_rankings where grade_key = 'psa-10'"
+        )
+    }
+    assert len(rows) == 4, "price-only cards are ranked while market.rank_by_price_until_population is on"
+    assert rows[cards[no_pop]]["rank_value"] == D("1500.00")
+    assert rows[cards[no_pop]]["market_cap_aud"] is None
+
+    # With the setting off, only cards with a real market cap are ranked.
+    conn.execute(
+        "update public.site_settings set value = 'false' where key = 'market.rank_by_price_until_population'"
+    )
+    try:
+        conn.execute("refresh materialized view public.market_cap_rankings")
+        ids = {
+            r["card_id"]
+            for r in conn.execute("select card_id from public.market_cap_rankings where grade_key = 'psa-10'")
+        }
+        assert cards[no_pop] not in ids and len(ids) == 3
+    finally:
+        conn.rollback()
+
+
+def test_listing_expiry_warning_is_queued_once_per_expiry(conn):
+    listing = conn.execute(
+        "select id, seller_id, expires_at from public.listings where status = 'active' order by id limit 1"
+    ).fetchone()
+    assert listing, "run supabase/tests/run.sh first"
+    try:
+        conn.execute(
+            "update public.listings set expires_at = now() + interval '2 days' where id = %s",
+            (listing["id"],),
+        )
+        conn.execute("delete from public.email_outbox where template = 'listing_expiring'")
+        conn.execute("delete from public.notifications where type = 'listing_expiring'")
+        conn.commit()
+
+        warn_expiring_listings(conn, "test")
+        warn_expiring_listings(conn, "test")  # hourly job: must not repeat
+
+        emails = conn.execute(
+            "select user_id, template, data from public.email_outbox where template = 'listing_expiring'"
+        ).fetchall()
+        assert len(emails) == 1 and emails[0]["user_id"] == listing["seller_id"]
+        assert emails[0]["data"]["listing_id"] == listing["id"] and emails[0]["data"]["expires_at"]
+        bell = conn.execute(
+            "select count(*) as n from public.notifications where type = 'listing_expiring'"
+        ).fetchone()
+        assert bell["n"] == 1
+
+        # Renewing moves the expiry, so the next warning is a new one.
+        conn.execute(
+            "update public.listings set expires_at = now() + interval '3 days' where id = %s",
+            (listing["id"],),
+        )
+        conn.commit()
+        warn_expiring_listings(conn, "test")
+        n = conn.execute(
+            "select count(*) as n from public.email_outbox where template = 'listing_expiring'"
+        ).fetchone()
+        assert n["n"] == 2
+    finally:
+        conn.rollback()
+        conn.execute(
+            "update public.listings set expires_at = %s where id = %s", (listing["expires_at"], listing["id"])
+        )
+        conn.execute("delete from public.email_outbox where template = 'listing_expiring'")
+        conn.execute("delete from public.notifications where type = 'listing_expiring'")
+        conn.commit()

@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
+import { PageIntro } from '@/components/ui'
 import { getRepo, type SetRow } from '@/lib/data'
 import { dataset } from '@/lib/seo/jsonld'
 import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
-import { GAME_NAMES, isGame, isLang, marketCapPath, type Game, type Lang } from '@/lib/seo/urls'
+import { GAME_NAMES, isGame, isLang, LANG_NAMES, marketCapPath, type Game, type Lang } from '@/lib/seo/urls'
 
 export interface MarketCapParams {
   game?: string
@@ -24,7 +25,7 @@ async function resolveScope(p: MarketCapParams): Promise<{ game?: Game; lang?: L
     set = (await getRepo().getSet(game!, lang!, p.set)) ?? undefined
     if (!set) return null
   }
-  const label = [game ? GAME_NAMES[game] : 'Pokémon & One Piece', lang?.toUpperCase(), set?.name].filter(Boolean).join(' ')
+  const label = set ? `${set.name} (${GAME_NAMES[game!]} ${lang!.toUpperCase()})` : [game ? GAME_NAMES[game] : 'Pokémon & One Piece', lang ? LANG_NAMES[lang] : null].filter(Boolean).join(' ')
   return { game, lang, set, label, path: marketCapPath(game, lang, set?.slug) }
 }
 
@@ -34,7 +35,7 @@ export async function marketCapMetadata(params: MarketCapParams, searchParams: S
   return buildMetadata({
     path: scope.path,
     title: titles.marketCap(scope.label),
-    description: `${scope.label} graded card market cap rankings: PSA population × floor price in AUD, updated daily.`,
+    description: `${scope.label} graded card rankings in Australian dollars: PSA 10 values, market cap and 7/30 day moves, updated daily.`,
     searchParams,
   })
 }
@@ -44,16 +45,16 @@ export async function MarketCapPage({ params, searchParams }: { params: MarketCa
   if (!scope) notFound()
   const rules = await getRepo().getRules()
   const query = parseMarketQuery(searchParams, { game: scope.game, lang: scope.lang, setId: scope.set?.id }, rules.primaryGrade)
-  const crumbs = [{ name: 'Market cap', path: '/market-cap/' }]
+  const crumbs: { name: string; path: string }[] = [] // Home (= all-games market cap) is prepended by Breadcrumbs
   if (scope.game) crumbs.push({ name: GAME_NAMES[scope.game], path: marketCapPath(scope.game) })
   if (scope.lang) crumbs.push({ name: scope.lang.toUpperCase(), path: marketCapPath(scope.game, scope.lang) })
   if (scope.set) crumbs.push({ name: scope.set.name, path: scope.path })
   return (
-    <>
-      <Breadcrumbs items={crumbs} />
-      <h1>{scope.label} market cap</h1>
+    <div className="container-x">
+      <div className="pt-6"><Breadcrumbs items={crumbs} /></div>
+      <PageIntro eyebrow="Market cap · AUD" title={`${scope.label} market cap`} lead="Graded cards ranked by value in Australian dollars. Japanese and English printings are ranked separately." />
       <MarketCapTable query={query} basePath={scope.path} caption={`${scope.label} cards ranked by market cap`} />
-      <JsonLd data={dataset({ name: `${scope.label} graded card market cap (AUD)`, description: 'Graded population × floor price, daily.', path: scope.path, dateModified: new Date().toISOString().slice(0, 10) })} />
-    </>
+      <JsonLd data={dataset({ name: `${scope.label} graded card market cap (AUD)`, description: 'Graded population × floor price, daily, in AUD.', path: scope.path, dateModified: new Date().toISOString().slice(0, 10) })} />
+    </div>
   )
 }
