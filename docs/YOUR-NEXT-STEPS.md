@@ -2,6 +2,8 @@
 
 Last updated 30 September 2026 (evening). Work top to bottom. Each step says **where to click**, **what to copy where**, and **what to tell Claude**.
 
+> Claude updates this guide as you go. Updates arrive as small "Docs:" pull requests in the repo: merge them once their checks are green, and the latest version is always on `main`.
+
 > **Never paste passwords or secret keys into the chat.** Put them straight into Cloudflare, Fly.io or Supabase as described below. Claude only needs to hear "done".
 
 **Where things stand:** the site is built and tested on Claude's side. It covers:
@@ -42,19 +44,38 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 3. VentraIP emails you to confirm the registrant details. Click the link, or the .au registry can suspend the domain.
 4. At **https://dash.cloudflare.com**, go to **Add a site → Connect a domain**. (Not "Transfer", since the domain stays registered at VentraIP, and not "Buy".)
    - Enter `tcgtracker.com.au` and keep **Quick scan for DNS records**.
-   - AI crawlers: choose **Do not block**. Leave Cloudflare's managed robots.txt **off**, because the site serves its own robots.txt and llms.txt.
+   - **Configure AI training & search policies** (what you chose):
+     - *I monetize pages that serve ads*: **unticked**. eBay affiliate links aren't display ads.
+     - *Search*: **Allow**, so Google and Bing can crawl.
+     - *Agent*: **Allow**, so ChatGPT, Perplexity, Claude and others can read and cite your prices.
+     - *Training*: **Allow**. It matches the site's open robots.txt; switch to Block later if you prefer.
+     - *Enable Bot Preference Sync*: **OFF**. Otherwise it would insert Cloudflare's rules at the top of the site's own robots.txt, which blocks `/account/`, `/admin/` and other private pages.
+   - *Import DNS records*: **Automatic**.
    - Plan: **Free**.
-   - Review DNS records: delete any VentraIP parking `A` records for `tcgtracker.com.au` or `www`. An empty list is fine, because Step 4 (Workers) and Step 5 (Resend) add the records the site needs.
-   - Copy the **two nameservers** Cloudflare shows.
+   - **Review DNS records:** delete the two VentraIP parking `A` records, for `tcgtracker.com.au` and `www`, both pointing to `103.42.108.46` (done). Cloudflare warns that the domain will have no web address. That's expected: Step 4 adds the right records, and Step 5 adds Resend's. Ignore the "add an MX record" banner too; receiving email comes later.
+   - Click **Continue to activation**, then copy the **two nameservers** Cloudflare shows. Yours are `grannbo.ns.cloudflare.com` and `jaime.ns.cloudflare.com`. These are **not** the DNS records from the previous screen.
 5. In VIPcontrol, turn **DNSSEC off** for the domain if it's on. Otherwise the domain can stop resolving while nameservers switch. You can turn it back on later from Cloudflare.
-6. Log in to **VIPcontrol** (https://vip.ventraip.com.au) → **Domain Names** → click `tcgtracker.com.au` → **Nameservers**. Choose **custom nameservers**, replace VentraIP's nameservers with the two from Cloudflare, and save. Remove any extra nameserver rows, so only Cloudflare's two are left.
-7. In Cloudflare, click **Check nameservers now**, then wait for the email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours.
+6. Log in to **VIPcontrol** (https://vip.ventraip.com.au) → **Domain Names** → click `tcgtracker.com.au` → the **Custom Nameservers** tab (not "DNS Hosting"; editing NS records there does nothing). Choose **custom nameservers**, replace VentraIP's nameservers with the two from Cloudflare, and save. Remove any extra nameserver rows, so only Cloudflare's two are left.
+7. In Cloudflare, click **Check nameservers now**, then wait for the email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours. Until then, Cloudflare's domain list shows **"Invalid nameservers"**. That's normal while the change spreads; it switched to **Active** for you the same day.
 8. In Cloudflare, go to **SSL/TLS** → mode **Full (strict)**. Then **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
 
 ## Step 3 · Supabase: database, sign-in and photos (≈20 min)
 
 ### 3a · Create the project ✅ done
-Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password saved in your password manager, and **Enable Data API** and **Automatically expose new tables** both ticked.
+What you chose, for reference:
+
+| Field | Setting |
+|---|---|
+| Organization | `tcgtracker` (Free) |
+| GitHub (optional) | **Skipped.** Database changes are applied by the "Deploy database" workflow instead. |
+| Project name | `tcgtracker` |
+| Database password | **Generate a password**, saved in your password manager, never pasted into chat |
+| Region | **Oceania (Sydney)** |
+| Enable Data API | **Ticked** (the website uses it) |
+| Automatically expose new tables | **Ticked**, despite Supabase's advice. The database setup relies on it, and every table has row-level security (a test fails if one doesn't). |
+| Enable automatic RLS | Unticked. The database setup enables RLS itself. |
+
+Email templates (the Magic link) can't be edited until custom SMTP is on. That's in Step 5.
 
 ### 3b · Sign-in address settings (2 min)
 1. In the Supabase dashboard, open the **tcgtracker** project.
@@ -67,6 +88,7 @@ Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password sa
 These let GitHub load the database tables into Supabase for you. Don't paste them into the chat.
 1. **Project ID:** Supabase → **Project Settings** (gear icon, bottom of the sidebar) → **General** → copy **Project ID**. It's a 20-letter code like `abcdefghijklmnopqrst`.
 2. **Access token:** click your avatar (top right) → **Account preferences** → **Access Tokens** (or go to https://supabase.com/dashboard/account/tokens) → **Generate new token**. Name it `github-deploy`, then copy the token. It's shown once only.
+   - *Expires in*: 90 days if it's offered (7 days is the default). You'll reuse this token whenever Claude adds database changes.
    - What you chose: resource access **Project** (tcgtracker only), preset **Full access**, with **Infrastructure and delivery** and **Account and organization** set to **None**.
    - If the deploy's "Link the project" step ever fails with *forbidden*, make a new token with **Projects (account-wide) → Read** added and update the secret.
    - When the token expires, the deploy fails with an authorisation error. Generate a new one and update `SUPABASE_ACCESS_TOKEN` in GitHub.
@@ -74,7 +96,7 @@ These let GitHub load the database tables into Supabase for you. Don't paste the
 
 ### 3d · Add them to GitHub as secrets ✅ done
 1. Open **https://github.com/JamieOnGit/TCGTracker/settings/secrets/actions**. That's the repo → **Settings** → **Secrets and variables** → **Actions**.
-2. Click **New repository secret** three times, one per value. The names must match exactly:
+2. Click **New repository secret** three times, one per value. The names must match exactly, and paste each value with no spaces or quotes around it:
 
    | Name | Secret |
    |---|---|
@@ -233,7 +255,7 @@ This powers **/deals/**: graded cards listed on eBay Australia well under market
 ## Step 9c · Card images: decide, then Scrydex (≈10 min) *new*
 Until this is done, cards show a styled placeholder. Neither The Pokémon Company nor Bandai licenses card images to other sites. Most TCG sites show scans anyway, with a "not affiliated" notice (see `docs/research/03-catalogue-sources.md` §4).
 1. Decide, ideally with your lawyer in Step 14, whether to show card scans.
-2. If yes: subscribe to **Scrydex** (https://scrydex.com, from US$29/mo). It covers Pokémon EN + JP and One Piece EN, and its terms allow showing and self-hosting its images.
+2. If yes: subscribe to **Scrydex** (https://scrydex.com, from US$29/mo for 5,000 requests a month; about US$99/mo for the next tier if you outgrow it). It covers Pokémon EN + JP and One Piece EN, and its terms allow showing and self-hosting its images.
 3. Run `fly secrets set SCRYDEX_API_KEY=... SCRYDEX_TEAM_ID=...` and tell Claude **"Scrydex ready"**. Claude then builds the image import: copied once to our own storage as WebP, with an admin on/off switch per game and a takedown process.
 4. One Piece Japanese has no licensable source. It keeps the placeholder plus members' own photos.
 5. Sealed product images: use your affiliate feeds once approved (Step 13). They include images you're allowed to use.
