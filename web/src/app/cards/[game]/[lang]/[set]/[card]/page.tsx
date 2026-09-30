@@ -127,7 +127,7 @@ export default async function CardPage({ params, searchParams }: Props) {
 
           <div className="mt-8 flex flex-wrap gap-3">
             {buy.kind === 'listings' ? (
-              <Link href={buy.href} className="btn btn-primary">Buy on TCG Trade · {buy.count} from {fmtAudShort(buy.fromAud)}</Link>
+              <Link href={buy.href} className="btn btn-primary">Buy on TCGTracker · {buy.count} from {fmtAudShort(buy.fromAud)}</Link>
             ) : (
               <>
                 {buy.external && <a href={buy.external.href} className="btn btn-secondary" rel="sponsored nofollow noopener" target="_blank" data-buy="ebay">Check eBay Australia ↗</a>}
@@ -161,7 +161,7 @@ export default async function CardPage({ params, searchParams }: Props) {
             </table>
           </div>
         </details>
-        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="PriceCharting, TCG Trade marketplace" />
+        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="PriceCharting, TCGTracker marketplace" />
       </section>
 
       <section aria-labelledby="grades-h">
@@ -197,7 +197,7 @@ export default async function CardPage({ params, searchParams }: Props) {
         )}
         {closed.length > 0 && (
           <>
-            <h3 className="mt-12">Recent sales on TCG Trade</h3>
+            <h3 className="mt-12">Recent sales on TCGTracker</h3>
             <div className="table-wrap mt-4">
               <table className="dt">
                 <thead><tr><th scope="col">Date</th><th scope="col">Grade</th><th scope="col" className="n">Price (A$)</th></tr></thead>

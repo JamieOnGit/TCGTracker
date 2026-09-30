@@ -6,7 +6,7 @@ import { supabaseService } from '@/lib/supabase/server'
 // mail client's one-click) turns that alert type's email off.
 const page = (title: string, body: string) =>
   new NextResponse(
-    `<!doctype html><html lang="en-AU"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} · TCG Trade</title><body style="font-family:Inter,Arial,sans-serif;background:#F7F5F0;color:#1C1B19;max-width:520px;margin:80px auto;padding:0 16px"><h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400">${title}</h1>${body}</body></html>`,
+    `<!doctype html><html lang="en-AU"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} · TCGTracker</title><body style="font-family:Inter,Arial,sans-serif;background:#F7F5F0;color:#1C1B19;max-width:520px;margin:80px auto;padding:0 16px"><h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400">${title}</h1>${body}</body></html>`,
     { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   )
 

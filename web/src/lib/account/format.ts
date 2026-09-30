@@ -285,7 +285,7 @@ export const ALERT_TYPES = [
   { key: 'drop', label: 'Retail drops', hint: 'Premium: instant. Free: 24 hours later.' },
   { key: 'billing', label: 'Billing and receipts' },
   { key: 'weekly_digest', label: 'Weekly market digest', hint: 'Optional, off unless you turn it on.' },
-  { key: 'marketing', label: 'News and offers from TCG Trade', hint: 'Opt-in only. Unsubscribe from any email in one click.' },
+  { key: 'marketing', label: 'News and offers from TCGTracker', hint: 'Opt-in only. Unsubscribe from any email in one click.' },
 ] as const
 export type AlertType = (typeof ALERT_TYPES)[number]['key']
 export const CHANNELS = [

@@ -198,14 +198,14 @@ export const RETAILER_COPY: Record<string, PageCopy> = {
         a: 'There are many different independent stores, so the store name is required to make a report useful. For chains, the suburb is usually enough.',
       },
       {
-        q: 'Can I find prerelease events through TCG Trade?',
+        q: 'Can I find prerelease events through TCGTracker?',
         a: 'Our release calendar lists prerelease dates where they’ve been announced. For event times and bookings, contact your local store or check the publisher’s official event locator.',
       },
     ],
   },
 }
 
-const EASTERN_TIME = 'Times on TCG Trade are shown in Australian Eastern time (AEST, or AEDT during daylight saving).'
+const EASTERN_TIME = 'Times on TCGTracker are shown in Australian Eastern time (AEST, or AEDT during daylight saving).'
 
 /** Keyed by state code (ACT, NSW, NT, QLD, SA, TAS, VIC, WA). */
 export const STATE_COPY: Record<string, PageCopy> = {
@@ -312,7 +312,7 @@ export const STATE_COPY: Record<string, PageCopy> = {
   TAS: {
     intro: [
       'Tasmanian sightings come from members in Hobart, Launceston, Devonport, Burnie and around the state. Mainland reports say little about what’s on Tasmanian shelves, so local, confirmed sightings are the most reliable guide to what you can actually buy here.',
-      'Tasmania uses Australian Eastern time, including daylight saving, so alert times on TCG Trade match your clock.',
+      'Tasmania uses Australian Eastern time, including daylight saving, so alert times on TCGTracker match your clock.',
     ],
     faqs: [
       {

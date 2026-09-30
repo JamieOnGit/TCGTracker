@@ -185,7 +185,7 @@ describe('eBay links', async () => {
     const url = new URL(ebaySearchUrl(q, { ...DEFAULT_EBAY, affiliateEnabled: true, campaignId: '5338123456' })!)
     expect(url.searchParams.get('campid')).toBe('5338123456')
     expect(url.searchParams.get('mkrid')).toBe('705-53470-19255-0')
-    expect(url.searchParams.get('customid')).toBe('tcgtrade-c1')
+    expect(url.searchParams.get('customid')).toBe('tcgtracker-c1')
   })
   it('ignores an invalid campaign id and respects the off switch', () => {
     expect(new URL(ebaySearchUrl(q, { ...DEFAULT_EBAY, affiliateEnabled: true, campaignId: 'abc' })!).searchParams.get('campid')).toBeNull()

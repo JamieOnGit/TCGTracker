@@ -39,7 +39,7 @@ test('state, retailer and scouts pages render', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Seen stock in store? Report it' })).toBeVisible()
 
   await page.goto('/drops/scouts/')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('TCG Trade Scouts')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('TCGTracker Scouts')
   await expect(page.getByRole('table').first()).toContainText('demo-scout')
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents()
   expect(jsonLd.filter((j) => j.includes('"FAQPage"'))).toHaveLength(1)

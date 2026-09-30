@@ -1,7 +1,7 @@
 # 07: Target AU, JB Hi-Fi runtime config, BIG W/Kmart re-check, PriceCharting API, eBay Partner Network
 
 **Date:** 2026-09-28
-**Project:** TCG Trade (tcgtrade.com.au)
+**Project:** TCGTracker (tcgtracker.com.au)
 **Builds on:** `04-retailers.md` (retailers) and `02-pricing-sources.md` (pricing).
 **Method:** robots.txt was read first. We then made a small number of curl requests and headless Chromium visits (Playwright, `/opt/pw-browsers/chromium-1194`), spaced seconds apart, with no cart or checkout actions and no challenge solving. When a live site blocked us, we read **public Internet Archive (Wayback Machine) snapshots** instead. These show page shape, not current data.
 
@@ -204,7 +204,7 @@ All three worked with the public search key (about 0.7–0.9 s round trip from t
   - a drop in `price`.
 - Values seen: `overallStatus` / `deliveryStatus` / `clickNCollectStatus` ∈ {`InStock`, `LimitedStock`, `NotAvailable`}. `OutOfStock` is still UNVERIFIED.
 - Treat an HTTP 403 with `Invalid Application-ID or API key`, or `searchProvider` ≠ `algolia`, as a "rediscover / provider changed" event, and don't hammer while it lasts.
-- User-Agent for the storefront HTML and JS fetches: a contactable bot UA (`TCGTradeBot/0.1 (+https://tcgtrade.com.au/bot; contact@…)`).
+- User-Agent for the storefront HTML and JS fetches: a contactable bot UA (`TCGTrackerBot/0.1 (+https://tcgtracker.com.au/bot; contact@…)`).
 
 ---
 
@@ -256,7 +256,7 @@ User-agent: CazoodleBot / dotbot/1.0 / Gigabot / GPTBot / MJ12bot → Disallow: 
 Fly.io egress is still a **datacenter ASN** (Fly.io, AS40509). Akamai Bot Manager weighs ASN, IP reputation and client fingerprint, not just country, so AU geography alone may not help. Expectation: **probably still blocked** (UNVERIFIED).
 
 Test plan (run manually, once, with an identified UA; stop at the first 403):
-1. `curl -sS -o /dev/null -w "%{http_code} %{remote_ip}\n" -A "TCGTradeBot/0.1 (+https://tcgtrade.com.au/bot)" https://www.{bigw,kmart,target}.com.au/robots.txt`. Record the status, `server`, `akamai-grn` / `errors.edgesuite.net` reference, and any `akaalb_*` cookie.
+1. `curl -sS -o /dev/null -w "%{http_code} %{remote_ip}\n" -A "TCGTrackerBot/0.1 (+https://tcgtracker.com.au/bot)" https://www.{bigw,kmart,target}.com.au/robots.txt`. Record the status, `server`, `akamai-grn` / `errors.edgesuite.net` reference, and any `akaalb_*` cookie.
 2. Repeat with a normal desktop Chrome UA string. If only the bot UA is denied, that is a policy signal: respect it and don't pretend to be a browser for polling.
 3. If robots returns 200: fetch the sitemap index (1 request). Then fetch one category page each:
    - BIG W `https://www.bigw.com.au/toys/…/pokemon…` (find the path from the sitemap)
@@ -391,7 +391,7 @@ Verified from `/category/pokemon-cards` (459 console links) and `/category/one-p
 > With a Commercial Agreement: "we'd prefer attribution of either a logo or text linkback to our specific product page `https://www.pricecharting.com/game/{{PriceCharting_ID_Goes_Here}}`."
 > "Data can and should be cached/stored on your servers… **All data gathered from the API or CSV must be purged after your subscription has ended.**"
 
-**The $49 Legendary plan alone does not permit showing prices on tcgtrade.com.au.** A commercial licence (email brady@vgpc.com; price on request) is needed before any public display.
+**The $49 Legendary plan alone does not permit showing prices on tcgtracker.com.au.** A commercial licence (email brady@vgpc.com; price on request) is needed before any public display.
 
 ### D.10 Implementation notes (PriceCharting)
 1. **Bulk path (daily):** one CSV download per category per day (`pokemon-cards`, `one-piece-cards`), at least 10 min apart, e.g. 16:00 and 16:15 UTC. Parse the header row and map columns by name, never by position. Price columns are USD decimals, so convert them to integer cents to match the API. Upsert into `pc_prices(pc_id, snapshot_date, ungraded_c, g7_c, g8_c, g9_any_c, g9_5_c, psa10_c, bgs10_c, cgc10_c, sgc10_c, sales_volume)`. **Keep the daily snapshots**, because the API has no history.
@@ -445,7 +445,7 @@ https://www.ebay.com.au/sch/i.html?_nkw={urlencoded query}&_sacat=183454
 
 **How to get a campaign id:**
 1. Sign up at the EPN portal (partnernetwork.ebay.com; payouts in AUD are supported per the Network Agreement).
-2. Once approved, log in → **Campaigns** tab → create a campaign (e.g. "tcgtrade-web", and a separate "tcgtrade-email" if approved) → copy the 10-digit Campaign ID.
+2. Once approved, log in → **Campaigns** tab → create a campaign (e.g. "tcgtracker-web", and a separate "tcgtracker-email" if approved) → copy the 10-digit Campaign ID.
 
 EPN's step 2 page says: "Sign in to the portal / Locate the 'Create A Promotable Link' section / Select the campaign… / Add a Custom ID… / Paste in any link from eBay… / Click the Generate Link button". Generate one AU search link there to confirm the exact param set the portal emits. Then template it in code.
 
@@ -463,7 +463,7 @@ Source: the Network Agreement (`https://epnmarketing.ebay.com/page/network-agree
 - Suggested wording from the Agreement: "As an eBay Partner Network Affiliate, I earn from qualifying purchases."
 
 **Restricted methods (need prior written EPN approval, "Special Business Models"):**
-- "**Electronic Communications:** You may not promote Participating Sites and Content using **email or other forms of electronic communication (for example, SMS, instant messaging, or IRC)** without EPN's prior written approval." **This matters for TCG Trade:** alert emails or push notifications that contain EPN links need approval. The fallback is to send a non-affiliate link, or link to our own card page where the affiliate link and disclosure sit.
+- "**Electronic Communications:** You may not promote Participating Sites and Content using **email or other forms of electronic communication (for example, SMS, instant messaging, or IRC)** without EPN's prior written approval." **This matters for TCGTracker:** alert emails or push notifications that contain EPN links need approval. The fallback is to send a non-affiliate link, or link to our own card page where the affiliate link and disclosure sit.
 - Incentive/loyalty programmes; Software Applications / browser extensions; PLA/paid traffic; **"AI Tools: Promoting eBay through any generative artificial intelligence or tool"**.
 - "Additional Restricted Promotional Methods… **Promotional Content created by a developer's program tool or API**." Programmatically generated search links on our pages arguably fall under this. **Ask EPN when applying (UNVERIFIED interpretation).**
 

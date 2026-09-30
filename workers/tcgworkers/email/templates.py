@@ -1,11 +1,11 @@
 """Email templates for every ``email_outbox.template`` value.
 
 Each template turns the outbox row's ``data`` into a list of simple blocks;
-one layout renders those blocks as HTML (inline CSS, 560px, TCG Trade
+one layout renders those blocks as HTML (inline CSS, 560px, TCGTracker
 colours) and as the plain-text part, so both always carry the same content.
 
 Every email carries (Spam Act 2003, Gmail/Yahoo bulk-sender rules):
-* sender identification - TCG Trade, Australia;
+* sender identification - TCGTracker, Australia;
 * a link to the notification preferences centre;
 * a one-click unsubscribe link for that alert type (the sender adds the
   matching List-Unsubscribe / List-Unsubscribe-Post headers).
@@ -31,7 +31,7 @@ from tcgworkers.config import DEFAULT_SITE_URL
 from tcgworkers.drops import rrp as rrp_mod
 from tcgworkers.drops.models import RrpTag
 
-BRAND = "TCG Trade"
+BRAND = "TCGTracker"
 TIMEZONE = ZoneInfo("Australia/Melbourne")
 SYDNEY = ZoneInfo("Australia/Sydney")
 DEALS_PATH = "/deals/"
@@ -123,7 +123,7 @@ HOLO = "linear-gradient(100deg,#6D5DF6,#3EC6FF,#FF6AD5)"
 LINK = "#9D8CFF"
 UP = "#3DDC97"
 DOWN = "#FF6B7A"
-WORDMARK = "TCG TRADE"
+WORDMARK = "TCGTRACKER"
 SERIF = "'Cormorant Garamond', Georgia, serif"
 WORDMARK_FONT = "Georgia, 'Times New Roman', serif"
 SANS = "Inter, Arial, sans-serif"
@@ -436,7 +436,7 @@ def _message(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     blocks.append(
         (
             "note",
-            "Keep payment and contact details inside TCG Trade messages until you trust the other party. "
+            "Keep payment and contact details inside TCGTracker messages until you trust the other party. "
             "We never ask for your password by email.",
         )
     )
@@ -486,7 +486,7 @@ def _wishlist(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     title, blocks, pre, _ = _generic(data, ctx, "A card on your wishlist was just listed", "View listing")
     if data.get("price_aud") is not None:
         blocks.insert(1, ("rows", [("Price", format_aud(data.get("price_aud")))]))
-    return title, blocks, pre, "You're receiving this because the item is on your TCG Trade wishlist."
+    return title, blocks, pre, "You're receiving this because the item is on your TCGTracker wishlist."
 
 
 def _saved_search(data: Mapping[str, Any], ctx: RenderContext) -> Built:
@@ -529,7 +529,7 @@ def confirmed_label(count: Any) -> str:
     return f"Confirmed by {n} member{'s' if n != 1 else ''}"
 
 
-_DROP_REASON = "You're receiving this because retail drop alerts are on for your TCG Trade account."
+_DROP_REASON = "You're receiving this because retail drop alerts are on for your TCGTracker account."
 
 
 def _sighting(data: Mapping[str, Any], ctx: RenderContext) -> Built:
@@ -587,9 +587,9 @@ def _sighting(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     blocks.append(
         (
             "note",
-            "Reported by a TCG Trade member and confirmed by the community. Stock moves fast and may be "
+            "Reported by a TCGTracker member and confirmed by the community. Stock moves fast and may be "
             "gone by the time you arrive; call the store if you're travelling far. "
-            "TCG Trade never buys, queues or checks out for you.",
+            "TCGTracker never buys, queues or checks out for you.",
         )
     )
     pre = " · ".join(x for x in (place, price if price != "—" else None, stock, confirmed) if x)
@@ -628,7 +628,7 @@ def _drop(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     blocks.append(
         (
             "note",
-            "Stock moves fast and can sell out before you get there. TCG Trade only tells you what we saw; "
+            "Stock moves fast and can sell out before you get there. TCGTracker only tells you what we saw; "
             "we never buy, queue or check out for you.",
         )
     )
@@ -640,15 +640,15 @@ def _billing(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     kind = str(data.get("kind") or "")
     defaults = {
         "receipt": (
-            "Your TCG Trade Premium receipt",
-            "Thanks for supporting TCG Trade. Here's your receipt.",
+            "Your TCGTracker Premium receipt",
+            "Thanks for supporting TCGTracker. Here's your receipt.",
         ),
         "payment_failed": (
-            "Payment failed for TCG Trade Premium",
+            "Payment failed for TCGTracker Premium",
             "We couldn't take your Premium payment. Update your card to keep instant drop alerts and 30 listings a month.",
         ),
         "subscription_started": (
-            "Welcome to TCG Trade Premium",
+            "Welcome to TCGTracker Premium",
             "Instant drop alerts and 30 listings a month are on.",
         ),
         "subscription_cancelled": (
@@ -656,7 +656,7 @@ def _billing(data: Mapping[str, Any], ctx: RenderContext) -> Built:
             "You'll keep Premium until the end of the current period, then move to the Free plan.",
         ),
     }
-    d_title, d_body = defaults.get(kind, ("Your TCG Trade billing update", ""))
+    d_title, d_body = defaults.get(kind, ("Your TCGTracker billing update", ""))
     title = _one_line(data.get("title") or d_title)
     blocks: list[Block] = [("h", title)]
     body = str(data.get("body") or d_body)
@@ -683,7 +683,7 @@ def _billing(data: Mapping[str, Any], ctx: RenderContext) -> Built:
         title,
         blocks,
         _one_line(body or title, 120),
-        "You're receiving this because you have a TCG Trade subscription.",
+        "You're receiving this because you have a TCGTracker subscription.",
     )
 
 
@@ -699,19 +699,19 @@ def _admin_alert(data: Mapping[str, Any], ctx: RenderContext) -> Built:
         ("button", "Open the admin console", absolute_url(ctx.site_url, data.get("url"), "/admin/"))
     )
     return (
-        f"[TCG Trade admin] {title}",
+        f"[TCGTracker admin] {title}",
         blocks,
         title,
-        "You're receiving this because you're a TCG Trade administrator.",
+        "You're receiving this because you're a TCGTracker administrator.",
     )
 
 
 def _welcome(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     name = _one_line(data.get("display_name") or data.get("username") or "", 60)
-    title = f"Welcome to TCG Trade{', ' + name if name else ''}"
+    title = f"Welcome to TCGTracker{', ' + name if name else ''}"
     blocks: list[Block] = [
         ("h", title),
-        ("p", "TCG Trade tracks the Australian market for Pokémon TCG and One Piece Card Game in A$."),
+        ("p", "TCGTracker tracks the Australian market for Pokémon TCG and One Piece Card Game in A$."),
         (
             "rows",
             [
@@ -726,7 +726,7 @@ def _welcome(data: Mapping[str, Any], ctx: RenderContext) -> Built:
         title,
         blocks,
         "Your account is ready.",
-        "You're receiving this because you created a TCG Trade account.",
+        "You're receiving this because you created a TCGTracker account.",
     )
 
 
@@ -751,7 +751,7 @@ def _release(data: Mapping[str, Any], ctx: RenderContext) -> Built:
         title,
         blocks,
         _one_line(body or title, 120),
-        "You're receiving this because you asked for a reminder about this release on TCG Trade.",
+        "You're receiving this because you asked for a reminder about this release on TCGTracker.",
     )
 
 
@@ -774,7 +774,7 @@ def _deal(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     if data.get("shipping_aud") is not None:
         rows.append(("Postage", format_aud(data.get("shipping_aud"))))
     if data.get("market_aud") is not None:
-        rows.append(("TCG Trade market value", format_aud(data.get("market_aud"))))
+        rows.append(("TCGTracker market value", format_aud(data.get("market_aud"))))
     if data.get("discount_pct") not in (None, ""):
         with contextlib.suppress(InvalidOperation, ValueError):
             rows.append(("Under market value", f"{Decimal(str(data['discount_pct'])):.0f}%", UP))
@@ -795,14 +795,14 @@ def _deal(data: Mapping[str, Any], ctx: RenderContext) -> Built:
         (
             "note",
             "Found by searching eBay Australia's public listings. Check the photos, the seller and the "
-            "grading certificate before you buy; TCG Trade isn't part of the sale.",
+            "grading certificate before you buy; TCGTracker isn't part of the sale.",
         )
     )
     return (
         title,
         blocks,
         _one_line(body or title, 120),
-        "You're receiving this because the card is on your TCG Trade wishlist.",
+        "You're receiving this because the card is on your TCGTracker wishlist.",
     )
 
 

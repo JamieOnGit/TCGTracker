@@ -101,7 +101,7 @@ export function PushToggle({ vapidKey }: { vapidKey: string | null }) {
       {status === 'unsupported' && <p className="muted mt-1">This browser doesn&apos;t support push notifications. Use email or on-site alerts, or try Chrome, Edge, Firefox or Safari.</p>}
       {status === 'ios-install' && (
         <p className="muted mt-1">
-          On iPhone and iPad (iOS 16.4 or later), push only works from the Home Screen: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>, open TCG Trade from the new icon, sign in and come back here.
+          On iPhone and iPad (iOS 16.4 or later), push only works from the Home Screen: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>, open TCGTracker from the new icon, sign in and come back here.
         </p>
       )}
       {status === 'denied' && <p className="muted mt-1">Notifications are blocked for this site. Allow them in your browser&apos;s site settings, then reload this page.</p>}

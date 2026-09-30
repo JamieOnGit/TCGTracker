@@ -21,7 +21,7 @@ export default async function Login({ searchParams }: Props) {
   return (
     <div className="container-x">
       <div className="auth-card">
-        <p className="eyebrow">TCG Trade account</p>
+        <p className="eyebrow">TCGTracker account</p>
         <h1 className="mt-3">Sign in or join</h1>
         <p className="lead mt-3">No passwords to remember. Enter your email and we&apos;ll send you a secure one-time sign-in link.</p>
         <div className="mt-8">

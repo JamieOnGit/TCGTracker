@@ -17,7 +17,7 @@ export function SiteHeader() {
       <HeaderScroll />
       <div className="container-x flex h-full items-center gap-6">
         <Link href="/" className="wordmark" aria-label={`${siteName()} home`}>
-          <span className="holo-text">TCG</span> Trade
+          <span className="holo-text">TCG</span>Tracker
         </Link>
         <nav aria-label="Primary" className="hidden flex-1 justify-center gap-7 lg:flex">
           <NavLinks items={NAV} />
@@ -40,14 +40,14 @@ export function SiteFooter() {
     { title: 'Market', links: [['Market cap', '/'], ['Pokémon', '/market-cap/pokemon/'], ['One Piece', '/market-cap/one-piece/'], ['Methodology', '/methodology/'], ['Data & API', '/data/']] },
     { title: 'Cards', links: [['Pokémon English', '/cards/pokemon/en/'], ['Pokémon Japanese', '/cards/pokemon/jp/'], ['One Piece English', '/cards/one-piece/en/'], ['One Piece Japanese', '/cards/one-piece/jp/'], ['Release calendar', '/releases/']] },
     { title: 'Buy & sell', links: [['Marketplace', '/marketplace/'], ['Sell a card', '/account/listings/new/'], ['Retail drops', '/drops/'], ['eBay deals', '/deals/'], ['Premium', '/premium/']] },
-    { title: 'TCG Trade', links: [['About', '/about/'], ['Contact', '/contact/'], ['News', '/news/'], ['Guides', '/guides/'], ['Terms', '/terms/'], ['Privacy', '/privacy/']] },
+    { title: 'TCGTracker', links: [['About', '/about/'], ['Contact', '/contact/'], ['News', '/news/'], ['Guides', '/guides/'], ['Terms', '/terms/'], ['Privacy', '/privacy/']] },
   ]
   return (
     <footer className="site-footer">
       <div className="container-x">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="wordmark">TCG Trade</Link>
+            <Link href="/" className="wordmark">TCGTracker</Link>
             <p className="muted mt-4 text-sm">Australia&apos;s graded Pokémon and One Piece card market, in AUD.</p>
           </div>
           {cols.map((c) => (
@@ -63,12 +63,12 @@ export function SiteFooter() {
         </div>
         <div className="legal">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p>© {new Date().getFullYear()} TCG Trade · Australia · All prices in AUD, GST inclusive where applicable.</p>
+            <p>© {new Date().getFullYear()} TCGTracker · Australia · All prices in AUD, GST inclusive where applicable.</p>
             <ThemeToggle />
           </div>
           <p>
             Market data is indicative and not financial advice. Pokémon is a trademark of Nintendo, Creatures and GAME FREAK (The Pokémon Company); One
-            Piece is a trademark of Eiichiro Oda, Shueisha and Toei Animation, and the One Piece Card Game is published by Bandai. TCG Trade is independent
+            Piece is a trademark of Eiichiro Oda, Shueisha and Toei Animation, and the One Piece Card Game is published by Bandai. TCGTracker is independent
             and not affiliated with, endorsed or sponsored by any of them.
           </p>
         </div>

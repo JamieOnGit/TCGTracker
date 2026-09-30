@@ -16,9 +16,9 @@ from tcgworkers.email.templates import (
     render,
 )
 
-CTX = RenderContext(site_url="https://tcgtrade.com.au", unsubscribe_token="TOKEN123")
-UNSUB = "https://tcgtrade.com.au/unsubscribe/?t=TOKEN123"
-PREFS = "https://tcgtrade.com.au/account/settings/"
+CTX = RenderContext(site_url="https://tcgtracker.com.au", unsubscribe_token="TOKEN123")
+UNSUB = "https://tcgtracker.com.au/unsubscribe/?t=TOKEN123"
+PREFS = "https://tcgtracker.com.au/account/settings/"
 
 SAMPLE: dict[str, dict[str, object]] = {
     "message": {
@@ -147,7 +147,7 @@ def test_every_template_renders_with_compliance_footer(template: str) -> None:
     r = render(template, SAMPLE[template], CTX)
     assert r.subject and "\n" not in r.subject
     for part in (r.html, r.text):
-        assert "TCG Trade" in part
+        assert "TCGTracker" in part
         assert "Australia" in part  # sender identification (Spam Act 2003)
         assert PREFS in part
         assert UNSUB in part
@@ -155,7 +155,7 @@ def test_every_template_renders_with_compliance_footer(template: str) -> None:
     # Midnight Holo theme.
     assert "background:#0B0D14" in r.html and "background:#121521" in r.html and "color:#EEF0F7" in r.html
     assert "background:#6D5DF6;background-image:linear-gradient(100deg,#6D5DF6,#3EC6FF,#FF6AD5)" in r.html
-    assert "letter-spacing:.28em" in r.html and ">TCG TRADE</a>" in r.html
+    assert "letter-spacing:.28em" in r.html and ">TCGTRACKER</a>" in r.html
     assert '<meta name="color-scheme" content="dark light">' in r.html
     assert "color:#9D8CFF" in r.html  # links
     assert "Inter" in r.html
@@ -244,10 +244,10 @@ def test_free_drop_email_has_the_24h_upgrade_line() -> None:
     r = render("drop", {**SAMPLE["drop"], "tier": "free"}, CTX)
     line = (
         "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: "
-        "https://tcgtrade.com.au/premium/"
+        "https://tcgtracker.com.au/premium/"
     )
     assert line in r.text
-    assert "https://tcgtrade.com.au/premium/" in r.html
+    assert "https://tcgtracker.com.au/premium/" in r.html
 
 
 def test_user_content_is_escaped_in_html() -> None:
@@ -264,11 +264,11 @@ def test_site_url_env_is_used_for_links() -> None:
 
 
 def test_absolute_url_never_links_unsafe_schemes() -> None:
-    site = "https://tcgtrade.com.au"
-    assert absolute_url(site, "/drops/") == "https://tcgtrade.com.au/drops/"
+    site = "https://tcgtracker.com.au"
+    assert absolute_url(site, "/drops/") == "https://tcgtracker.com.au/drops/"
     assert absolute_url(site, "https://www.target.com.au/p/1") == "https://www.target.com.au/p/1"
-    assert absolute_url(site, "javascript:alert(1)") == "https://tcgtrade.com.au/"
-    assert absolute_url(site, "//evil.example/") == "https://tcgtrade.com.au/"
+    assert absolute_url(site, "javascript:alert(1)") == "https://tcgtracker.com.au/"
+    assert absolute_url(site, "//evil.example/") == "https://tcgtracker.com.au/"
 
 
 def test_format_when_uses_melbourne_time() -> None:
@@ -323,11 +323,11 @@ def test_in_store_sighting_email() -> None:
         "Confirmed by 3 members.",
         "> Behind the counter, ask at the service desk",
         "Photo from the store: https://ref.supabase.co/storage/v1/object/public/sighting-photos/u1/p.jpg",
-        "See VIC sightings: https://tcgtrade.com.au/drops/vic/",
+        "See VIC sightings: https://tcgtracker.com.au/drops/vic/",
     ):
         assert line in r.text, line
     assert "24 hours after Premium" not in r.text
-    assert "https://tcgtrade.com.au/unsubscribe/?t=TOKEN123" in r.text
+    assert "https://tcgtracker.com.au/unsubscribe/?t=TOKEN123" in r.text
     free = render("drop", {**SIGHTING, "tier": "free"}, CTX)
     assert "You're seeing this 24 hours after Premium members." in free.text
 
@@ -362,9 +362,9 @@ def test_release_reminder_email() -> None:
     r = render("release", SAMPLE["release"], CTX)
     assert r.subject == "Mega Evolution: Phantasmal Flames is out tomorrow"
     assert "[RELEASE REMINDER]" in r.text
-    assert "https://tcgtrade.com.au/releases/pokemon/phantasmal-flames/" in r.text
+    assert "https://tcgtracker.com.au/releases/pokemon/phantasmal-flames/" in r.text
     assert (
-        "Unsubscribe from release reminder emails (one click): https://tcgtrade.com.au/unsubscribe/?t=TOKEN123"
+        "Unsubscribe from release reminder emails (one click): https://tcgtracker.com.au/unsubscribe/?t=TOKEN123"
         in (r.text)
     )
     assert UNSUBSCRIBE_TYPE["release"] == PREFERENCE_TYPE["release"] == "release"
@@ -377,17 +377,17 @@ def test_deal_email_links_our_site_not_ebay() -> None:
     for line in (
         "Current bid: A$640.00",
         "Postage: A$12.00",
-        "TCG Trade market value: A$850.00",
+        "TCGTracker market value: A$850.00",
         "Under market value: 23%",
         "Auction ends: Thu 1 Oct 2026, 8:15 pm AEST",
-        "See the deal: https://tcgtrade.com.au/deals/",
-        "Price history for this card: https://tcgtrade.com.au/cards/pokemon/en/obsidian-flames/charizard-ex-199/",
+        "See the deal: https://tcgtracker.com.au/deals/",
+        "Price history for this card: https://tcgtracker.com.au/cards/pokemon/en/obsidian-flames/charizard-ex-199/",
         "Unsubscribe from wishlist alerts (one click)",
     ):
         assert line in r.text, line
     # Even if an eBay URL ends up in the data, the email links /deals/.
     ebay = render("deal", {**SAMPLE["deal"], "url": "https://www.ebay.com.au/itm/1?campid=5338000000"}, CTX)
-    assert "ebay.com.au" not in ebay.text and "https://tcgtrade.com.au/deals/" in ebay.text
+    assert "ebay.com.au" not in ebay.text and "https://tcgtracker.com.au/deals/" in ebay.text
     bin_deal = render("deal", {"title": "Deal", "buying_option": "FIXED_PRICE", "price_aud": "10"}, CTX)
     assert "[BUY IT NOW]" in bin_deal.text and "Price: A$10.00" in bin_deal.text
     assert UNSUBSCRIBE_TYPE["deal"] == PREFERENCE_TYPE["deal"] == "wishlist"

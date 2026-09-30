@@ -90,7 +90,7 @@ export function AntiScamBanner({ compact = false }: { compact?: boolean }) {
       <strong>Contact details are hidden — keep payment on-platform.</strong>{' '}
       {compact
         ? 'Keep the conversation here and pay with buyer protection (e.g. PayPal Goods & Services). Never use Friends & Family, bank transfer to strangers, gift cards or crypto.'
-        : 'Emails and phone numbers are never shown. Keep the conversation on TCG Trade and pay with a method that has buyer protection (e.g. PayPal Goods & Services). Be wary of anyone asking to move off-site or to pay by PayPal Friends & Family, bank transfer to strangers, gift cards or crypto. Meet somewhere public for local pickup, and report anything suspicious.'}
+        : 'Emails and phone numbers are never shown. Keep the conversation on TCGTracker and pay with a method that has buyer protection (e.g. PayPal Goods & Services). Be wary of anyone asking to move off-site or to pay by PayPal Friends & Family, bank transfer to strangers, gift cards or crypto. Meet somewhere public for local pickup, and report anything suspicious.'}
     </aside>
   )
 }

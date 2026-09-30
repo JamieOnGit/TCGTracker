@@ -14,11 +14,11 @@ export async function releaseIcsResponse(game?: Game): Promise<Response> {
   const name = game ? `${GAME_NAMES[game]} TCG releases (Australia)` : 'Pokémon & One Piece TCG releases (Australia)'
   const body = buildIcs({
     name,
-    description: 'Australian release dates from TCG Trade. Day-confirmed dates only.',
+    description: 'Australian release dates from TCGTracker. Day-confirmed dates only.',
     events: rows
       .filter((r) => r.datePrecision === 'day' && r.releaseDate)
       .map((r) => ({
-        uid: `${r.id}@tcgtrade.com.au`,
+        uid: `${r.id}@tcgtracker.com.au`,
         date: r.releaseDate!,
         summary: `${r.title} (${r.lang.toUpperCase()})${r.kind === 'set_release' ? '' : ` – ${KIND_LABEL[r.kind]}`}`,
         description: [`${GAME_NAMES[r.game]} TCG · ${CONFIDENCE_LABEL[r.confidence]}`, r.summary, absoluteUrl(releasePath(r.game, r.slug))].filter(Boolean).join('\n'),

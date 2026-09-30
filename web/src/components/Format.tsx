@@ -16,7 +16,7 @@ export function fmtAudShort(v: number | null | undefined): string {
 }
 export const gradeLabel = (key: string) => (key === 'raw' ? 'Raw' : key === 'all' ? 'All grades' : key.toUpperCase().replace('-', ' '))
 export const basisLabel = (b: string | null) =>
-  b === 'marketplace_ask' ? 'TCG Trade ask' : b === 'external_ask' ? 'Market ask' : b === 'last_sale' ? 'Last sale' : '—'
+  b === 'marketplace_ask' ? 'TCGTracker ask' : b === 'external_ask' ? 'Market ask' : b === 'last_sale' ? 'Last sale' : '—'
 export const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Australia/Melbourne' }) : '—'
 

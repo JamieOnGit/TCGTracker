@@ -38,7 +38,7 @@ function BuyCell({ row, rules, stats }: { row: MarketRow; rules: Rules; stats: P
   const buy = resolveBuyButton({ card: row.card, gradeKey: row.gradeKey, stats, externalFallback: Boolean(ebay), externalUrl: ebay })
   if (buy.kind === 'listings') {
     return (
-      <Link className="btn btn-secondary btn-sm" href={buy.href} data-buy="listings" aria-label={`${buy.count} listed on TCG Trade from ${fmtAud(buy.fromAud)}`}>
+      <Link className="btn btn-secondary btn-sm" href={buy.href} data-buy="listings" aria-label={`${buy.count} listed on TCGTracker from ${fmtAud(buy.fromAud)}`}>
         Buy · {buy.count} from {fmtAudShort(buy.fromAud)}
       </Link>
     )
@@ -172,7 +172,7 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
         asOf={result.asOf}
         demo={repo.isDemo}
         scope={`${result.total.toLocaleString('en-AU')} cards · ${gradeLabel(query.gradeKey)}${priceMode ? ' · ranked by value until licensed PSA population data is connected' : ''}`}
-        sources="PriceCharting (graded prices, converted from USD), TCG Trade marketplace asks"
+        sources="PriceCharting (graded prices, converted from USD), TCGTracker marketplace asks"
       />
     </section>
   )

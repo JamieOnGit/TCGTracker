@@ -6,7 +6,7 @@ import { formatAud } from '@/lib/domain/rules'
 import { staticMeta } from '@/lib/staticPage'
 
 export const revalidate = 3600
-export const metadata = staticMeta('/premium/', 'TCG Trade Premium – Instant Restock Alerts & 30 Listings a Month', 'Premium: instant Pokémon and One Piece restock and pre-order alerts from Australian retailers, 30 marketplace listings a month and a Premium badge. A$12.99/month incl. GST, cancel any time.')
+export const metadata = staticMeta('/premium/', 'TCGTracker Premium – Instant Restock Alerts & 30 Listings a Month', 'Premium: instant Pokémon and One Piece restock and pre-order alerts from Australian retailers, 30 marketplace listings a month and a Premium badge. A$12.99/month incl. GST, cancel any time.')
 
 const FAQ: [string, string][] = [
   ['How fast are Premium alerts?', 'We check each retailer around the clock, every minute or two for watched products. Premium alerts go out the moment a change is detected, by email and on-site (Discord optional). Free members get the same alerts 24 hours later.'],

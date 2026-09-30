@@ -27,7 +27,7 @@ from tcgworkers.drops.push import PushGone, PushSubscription
 from tcgworkers.email.templates import RenderContext, render
 
 NOW = datetime(2026, 9, 28, 1, 0, tzinfo=UTC)
-UPGRADE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: https://tcgtrade.com.au/premium/"
+UPGRADE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: https://tcgtracker.com.au/premium/"
 
 EVENT = EventInfo(
     id=10,
@@ -159,7 +159,7 @@ def test_onsite_notification_rows_and_tier_text() -> None:
     assert notes["prem"][1] == "JB Hi-Fi · A$89.00 · ABOVE RRP (+12.5%)"
     assert "24 hours after Premium" in notes["free"][1] and "24 hours" not in notes["prem"][1]
     assert notes["prem"][2] == "/drops/"
-    assert notification(EVENT, "free", "https://tcgtrade.com.au")[3]["tier"] == "free"
+    assert notification(EVENT, "free", "https://tcgtracker.com.au")[3]["tier"] == "free"
 
 
 def test_discord_posts_once_per_event_for_premium_members_only() -> None:
@@ -333,24 +333,24 @@ def test_sighting_email_data_and_render() -> None:
 
 
 def test_sighting_onsite_notification() -> None:
-    title, body, url, data = notification(SIGHTING, "premium", "https://tcgtrade.com.au")
+    title, body, url, data = notification(SIGHTING, "premium", "https://tcgtracker.com.au")
     assert title == "In store: Pokémon booster bundles at Kmart Chadstone, VIC"
     assert body == "A$45.00 · AT RRP · Some in stock · Limit 2 per customer · Confirmed by 3 members"
     assert url == "/drops/vic/" and data["source"] == "member" and data["sighting_id"] == 7
-    title, body, url, _ = notification(ONLINE, "free", "https://tcgtrade.com.au")
+    title, body, url, _ = notification(ONLINE, "free", "https://tcgtracker.com.au")
     assert title == "Online: Pokémon booster bundles at Kmart"
     assert url == "/drops/kmart/" and "24 hours after Premium" in body
     # Monitors keep their format.
-    assert notification(EVENT, "premium", "https://tcgtrade.com.au")[2] == "/drops/"
+    assert notification(EVENT, "premium", "https://tcgtracker.com.au")[2] == "/drops/"
 
 
 def test_sighting_discord_card() -> None:
-    p = discord_payload(SIGHTING, "https://tcgtrade.com.au")
+    p = discord_payload(SIGHTING, "https://tcgtracker.com.au")
     embed = p["embeds"][0]
     fields = {f["name"]: f["value"] for f in embed["fields"]}
     assert p["content"] == "**IN STORE** Pokémon booster bundles — Kmart Chadstone, VIC"
     assert embed["title"] == "In store: Pokémon booster bundles at Kmart Chadstone, VIC"
-    assert embed["url"] == "https://tcgtrade.com.au/drops/vic/"
+    assert embed["url"] == "https://tcgtracker.com.au/drops/vic/"
     assert embed["image"] == {"url": PHOTO}
     assert embed["description"] == "“Behind the service desk”"
     assert embed["color"] == 0x3DDC97

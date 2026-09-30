@@ -95,7 +95,7 @@ def build_email(
 ) -> OutgoingEmail:
     ctx = RenderContext(site_url=site_url, unsubscribe_token=unsubscribe_token)
     rendered = render(row.template, row.data, ctx)
-    headers: dict[str, str] = {"X-TCGTrade-Template": row.template}
+    headers: dict[str, str] = {"X-TCGTracker-Template": row.template}
     if ctx.unsubscribe_url:
         # RFC 8058 one-click unsubscribe (Gmail/Yahoo bulk-sender requirement).
         headers["List-Unsubscribe"] = f"<{ctx.unsubscribe_url}>"

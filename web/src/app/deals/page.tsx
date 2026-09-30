@@ -17,7 +17,7 @@ export const metadata: Metadata = buildMetadata({
   path: '/deals/',
   title: 'Pokémon Card Deals on eBay Australia (Under Market Value)',
   description:
-    'Graded Pokémon and One Piece cards listed on eBay Australia well under their market value in AUD, plus auctions ending soon. Checked against TCG Trade’s price data through the day.',
+    'Graded Pokémon and One Piece cards listed on eBay Australia well under their market value in AUD, plus auctions ending soon. Checked against TCGTracker’s price data through the day.',
 })
 
 const FAQS = [
@@ -77,7 +77,7 @@ export default async function Deals() {
           <section aria-labelledby="alert-h">
             <h2 id="alert-h" className="text-xl">Get alerted</h2>
             <p className="muted mt-3 text-sm">
-              Add a card to your wishlist (use <strong>Alert me</strong> on any card page) and we&apos;ll email you when it&apos;s listed on TCG Trade or found on eBay under value — instantly on Premium.
+              Add a card to your wishlist (use <strong>Alert me</strong> on any card page) and we&apos;ll email you when it&apos;s listed on TCGTracker or found on eBay under value — instantly on Premium.
             </p>
             <p className="mt-3 text-sm"><Link href="/account/alerts/" className="prose-link">Your wishlist</Link> · <Link href="/premium/" className="prose-link">Compare Free and Premium</Link></p>
           </section>

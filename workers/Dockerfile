@@ -1,5 +1,5 @@
-# TCG Trade workers: scheduler + 24/7 drop monitors + email/alert delivery.
-# Build from the workers/ directory:  docker build -t tcgtrade-workers .
+# TCGTracker workers: scheduler + 24/7 drop monitors + email/alert delivery.
+# Build from the workers/ directory:  docker build -t tcgtracker-workers .
 FROM python:3.11-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/

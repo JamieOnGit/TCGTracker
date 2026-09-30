@@ -1,8 +1,8 @@
-# TCG Trade: status against the brief
+# TCGTracker: status against the brief
 
 Legend: ✅ done and tested · 🟡 built, waiting on an account, licence or decision from Jamie · ⏳ later phase · ❌ blocked by a third party
 
-Owner decisions applied (2026-09-28): brand **TCG Trade**, domain **tcgtrade.com.au**, Premium **A$12.99/month incl. GST**, free drop alerts **delayed 1 day**, **eBay fallback ON** with affiliate details set in the admin console, PriceCharting US$49/mo plan, JB Hi-Fi approved, all prices in **AUD**, "Midnight Holo" design (Aman-style type and whitespace on a dark gamer/holo palette, with a light theme toggle).
+Owner decisions applied (2026-09-28): brand **TCGTracker**, domain **tcgtracker.com.au**, Premium **A$12.99/month incl. GST**, free drop alerts **delayed 1 day**, **eBay fallback ON** with affiliate details set in the admin console, PriceCharting US$49/mo plan, JB Hi-Fi approved, all prices in **AUD**, "Midnight Holo" design (Aman-style type and whitespace on a dark gamer/holo palette, with a light theme toggle).
 
 ## Pillar 1: Market cap
 | Item | Status | Where |
@@ -13,7 +13,7 @@ Owner decisions applied (2026-09-28): brand **TCG Trade**, domain **tcgtrade.com
 | **Price-only mode** until PSA population is licensed: ranks by value, labelled, and switches to market cap per card as soon as a population exists | ✅ | `20260928000200_price_rankings.sql` |
 | PriceCharting ingestion (CSV bulk + API), USD cents → AUD, grade field mapping, matcher → admin mapping queue | ✅ fixture tested; 🟡 needs token + licence | `sources/pricing/pricecharting.py` |
 | Card, set, game and language hubs with charts, history tables, JSON-LD | ✅ | `app/[game]/**` |
-| Buy button: TCG Trade listings first, else **eBay AU** search for that exact card/lang/grade, plus Alert me / Sell | ✅ unit + e2e | `lib/domain/buyButton.ts`, `lib/domain/ebay.ts` |
+| Buy button: TCGTracker listings first, else **eBay AU** search for that exact card/lang/grade, plus Alert me / Sell | ✅ unit + e2e | `lib/domain/buyButton.ts`, `lib/domain/ebay.ts` |
 | eBay Partner Network: campaign ID entered in Admin → Settings populates every link; "Ad" disclosure next to links; `rel="sponsored"` | ✅ | `app/admin/settings` |
 | PSA population data | ❌ PSA API terms/quota; licence from PSA or GemRate needed | `research/01` |
 

@@ -1,4 +1,4 @@
-# TCG Trade SEO strategy (Australia)
+# TCGTracker SEO strategy (Australia)
 
 Goal: rank on Google Australia for card, set, price, population, restock, release-date and "how to" searches made by Australian collectors. We win through site structure (one canonical URL per entity, deep internal linking, data in the HTML), genuinely useful Australian content, and by being the only site doing this **in AUD, for Australians**.
 
@@ -68,7 +68,7 @@ Sitemap types (`web/src/lib/seo/sitemap.ts`): `static`, `drops`, `releases`, `gu
 | Guide | `{seoTitle}` (question/intent phrasing, "Australia") | AU retailers, AU official sources |
 | Home | `Pokémon & One Piece Card Market Cap Rankings in AUD (Australia)` | |
 
-- The brand suffix " | TCG Trade" is added automatically. Aim for ≤ 60 characters before the suffix and descriptions of 120–160 characters; the CI crawl warns above 70/170.
+- The brand suffix " | TCGTracker" is added automatically. Aim for ≤ 60 characters before the suffix and descriptions of 120–160 characters; the CI crawl warns above 70/170.
 - H1s match search intent ("{Title} release date", "Kmart restocks & pre-orders").
 - Every data page states "Prices in AUD" and "Last updated". Charts have an HTML table underneath.
 - Australian English (en-AU): "colour", "catalogue", "favourite". Dates as "6 November 2026" / "6 Nov 2026"; times as AEST/AEDT. `<html lang="en-AU">`, `og:locale en_AU`.
@@ -127,7 +127,7 @@ Every week: publish or update **release pages as soon as a date is announced** (
 - The CI crawl (`BASE_URL=… npm run seo:check`) fails on duplicate titles/descriptions, missing canonicals or breadcrumbs, indexable filter pages, broken or redirecting internal links, sitemap URLs that aren't indexable 200s, wrong `.ics` content type or redirects, missing Event/Article JSON-LD on releases/guides, and soft 404s. It warns on long titles/descriptions.
 
 ## 9. Off-page and local signals
-- Google Search Console Domain property for `tcgtrade.com.au` (DNS TXT); submit `/sitemap.xml`. Bing Webmaster Tools: import from GSC.
+- Google Search Console Domain property for `tcgtracker.com.au` (DNS TXT); submit `/sitemap.xml`. Bing Webmaster Tools: import from GSC.
 - Links from Australian communities: Reddit r/PokemonTCGAus, Facebook groups, Discord servers, local game stores and Aussie YouTubers. The linkable assets: AUD market cap, the public drop history, the release calendar (and its `.ics` feed) and the guides.
 - No Google Business Profile: we're online-only, and Organization schema covers it.
 

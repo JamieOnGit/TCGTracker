@@ -2,9 +2,9 @@ import type { Guide } from './types'
 
 export const guide: Guide = {
   slug: 'drop-alerts-and-sightings-explained',
-  title: 'How TCG Trade drop alerts, member sightings and deal alerts work',
+  title: 'How TCGTracker drop alerts, member sightings and deal alerts work',
   seoTitle: 'How Drop Alerts, Member Sightings & Deal Alerts Work',
-  description: 'How TCG Trade finds Pokémon and One Piece restocks in Australia: retailer monitors, member sightings, alert filters, push alerts and eBay deal alerts.',
+  description: 'How TCGTracker finds Pokémon and One Piece restocks in Australia: retailer monitors, member sightings, alert filters, push alerts and eBay deal alerts.',
   dek: 'Monitors, member sightings, confirmations, filters, delivery channels and deal alerts, explained.',
   published: '2026-09-30',
   updated: '2026-09-30',
@@ -35,7 +35,7 @@ export const guide: Guide = {
     },
   ],
   body: `
-TCG Trade tells Australian collectors when Pokémon TCG and One Piece Card Game products become available at Australian retailers, and when graded cards are listed below their market value. This guide explains where alerts come from, how member sightings are checked, and how to set up alerts that fit you.
+TCGTracker tells Australian collectors when Pokémon TCG and One Piece Card Game products become available at Australian retailers, and when graded cards are listed below their market value. This guide explains where alerts come from, how member sightings are checked, and how to set up alerts that fit you.
 
 ## Where alerts come from
 

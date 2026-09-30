@@ -277,7 +277,9 @@ class DropRunner:
     cycle: CycleFn
     make_adapter: Callable[[RetailerConfig], RetailerAdapter] = adapter_for
     make_client: Callable[[RetailerConfig], PoliteClient] = field(
-        default=lambda cfg: PoliteClient(user_agent="TCGTradeBot/1.0 (+https://tcgtrade.com.au/about/bot/)")
+        default=lambda cfg: PoliteClient(
+            user_agent="TCGTrackerBot/1.0 (+https://tcgtracker.com.au/about/bot/)"
+        )
     )
     alert: AlertFn | None = None
     reload_seconds: float = RELOAD_SECONDS

@@ -42,7 +42,7 @@ export default async function Billing({ searchParams }: Props) {
       <div className="grid gap-4">
         {one(sp.welcome) === '1' && (
           <div className="notice notice-up" role="status" data-testid="welcome">
-            <strong>Welcome to Premium ◆</strong> Thanks for supporting TCG Trade. Your badge, 30 listings a month and instant drop alerts are switching on now; it can take a minute for the payment to confirm.
+            <strong>Welcome to Premium ◆</strong> Thanks for supporting TCGTracker. Your badge, 30 listings a month and instant drop alerts are switching on now; it can take a minute for the payment to confirm.
           </div>
         )}
         {one(sp.error) === 'unavailable' && (

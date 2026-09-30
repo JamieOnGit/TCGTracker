@@ -10,7 +10,7 @@ export const guide: Guide = {
   updated: '2026-09-30',
   topic: 'selling',
   related: [
-    { label: 'Sell on the TCG Trade marketplace', href: '/marketplace/' },
+    { label: 'Sell on the TCGTracker marketplace', href: '/marketplace/' },
     { label: 'Check a card’s value in AUD', href: '/' },
     { label: 'Spotting fake cards', href: '/guides/how-to-spot-fake-pokemon-cards/' },
     { label: 'Grading cards in Australia', href: '/guides/grading-cards-australia/' },
@@ -85,9 +85,9 @@ Local pickup avoids postage risk but brings its own:
 - Bring a friend, tell someone where you'll be, and don't carry more stock than you're selling.
 - Check the card (or the payment) fully before completing the exchange.
 
-## Selling on TCG Trade
+## Selling on TCGTracker
 
-The [TCG Trade marketplace](/marketplace/) is built for Australian collectors: listings are reviewed before going live, prices are in AUD, sellers have public profiles and messages stay on the platform. Keep conversations and payment arrangements on the platform, because it helps us assist if something goes wrong.
+The [TCGTracker marketplace](/marketplace/) is built for Australian collectors: listings are reviewed before going live, prices are in AUD, sellers have public profiles and messages stay on the platform. Keep conversations and payment arrangements on the platform, because it helps us assist if something goes wrong.
 
 ## If something goes wrong
 
@@ -95,7 +95,7 @@ The [TCG Trade marketplace](/marketplace/) is built for Australian collectors: l
 2. **Contact your bank or payment provider** straight away, since disputes often have time limits.
 3. **Gather evidence**: messages, screenshots, tracking and listing details.
 4. **Report it** to [Scamwatch](https://www.scamwatch.gov.au/) and, for cybercrime, to [ReportCyber](https://www.cyber.gov.au/).
-5. **Report the account** to the platform where you met. On TCG Trade, use the report link on the listing or profile.
+5. **Report the account** to the platform where you met. On TCGTracker, use the report link on the listing or profile.
 
 For consumer rights when buying from businesses, see the [ACCC](https://www.accc.gov.au/).
 `,

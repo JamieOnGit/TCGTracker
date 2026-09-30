@@ -198,7 +198,7 @@ const RETAILERS: RetailerRow[] = [
   { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false, monitored: true },
   { slug: 'target-au', name: 'Target', baseUrl: 'https://www.target.com.au', enabled: false, monitored: true },
   { slug: 'toymate', name: 'Toymate', baseUrl: 'https://www.toymate.com.au', enabled: false, monitored: false },
-  { slug: 'local-game-store', name: 'Independent game store', baseUrl: 'https://tcgtrade.com.au', enabled: false, monitored: false },
+  { slug: 'local-game-store', name: 'Independent game store', baseUrl: 'https://tcgtracker.com.au', enabled: false, monitored: false },
 ]
 
 const DROPS: DropRow[] = [

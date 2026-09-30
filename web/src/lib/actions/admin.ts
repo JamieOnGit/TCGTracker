@@ -99,7 +99,7 @@ export async function saveEbayAffiliate(form: FormData): Promise<ActionResult> {
   if (enabled && !validCampaignId(campaign)) return { ok: false, error: 'Enter your 10-digit EPN campaign id to switch tracking on.', field: 'campaign_id' }
   for (const [k, v] of [
     ['ebay.campaign_id', campaign],
-    ['ebay.custom_id', String(form.get('custom_id') ?? 'tcgtrade').trim() || 'tcgtrade'],
+    ['ebay.custom_id', String(form.get('custom_id') ?? 'tcgtracker').trim() || 'tcgtracker'],
     ['ebay.affiliate_enabled', enabled],
     ['ebay.enabled', form.get('ebay_enabled') === 'on'],
   ] as const) {

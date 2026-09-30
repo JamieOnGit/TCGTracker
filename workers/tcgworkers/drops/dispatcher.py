@@ -354,7 +354,7 @@ def discord_payload(event: EventInfo, site_url: str = DEFAULT_SITE_URL) -> dict[
         "color": EVENT_COLOURS.get(event.event_type, DEFAULT_COLOUR),
         "fields": fields,
         "timestamp": event.occurred_at.isoformat(),
-        "footer": {"text": "TCG Trade · Premium instant alert"},
+        "footer": {"text": "TCGTracker · Premium instant alert"},
     }
     if event.note:
         embed["description"] = f"“{event.note[:500]}”"
@@ -364,7 +364,7 @@ def discord_payload(event: EventInfo, site_url: str = DEFAULT_SITE_URL) -> dict[
     if event.in_store:
         content += f" — {event.place}"
     return {
-        "username": "TCG Trade Drops",
+        "username": "TCGTracker Drops",
         "content": content[:2000],
         "embeds": [embed],
         "allowed_mentions": {"parse": []},

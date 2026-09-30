@@ -1,7 +1,7 @@
 /**
  * eBay fallback on the Buy button (owner decision 2026-09-28: ON).
  *
- * When a card has no active listings on TCG Trade, we link to an eBay
+ * When a card has no active listings on TCGTracker, we link to an eBay
  * Australia search for that exact card, language and grade. When the owner
  * enters eBay Partner Network details in the admin console
  * (ebay.affiliate_enabled + ebay.campaign_id), every card's link picks them
@@ -26,7 +26,7 @@ export const DEFAULT_EBAY: EbaySettings = {
   site: 'ebay.com.au',
   affiliateEnabled: false,
   campaignId: null,
-  customIdPrefix: 'tcgtrade',
+  customIdPrefix: 'tcgtracker',
   rotationId: '705-53470-19255-0',
 }
 
@@ -65,7 +65,7 @@ export function ebaySearchUrl(q: EbayCardQuery, s: EbaySettings = DEFAULT_EBAY):
     url.searchParams.set('mkrid', s.rotationId)
     url.searchParams.set('siteid', '15') // eBay Australia
     url.searchParams.set('campid', s.campaignId)
-    url.searchParams.set('customid', `${s.customIdPrefix ?? 'tcgtrade'}-${q.cardId}`.slice(0, 256))
+    url.searchParams.set('customid', `${s.customIdPrefix ?? 'tcgtracker'}-${q.cardId}`.slice(0, 256))
     url.searchParams.set('toolid', '10001')
     url.searchParams.set('mkevt', '1')
   }

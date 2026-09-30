@@ -210,7 +210,7 @@ From the fetched summaries:
 
 ---
 
-## 2. Synthesis — the TCG Trade direction
+## 2. Synthesis — the TCGTracker direction
 
 **One sentence:** the page reads like a quiet hotel brochure, and the numbers inside it read like a terminal. The difference is carried by type and alignment, not by colour or boxes.
 
@@ -242,7 +242,7 @@ Principles:
 
 **Header (desktop, 64px, sticky)**
 - Layout: wordmark left, primary nav centred, utilities right. It sits on `--bg` with a 1px `--line` bottom rule and turns to `--surface` after 8px of scroll. There is no shadow.
-- Wordmark: "TCG TRADE" in Newsreader 400, 15px, `letter-spacing: .28em`, uppercase. This is our own typographic mark, not a logo image.
+- Wordmark: "TCGTRACKER" in Newsreader 400, 15px, `letter-spacing: .28em`, uppercase. This is our own typographic mark, not a logo image.
 - Nav: Market · Charts · Sets · Marketplace · Drops. Inter 14/450 with +0.01em tracking, in `--ink-muted`. The active item is `--ink` with a 1px bronze underline, 6px below the baseline.
 - Utilities:
   - Search field (240px, ⌘K hint).
@@ -265,7 +265,7 @@ Principles:
 - `--bg-sunken` band with 64px top padding.
 - Four columns of 13px lists (Market / Games / Marketplace / Company) under 11px tracked eyebrows.
 - Then a rule, then the legal row:
-  - © TCG Trade.
+  - © TCGTracker.
   - ABN placeholder.
   - "Market data is indicative, not financial advice."
   - Data-source credits.
@@ -364,7 +364,7 @@ The page runs top to bottom in this order:
 
 - **Desktop layout**: a 240px left **section index** (no card, only hairline-separated groups) and the main column.
   - Market: Market cap · Pokémon vs One Piece · EN vs JP.
-  - Indices: TCG Trade 100 · Grail 25. These are our own index names; confirm them before launch.
+  - Indices: TCGTracker 100 · Grail 25. These are our own index names; confirm them before launch.
   - Grades: Grade mix · Population growth.
   - Sentiment: Breadth · Volatility.
 - **Main column**:
@@ -851,7 +851,7 @@ Base: `inline-flex items-center h-5 px-1.5 rounded-xs text-2xs font-semibold tra
 
 ## 5. What makes it ours (vs the references)
 
-| | PokeWealth | TCGCharts | TCGIndex | **TCG Trade** |
+| | PokeWealth | TCGCharts | TCGIndex | **TCGTracker** |
 |---|---|---|---|---|
 | Feel | fintech blue, pills | SaaS dashboard cards | content + signals | stone paper, serif voice, square |
 | Up/down | green/red only | green/red + gradient | green/red | teal ▲ / sienna ▼ + sign, AA both themes |

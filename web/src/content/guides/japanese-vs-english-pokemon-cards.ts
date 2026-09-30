@@ -29,7 +29,7 @@ export const guide: Guide = {
       a: 'Yes, through importers, specialist stores and online sellers. Major Australian retailers mainly sell English product.',
     },
     {
-      q: 'Does TCG Trade link the Japanese and English versions of a card?',
+      q: 'Does TCGTracker link the Japanese and English versions of a card?',
       a: 'Yes. They are separate pages with separate prices and populations, and each links to its counterpart where we have matched them.',
     },
   ],
@@ -38,7 +38,7 @@ Australian collectors increasingly buy both Japanese and English Pokémon cards.
 
 ## Different printings, different cards
 
-A Japanese card and its English counterpart are separate printings: different language, different set codes and numbering, often different set composition, and separate graded populations. That's why TCG Trade tracks them as **separate cards**, each with its own page, prices in AUD and population, in the [Japanese catalogue](/cards/pokemon/jp/) and the [English catalogue](/cards/pokemon/en/). Where we've matched them, each page links to its counterpart.
+A Japanese card and its English counterpart are separate printings: different language, different set codes and numbering, often different set composition, and separate graded populations. That's why TCGTracker tracks them as **separate cards**, each with its own page, prices in AUD and population, in the [Japanese catalogue](/cards/pokemon/jp/) and the [English catalogue](/cards/pokemon/en/). Where we've matched them, each page links to its counterpart.
 
 ## Release timing and set structure
 

@@ -14,8 +14,8 @@ export const revalidate = 300
 
 export const metadata: Metadata = buildMetadata({
   path: scoutsPath(),
-  title: 'TCG Trade Scouts: Member Pokémon & One Piece Stock Sightings',
-  description: 'How TCG Trade members report Pokémon and One Piece stock they see in Kmart, BIG W, Target and other Australian stores, how sightings are confirmed, and the scout leaderboard.',
+  title: 'TCGTracker Scouts: Member Pokémon & One Piece Stock Sightings',
+  description: 'How TCGTracker members report Pokémon and One Piece stock they see in Kmart, BIG W, Target and other Australian stores, how sightings are confirmed, and the scout leaderboard.',
 })
 
 function faqs(s: SightingRules, freeDelay: string) {
@@ -73,7 +73,7 @@ export default async function Scouts() {
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Drops', path: '/drops/' }, { name: 'Scouts', path: scoutsPath() }]} /></div>
-      <PageIntro eyebrow="Community sightings · Australia" title="TCG Trade Scouts" lead="Kmart, BIG W and Target restock in store long before their websites catch up. Scouts are members who report what they see on the shelf, so everyone else hears about it in minutes, not days.">
+      <PageIntro eyebrow="Community sightings · Australia" title="TCGTracker Scouts" lead="Kmart, BIG W and Target restock in store long before their websites catch up. Scouts are members who report what they see on the shelf, so everyone else hears about it in minutes, not days.">
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href={accountSightingsPath()} className="btn btn-primary btn-sm" rel="nofollow">Report a sighting</Link>
           <Link href="/drops/?source=member" className="btn btn-secondary btn-sm">See member sightings</Link>

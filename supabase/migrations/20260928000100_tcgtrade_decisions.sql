@@ -1,9 +1,9 @@
--- TCG Trade: owner decisions of 2026-09-28, plus the delivery plumbing for
+-- TCGTracker: owner decisions of 2026-09-28, plus the delivery plumbing for
 -- every alert the site sends (email outbox, drop-alert fan-out, message,
 -- listing-status and wishlist/saved-search alerts).
 --
 -- Decisions applied here (all still editable in the admin console):
---   * Brand "TCG Trade", https://tcgtrade.com.au
+--   * Brand "TCGTracker", https://tcgtracker.com.au
 --   * Premium A$12.99/month incl. GST (unchanged seed)
 --   * Free members DO get drop alerts, 1 day (1440 min) after the event;
 --     the public drop history uses the same delay
@@ -17,18 +17,18 @@ update public.site_settings set value = 'true' where key = 'drops.free_delayed_a
 update public.site_settings set value = 'true' where key = 'features.external_buy_fallback';
 
 insert into public.site_settings (key, value, description, is_public) values
-  ('site.name',                       '"TCG Trade"',                 'Brand name', true),
-  ('site.url',                        '"https://tcgtrade.com.au"',   'Canonical origin', true),
-  ('site.support_email',              '"hello@tcgtrade.com.au"',     'Support address shown to users', true),
+  ('site.name',                       '"TCGTracker"',                 'Brand name', true),
+  ('site.url',                        '"https://tcgtracker.com.au"',   'Canonical origin', true),
+  ('site.support_email',              '"hello@tcgtracker.com.au"',     'Support address shown to users', true),
   ('drops.free_delay_minutes',        '1440',                        'Free members receive drop alerts this long after the event', true),
   ('ebay.enabled',                    'true',                        'Show "Check eBay" when no marketplace listings exist', true),
   ('ebay.site',                       '"ebay.com.au"',               'eBay site searched', true),
   ('ebay.affiliate_enabled',          'false',                       'Wrap eBay links with eBay Partner Network tracking', true),
   ('ebay.campaign_id',                'null',                        'EPN campaign id (campid) — appears in public links anyway', true),
-  ('ebay.custom_id',                  '"tcgtrade"',                  'EPN customid (sub-id) prefix; the card id is appended', true),
+  ('ebay.custom_id',                  '"tcgtracker"',                  'EPN customid (sub-id) prefix; the card id is appended', true),
   ('ebay.rotation_id',                '"705-53470-19255-0"',         'EPN rotation id for eBay Australia (mkrid)', true),
   ('market.rank_by_price_until_population', 'true',                  'Until licensed population data exists, rank by PSA 10 price instead of market cap (labelled)', true),
-  ('email.from',                      '"TCG Trade <alerts@tcgtrade.com.au>"', 'Sender for alert emails', false),
+  ('email.from',                      '"TCGTracker <alerts@tcgtracker.com.au>"', 'Sender for alert emails', false),
   ('email.message_batch_minutes',     '10',                          'New-message emails are batched per conversation over this window', false)
 on conflict (key) do update set value = excluded.value, description = excluded.description;
 

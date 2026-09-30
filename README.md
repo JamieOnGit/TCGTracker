@@ -1,4 +1,4 @@
-# TCG Trade · tcgtrade.com.au
+# TCGTracker · tcgtracker.com.au
 
 Australia's graded Pokémon and One Piece card market, in AUD. It has three equal pillars:
 - **Market cap rankings:** graded values, population and market cap, with JP and EN printings as separate cards.
@@ -77,14 +77,14 @@ Wireframes: open `wireframes/index.html` in a browser. See `wireframes/README.md
 | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | web | Error monitoring. Inert when unset. |
 | `DATABASE_URL` | workers | Postgres connection string (service role) |
 | `SENTRY_DSN` | workers | Error monitoring. Every ERROR log (failed job, retailer cycle, email) is reported. |
-| `SITE_URL` | workers | Origin used in email links. Default `https://tcgtrade.com.au` |
+| `SITE_URL` | workers | Origin used in email links. Default `https://tcgtracker.com.au` |
 | `EMAIL_PROVIDER` | workers | `resend` (production) or `smtp` (Mailpit locally, or AWS SES SMTP) |
 | `RESEND_API_KEY` | workers | Resend API key, when `EMAIL_PROVIDER=resend` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_STARTTLS`, `SMTP_SSL` | workers | When `EMAIL_PROVIDER=smtp`. Local Mailpit: `127.0.0.1`, `54325`, `SMTP_STARTTLS=false`. SES: `email-smtp.ap-southeast-2.amazonaws.com`, `587`, SMTP credentials, STARTTLS on (the default). |
-| `EMAIL_FROM` | workers | Optional override for the sender. The default is the `email.from` site setting (`TCG Trade <alerts@tcgtrade.com.au>`). |
+| `EMAIL_FROM` | workers | Optional override for the sender. The default is the `email.from` site setting (`TCGTracker <alerts@tcgtracker.com.au>`). |
 | `ADMIN_ALERT_EMAIL` | workers | Receives admin alerts: a retailer monitor failing or returning nothing, emails or drop deliveries that exhausted their retries. Each alert is deduplicated per cause for 6 hours. |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | web (build variable) | Web push public key (`npx web-push generate-vapid-keys`). Without it the push toggle shows "being set up". |
-| `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | workers | Web push signing key and contact (`mailto:hello@tcgtrade.com.au`). Without them push deliveries are skipped, never retried forever. |
+| `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | workers | Web push signing key and contact (`mailto:hello@tcgtracker.com.au`). Without them push deliveries are skipped, never retried forever. |
 | `SUPABASE_URL` | workers | Public Supabase URL, used to build sighting photo links in alerts. |
 | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` | workers | eBay Browse API keys for the deal finder (`deals.enabled` must also be on). Budget-capped under eBay's 5,000 calls a day. |
 | `DISCORD_DROPS_WEBHOOK_URL` | workers | Premium Discord channel webhook. The bot posts once per drop event. |
@@ -120,5 +120,5 @@ The step-by-step owner guide is in [`docs/SETUP.md`](docs/SETUP.md).
 - **Database:** a Supabase project in the Sydney region. Push the migrations with `supabase db push`, or paste them in order. Don't run `supabase/tests/supabase_stub.sql` against Supabase.
 - **Workers:** one always-on Fly.io machine in `syd`, using `workers/Dockerfile` and `workers/fly.toml`. The deploy steps and secrets are in the comments at the top of `fly.toml`. Run exactly one machine (`fly scale count 1`) so the scheduler never runs twice. The workers can't run on Vercel or GitHub Actions, because drop polling is under 5 minutes. Point a healthchecks.io check (1 minute period, 3–5 minute grace) at `HEALTHCHECK_URL`.
 - **Stripe:** AUD price, GST-inclusive, with the customer portal enabled. Webhook: `https://<domain>/webhooks/stripe/`.
-- **Email:** Resend (`EMAIL_PROVIDER=resend`) or SES over SMTP, with SPF, DKIM and DMARC on `tcgtrade.com.au`. Every email has a one-click unsubscribe: `List-Unsubscribe` and `List-Unsubscribe-Post` headers pointing at `/unsubscribe/?t=<token>`, backed by `unsubscribe_tokens`. That page and its POST handler live in `web/`.
+- **Email:** Resend (`EMAIL_PROVIDER=resend`) or SES over SMTP, with SPF, DKIM and DMARC on `tcgtracker.com.au`. Every email has a one-click unsubscribe: `List-Unsubscribe` and `List-Unsubscribe-Post` headers pointing at `/unsubscribe/?t=<token>`, backed by `unsubscribe_tokens`. That page and its POST handler live in `web/`.
 - **Monitoring:** Sentry DSNs, an uptime monitor on `/`, and Search Console with the sitemap submitted.

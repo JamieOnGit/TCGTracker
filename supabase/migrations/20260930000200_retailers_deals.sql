@@ -18,7 +18,7 @@ insert into public.retailers (slug, name, base_url, adapter, enabled) values
   ('zing-pop-culture', 'Zing Pop Culture',      'https://www.zingpopculture.com.au','none', false),
   ('woolworths',       'Woolworths',            'https://www.woolworths.com.au',    'none', false),
   ('coles',            'Coles',                 'https://www.coles.com.au',         'none', false),
-  ('local-game-store', 'Independent game store','https://tcgtrade.com.au',          'none', false)
+  ('local-game-store', 'Independent game store','https://tcgtracker.com.au',          'none', false)
 on conflict (slug) do nothing;
 
 -- Monitored = has a real adapter. Admins can only switch monitoring on for those.

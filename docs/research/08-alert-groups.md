@@ -1,6 +1,6 @@
-# 08 · What the best alert groups do, and what TCG Trade copies (30 Sep 2026)
+# 08 · What the best alert groups do, and what TCGTracker copies (30 Sep 2026)
 
-This came from the owner's request to learn from Lowkey and other top alert and "cook" groups. It is based on a review of Lowkey (a member's write-up) and web research across AU and international services. Services whose value comes mainly from checkout bots, proxies or auto-checkout were noted but not copied. TCG Trade does not evade retailer bot protection.
+This came from the owner's request to learn from Lowkey and other top alert and "cook" groups. It is based on a review of Lowkey (a member's write-up) and web research across AU and international services. Services whose value comes mainly from checkout bots, proxies or auto-checkout were noted but not copied. TCGTracker does not evade retailer bot protection.
 
 ## Who's out there
 
@@ -33,7 +33,7 @@ This came from the owner's request to learn from Lowkey and other top alert and 
 9. **eBay deal finder** (PokéMafia's "eBay sniper", done compliantly). The workers use eBay's official Browse API, not scraping, to find graded cards listed on eBay Australia well under our market value, plus auctions ending soon under value. Strict title matching (card number and exact grade; no proxies or lots) keeps it trustworthy. Premium sees deals live; everyone else after 24 h. Members who wishlist a card are alerted. Links carry your eBay Partner Network ID. Emails link to our deals page, because EPN doesn't allow affiliate links in email. Table `ebay_deals`, page `/deals/`.
 10. **Wider store coverage for sightings.** Members can report from Toymate, Myer, Amazon AU, Costco, Officeworks, Zing, Woolworths, Coles and independent game stores (store name required), as well as the monitored retailers.
 11. **Follow sets** in the alert setup (PokéMafia's set-specific alerts), plus the existing "RRP only: skip scalper-priced listings" filter.
-12. **Pricing check**: the AU norm is roughly A$10–13/mo, often with a 3–7 day trial. TCG Trade Premium at A$12.99 is in range. A 7-day Stripe trial is optional and set on the Stripe price (see YOUR-NEXT-STEPS.md).
+12. **Pricing check**: the AU norm is roughly A$10–13/mo, often with a 3–7 day trial. TCGTracker Premium at A$12.99 is in range. A 7-day Stripe trial is optional and set on the Stripe price (see YOUR-NEXT-STEPS.md).
 
 ## What we deliberately did not copy
 **Automatic giveaway entry.** Chance-based giveaways are trade-promotion lotteries in Australia, and the ACT and SA need permits above certain prize values. We haven't built them. Scout rewards are earned, not drawn. If you want giveaways later, check the permit rules first.

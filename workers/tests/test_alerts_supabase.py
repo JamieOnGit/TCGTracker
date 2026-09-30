@@ -38,8 +38,8 @@ URL = os.environ.get("TEST_SUPABASE_DB_URL")
 MAILPIT = os.environ.get("MAILPIT_URL", "http://127.0.0.1:54324").rstrip("/")
 SMTP_HOST = os.environ.get("MAILPIT_SMTP_HOST", "127.0.0.1")
 SMTP_PORT = int(os.environ.get("MAILPIT_SMTP_PORT", "54325"))
-SITE = "https://tcgtrade.com.au"
-UPGRADE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: https://tcgtrade.com.au/premium/"
+SITE = "https://tcgtracker.com.au"
+UPGRADE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: https://tcgtracker.com.au/premium/"
 
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_SUPABASE_DB_URL not set")
 
@@ -192,7 +192,7 @@ def test_drop_event_reaches_premium_and_free_inboxes(conn, members, product):
         assert (
             msg["Subject"] == "IN STOCK: Pokemon TCG: Surging Sparks Elite Trainer Box at JB Hi-Fi — A$89.00"
         )
-        assert msg["From"]["Address"] == "alerts@tcgtrade.com.au" and msg["From"]["Name"] == "TCG Trade"
+        assert msg["From"]["Address"] == "alerts@tcgtracker.com.au" and msg["From"]["Name"] == "TCGTracker"
         assert f"https://www.jbhifi.com.au/products/{sku.lower()}" in msg["Text"]
         assert (UPGRADE in msg["Text"]) is (tier == "free")
         token = conn.execute(

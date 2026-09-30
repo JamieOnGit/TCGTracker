@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Applies every migration to a fresh database and runs the SQL test suite.
 #   PGHOST/PGPORT/PGUSER select the server (defaults: local socket, postgres).
-# Used locally and in CI (.github/workflows/tcg-ci.yml).
+# Used locally and in CI (.github/workflows/ci.yml).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DB="${TEST_DB:-tcg_test}"

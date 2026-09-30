@@ -29,7 +29,7 @@ export const guide: Guide = {
       a: 'Group submissions can share the cost of international shipping and handle paperwork for you, which helps with small batches. Submitting directly gives you more control. Either way, check the service’s reputation, insurance and fees first.',
     },
     {
-      q: 'Does TCG Trade track grades other than PSA 10?',
+      q: 'Does TCGTracker track grades other than PSA 10?',
       a: 'Yes. Our rankings default to PSA 10, and card pages show market cap, population and prices by grade where data is available, all in AUD.',
     },
   ],

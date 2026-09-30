@@ -1,4 +1,4 @@
-/* TCG Trade service worker: web push only (no caching, no offline).
+/* TCGTracker service worker: web push only (no caching, no offline).
    Payload (from the workers): { title, body, url, icon?, tag? } */
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
@@ -10,7 +10,7 @@ self.addEventListener('push', (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : '' }
   }
-  const title = data.title || 'TCG Trade'
+  const title = data.title || 'TCGTracker'
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',

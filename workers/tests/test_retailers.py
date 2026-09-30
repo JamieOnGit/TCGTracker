@@ -27,7 +27,7 @@ from tcgworkers.drops.models import Availability
 from tcgworkers.drops.robots import Robots
 from tcgworkers.drops.runner import fetch, load_adapters
 
-UA = "TCGTradeBot/1.0 (+https://tcgtrade.com.au/about/bot/)"
+UA = "TCGTrackerBot/1.0 (+https://tcgtracker.com.au/about/bot/)"
 REAL_APP = "VTVKM5URPX"
 REAL_KEY = "a0c0108d737ad5ab54a0e2da900bf040"
 
@@ -295,7 +295,7 @@ def test_all_retailer_adapters_are_registered():
 def test_robots_matcher_rules():
     r = Robots.parse(
         "User-agent: *\nDisallow: /private\nAllow: /private/ok$\nDisallow: /*.json$\n\n"
-        "User-agent: TCGTradeBot\nDisallow: /nobots/\n"
+        "User-agent: TCGTrackerBot\nDisallow: /nobots/\n"
     )
     assert r.can_fetch("OtherBot/1.0", "https://x/public")
     assert not r.can_fetch("OtherBot/1.0", "https://x/private/secret")

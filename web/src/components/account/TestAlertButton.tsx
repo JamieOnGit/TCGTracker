@@ -24,10 +24,10 @@ export function TestAlertButton() {
             try {
               if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
                 const reg = await navigator.serviceWorker.getRegistration('/')
-                await reg?.showNotification('Test alert: TCG Trade', {
+                await reg?.showNotification('Test alert: TCGTracker', {
                   body: 'This is what a restock or member sighting alert looks like.',
                   icon: '/icon-192.png',
-                  tag: 'tcgtrade-test',
+                  tag: 'tcgtracker-test',
                   data: { url: '/account/alerts/drops/' },
                 })
               }

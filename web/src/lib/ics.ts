@@ -4,7 +4,7 @@
  */
 
 export interface IcsEvent {
-  uid: string // globally unique and stable, e.g. "<id>@tcgtrade.com.au"
+  uid: string // globally unique and stable, e.g. "<id>@tcgtracker.com.au"
   date: string // YYYY-MM-DD, all-day
   summary: string
   description?: string
@@ -61,7 +61,7 @@ export function buildIcs(cal: IcsCalendar, now = new Date()): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//TCG Trade//Release calendar//EN-AU',
+    'PRODID:-//TCGTracker//Release calendar//EN-AU',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${escapeText(cal.name)}`,

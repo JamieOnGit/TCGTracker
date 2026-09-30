@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     path: listingPath(listing.id, listing.title),
     title: titles.listing({ title: listing.status === 'sold' ? `Sold: ${listing.title}` : listing.title, state: listing.state }),
-    description: `${listing.title} ${listing.status === 'sold' ? 'sold' : 'for sale'} for ${fmtAud(listing.priceAud)} in ${listing.state}, Australia. ${listing.certVerified ? 'PSA cert verified. ' : ''}Message the seller on TCG Trade.`,
+    description: `${listing.title} ${listing.status === 'sold' ? 'sold' : 'for sale'} for ${fmtAud(listing.priceAud)} in ${listing.state}, Australia. ${listing.certVerified ? 'PSA cert verified. ' : ''}Message the seller on TCGTracker.`,
     noindex: !['active', 'sold', 'expired'].includes(listing.status),
   })
 }

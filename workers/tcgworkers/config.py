@@ -24,8 +24,8 @@ def _flag(value: str | None, default: bool = False) -> bool:
     return value.strip().lower() in ("1", "true", "yes", "on")
 
 
-DEFAULT_SITE_URL = "https://tcgtrade.com.au"
-DEFAULT_EMAIL_FROM = "TCG Trade <alerts@tcgtrade.com.au>"
+DEFAULT_SITE_URL = "https://tcgtracker.com.au"
+DEFAULT_EMAIL_FROM = "TCGTracker <alerts@tcgtracker.com.au>"
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ class Env:
             # Identify ourselves honestly to every site we poll (brief 9.6).
             user_agent=e.get(
                 "WORKER_USER_AGENT",
-                "TCGTradeBot/1.0 (+https://tcgtrade.com.au/about/bot/; contact: hello@tcgtrade.com.au)",
+                "TCGTrackerBot/1.0 (+https://tcgtracker.com.au/about/bot/; contact: hello@tcgtracker.com.au)",
             ),
             psa_api_token=e.get("PSA_API_TOKEN"),
             # Off until Jamie confirms a PSA licence allows commercial display.

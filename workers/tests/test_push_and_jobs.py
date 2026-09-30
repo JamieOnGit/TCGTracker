@@ -33,7 +33,7 @@ def _fake_webpush(calls: list[dict[str, Any]], status: int | None = None) -> Any
 def test_webpush_sender_sends_json_with_vapid(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[dict[str, Any]] = []
     monkeypatch.setattr(pywebpush, "webpush", _fake_webpush(calls))
-    send = webpush_sender("PRIVATE", "mailto:hello@tcgtrade.com.au")
+    send = webpush_sender("PRIVATE", "mailto:hello@tcgtracker.com.au")
     send(SUB, push_payload("IN STOCK: ETB", "JB Hi-Fi · A$89.00", "/drops/", "drop-1"))
     send(SUB, push_payload("t", "b", "/", "x"))
     call = calls[0]
@@ -48,7 +48,7 @@ def test_webpush_sender_sends_json_with_vapid(monkeypatch: pytest.MonkeyPatch) -
         "tag": "drop-1",
     }
     assert call["vapid_private_key"] == "PRIVATE"
-    assert call["vapid_claims"] == {"sub": "mailto:hello@tcgtrade.com.au"}
+    assert call["vapid_claims"] == {"sub": "mailto:hello@tcgtracker.com.au"}
     assert calls[1]["vapid_claims"] is not call["vapid_claims"]  # pywebpush mutates it
 
 
@@ -77,11 +77,11 @@ def test_push_needs_both_vapid_settings() -> None:
     env = Env.from_environ(
         {
             "VAPID_PRIVATE_KEY": "k",
-            "VAPID_SUBJECT": "mailto:hello@tcgtrade.com.au",
+            "VAPID_SUBJECT": "mailto:hello@tcgtracker.com.au",
             "SUPABASE_URL": "https://ref.supabase.co/",
         }
     )
-    assert env.vapid_private_key == "k" and env.vapid_subject == "mailto:hello@tcgtrade.com.au"
+    assert env.vapid_private_key == "k" and env.vapid_subject == "mailto:hello@tcgtracker.com.au"
     assert env.supabase_url == "https://ref.supabase.co"
     assert Env.from_environ({}).supabase_url is None
 

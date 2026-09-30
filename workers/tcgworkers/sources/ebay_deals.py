@@ -561,7 +561,7 @@ class DealFinder:
                     query,
                     max_price=deal_ceiling(card.market_aud, settings.min_discount_pct),
                     campaign_id=settings.campaign_id,
-                    reference=f"tcgtrade-{card.card_id}",
+                    reference=f"tcgtracker-{card.card_id}",
                 )
             except RateLimited:
                 log.warning("deals: eBay rate limit, stopping this run after %d cards", stats["cards"])

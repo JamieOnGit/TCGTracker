@@ -266,7 +266,7 @@ class PriceChartingError(RuntimeError):
 class PriceChartingClient:
     token: str
     csv_url_template: str = DEFAULT_CSV_URL_TEMPLATE
-    user_agent: str = "TCGTradeBot/1.0 (+https://tcgtrade.com.au/about/bot/)"
+    user_agent: str = "TCGTrackerBot/1.0 (+https://tcgtracker.com.au/about/bot/)"
     transport: httpx.BaseTransport | None = None
     clock: Callable[[], float] = time.monotonic
     sleep: Callable[[float], None] = time.sleep

@@ -81,13 +81,13 @@ describe('ICS builder', () => {
   })
   it('writes all-day events with stable UIDs and CRLF endings', () => {
     const ics = buildIcs(
-      { name: 'Test, calendar', events: [{ uid: 'abc@tcgtrade.com.au', date: '2026-12-31', summary: 'Set; one', url: 'https://example.com.au/releases/pokemon/x/', updatedAt: '2026-09-01T10:20:30Z' }] },
+      { name: 'Test, calendar', events: [{ uid: 'abc@tcgtracker.com.au', date: '2026-12-31', summary: 'Set; one', url: 'https://example.com.au/releases/pokemon/x/', updatedAt: '2026-09-01T10:20:30Z' }] },
       new Date('2026-09-30T00:00:00Z'),
     )
     expect(ics.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0\r\n')).toBe(true)
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
     expect(ics).toContain('X-WR-CALNAME:Test\\, calendar\r\n')
-    expect(ics).toContain('UID:abc@tcgtrade.com.au\r\n')
+    expect(ics).toContain('UID:abc@tcgtracker.com.au\r\n')
     expect(ics).toContain('DTSTAMP:20260901T102030Z\r\n')
     expect(ics).toContain('DTSTART;VALUE=DATE:20261231\r\n')
     expect(ics).toContain('DTEND;VALUE=DATE:20270101\r\n')
@@ -120,7 +120,7 @@ describe('markdown subset', () => {
     expect(inlineText(nodes)).toContain('<script>')
     expect(safeHref('javascript:alert(1)')).toBeNull()
     expect(safeHref('//evil.example')).toBeNull()
-    expect(safeHref('mailto:hello@tcgtrade.com.au')).toBe('mailto:hello@tcgtrade.com.au')
+    expect(safeHref('mailto:hello@tcgtracker.com.au')).toBe('mailto:hello@tcgtracker.com.au')
   })
 })
 

@@ -123,7 +123,7 @@ class SmtpProvider:
         msg["To"] = email.to
         msg["Subject"] = email.subject
         msg["Date"] = formatdate(localtime=False)
-        domain = email.from_addr.rsplit("@", 1)[-1].strip(" >") or "tcgtrade.com.au"
+        domain = email.from_addr.rsplit("@", 1)[-1].strip(" >") or "tcgtracker.com.au"
         msg["Message-ID"] = make_msgid(domain=domain)
         if email.reply_to:
             msg["Reply-To"] = email.reply_to

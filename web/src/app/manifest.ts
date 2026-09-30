@@ -7,8 +7,8 @@ import type { MetadataRoute } from 'next'
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'TCG Trade',
-    short_name: 'TCG Trade',
+    name: 'TCGTracker',
+    short_name: 'TCGTracker',
     description: 'Pokémon and One Piece TCG market cap, marketplace and retail drop alerts for Australia.',
     start_url: '/',
     scope: '/',

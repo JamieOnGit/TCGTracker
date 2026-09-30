@@ -551,7 +551,7 @@ export function ListingEditor({ userId, initial, prefill, quota: q0, defaults, r
               <label htmlFor="description">Description</label>
               <textarea id="description" className="textarea" maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} aria-invalid={inv('description')} aria-describedby={desc('description', 'desc-hint')} placeholder="Centring, surface, any marks on the slab, how you'll pack it…" />
               <p id="desc-hint" className="hint">
-                Don&apos;t include your phone number or email: buyers message you on TCG Trade. Listings for proxies, replicas or fakes are removed.
+                Don&apos;t include your phone number or email: buyers message you on TCGTracker. Listings for proxies, replicas or fakes are removed.
               </p>
               {hints.blocked.length > 0 && <p className="field-error">Contains a banned word ({hints.blocked.join(', ')}). Fakes and proxies can&apos;t be listed.</p>}
               {hints.flagged.length > 0 && <p className="hint" style={{ color: 'var(--warn)' }}>Mentions {hints.flagged.join(', ')}: these payment methods have no buyer protection, so moderators take a closer look.</p>}
@@ -619,7 +619,7 @@ export function ListingEditor({ userId, initial, prefill, quota: q0, defaults, r
             </dl>
             <div className="notice">
               <strong>What happens next:</strong> a moderator checks every listing, usually within a few hours. Submitting uses 1 of your {q0.limit} listings this month.
-              Buyers contact you through TCG Trade messages; your email and phone stay hidden.
+              Buyers contact you through TCGTracker messages; your email and phone stay hidden.
             </div>
           </section>
         )}

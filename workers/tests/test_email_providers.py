@@ -23,7 +23,7 @@ EMAIL = OutgoingEmail(
     html="<p>hi</p>",
     text="hi",
     headers={
-        "List-Unsubscribe": "<https://tcgtrade.com.au/unsubscribe/?t=abc>",
+        "List-Unsubscribe": "<https://tcgtracker.com.au/unsubscribe/?t=abc>",
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
     idempotency_key="outbox-1-",
@@ -74,9 +74,9 @@ def test_resend_network_error_is_retryable():
 
 def test_smtp_message_has_both_parts_and_unsubscribe_headers():
     msg = SmtpProvider("localhost").build(EMAIL)
-    assert msg["List-Unsubscribe"] == "<https://tcgtrade.com.au/unsubscribe/?t=abc>"
+    assert msg["List-Unsubscribe"] == "<https://tcgtracker.com.au/unsubscribe/?t=abc>"
     assert msg["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
-    assert msg["Message-ID"].endswith("@tcgtrade.com.au>")
+    assert msg["Message-ID"].endswith("@tcgtracker.com.au>")
     types = [p.get_content_type() for p in msg.iter_parts()]
     assert types == ["text/plain", "text/html"]
 
@@ -84,7 +84,7 @@ def test_smtp_message_has_both_parts_and_unsubscribe_headers():
 def test_smtp_long_unsubscribe_header_is_not_encoded():
     # A real token URL is ~90 chars; the default 78-char policy RFC 2047-encodes
     # it, and Gmail then can't offer one-click unsubscribe.
-    url = "https://tcgtrade.com.au/unsubscribe/?t=3x3fIxS6u_USBdeDo2Wo49qHvFssnwaAbi0nE4Z74K4"
+    url = "https://tcgtracker.com.au/unsubscribe/?t=3x3fIxS6u_USBdeDo2Wo49qHvFssnwaAbi0nE4Z74K4"
     email = OutgoingEmail(**{**EMAIL.__dict__, "headers": {"List-Unsubscribe": f"<{url}>"}})
     raw = SmtpProvider("localhost").build(email).as_bytes()
     assert f"List-Unsubscribe: <{url}>\r\n".encode() in raw

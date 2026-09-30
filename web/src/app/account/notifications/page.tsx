@@ -17,7 +17,7 @@ const TYPE_LABEL: Record<string, string> = {
   saved_search: 'Saved search',
   drop: 'Retail drop',
   billing: 'Billing',
-  system: 'TCG Trade',
+  system: 'TCGTracker',
 }
 
 export default async function Notifications() {

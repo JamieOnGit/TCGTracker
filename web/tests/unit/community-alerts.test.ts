@@ -54,7 +54,7 @@ describe('sighting form helpers', () => {
     const lgs = { ...inStore, retailerSlug: 'local-game-store' }
     expect(sightingSchema.safeParse(lgs).error?.issues[0]?.path).toEqual(['storeName'])
     expect(sightingSchema.safeParse({ ...lgs, storeName: 'Good Games Melbourne Central' }).success).toBe(true)
-    expect(sightingSchema.safeParse({ ...lgs, channel: 'online', url: 'https://tcgtrade.com.au/x', storeName: 'GG' }).success).toBe(false)
+    expect(sightingSchema.safeParse({ ...lgs, channel: 'online', url: 'https://tcgtracker.com.au/x', storeName: 'GG' }).success).toBe(false)
   })
 
   it('explains the outcome and the RPC’s errors in plain English', () => {

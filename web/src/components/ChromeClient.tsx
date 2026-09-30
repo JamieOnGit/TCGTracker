@@ -99,7 +99,7 @@ export function MobileMenu({ items }: { items: Item[] }) {
       {open && (
         <div role="dialog" aria-modal="true" aria-label="Menu" className="fixed inset-0 z-50 overflow-y-auto" style={{ background: 'var(--bg)' }}>
           <div className="container-x flex h-[var(--header-h)] items-center justify-between border-b" style={{ borderColor: 'var(--line)' }}>
-            <span className="wordmark">TCG Trade</span>
+            <span className="wordmark">TCGTracker</span>
             <button className="icon-btn" aria-label="Close menu" onClick={() => setOpen(false)}><X size={20} strokeWidth={1.25} /></button>
           </div>
           <nav className="container-x grid gap-5 py-8" aria-label="Mobile">

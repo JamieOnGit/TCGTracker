@@ -90,7 +90,7 @@ def test_confirmed_sighting_is_claimed_and_rendered(conn: Conn, members: dict[st
 
     run_dispatcher(
         conn,
-        site_url="https://tcgtrade.com.au",
+        site_url="https://tcgtracker.com.au",
         discord_webhook_url=None,
         admin_email=None,
         push_sender=None,

@@ -93,7 +93,7 @@ Resealed or fake sealed product is a separate problem:
 
 ## Where to buy with confidence
 
-The simplest protection is where you buy. Major Australian retailers and established local game stores sell genuine product. On the secondary market, use sellers with a track record, pay with buyer protection and ask for clear photos of the front, back and edges. Listings on the [TCG Trade marketplace](/marketplace/) are reviewed before going live, and our guide to [selling and buying safely](/guides/selling-cards-safely-australia/) covers the payment side.
+The simplest protection is where you buy. Major Australian retailers and established local game stores sell genuine product. On the secondary market, use sellers with a track record, pay with buyer protection and ask for clear photos of the front, back and edges. Listings on the [TCGTracker marketplace](/marketplace/) are reviewed before going live, and our guide to [selling and buying safely](/guides/selling-cards-safely-australia/) covers the payment side.
 
 If you believe you've been deliberately scammed, you can report it to [Scamwatch](https://www.scamwatch.gov.au/). Official product information is on [Pokémon Australia](https://www.pokemon.com/au).
 `,

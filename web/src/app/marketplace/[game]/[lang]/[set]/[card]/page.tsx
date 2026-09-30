@@ -26,7 +26,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   return buildMetadata({
     path: cardMarketplacePath(card),
     title: titles.cardMarketplace({ name: card.name, number: card.number, setName: card.setName, lang: card.lang }),
-    description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'}) for sale from Australian sellers, cheapest first, in AUD. Message sellers on TCG Trade.`,
+    description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'}) for sale from Australian sellers, cheapest first, in AUD. Message sellers on TCGTracker.`,
     searchParams: await searchParams,
   })
 }

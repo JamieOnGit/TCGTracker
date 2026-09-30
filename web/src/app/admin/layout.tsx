@@ -8,7 +8,7 @@ import { currentUserWithRole, supabaseConfigured, supabaseForRequest } from '@/l
 import './admin.css'
 
 export const metadata: Metadata = {
-  title: { default: 'Admin console · TCG Trade', template: '%s · Admin · TCG Trade' },
+  title: { default: 'Admin console · TCGTracker', template: '%s · Admin · TCGTracker' },
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 }
 export const dynamic = 'force-dynamic'

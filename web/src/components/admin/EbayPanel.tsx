@@ -11,17 +11,17 @@ export function EbayPanel({ initial, sample }: { initial: EbaySettings; sample: 
   const [enabled, setEnabled] = useState(initial.enabled)
   const [affiliate, setAffiliate] = useState(initial.affiliateEnabled)
   const [campaign, setCampaign] = useState(initial.campaignId ?? '')
-  const [customId, setCustomId] = useState(initial.customIdPrefix ?? 'tcgtrade')
+  const [customId, setCustomId] = useState(initial.customIdPrefix ?? 'tcgtracker')
   const [state, run, pending] = useActionState(async (_p: ActionResult | null, fd: FormData) => saveEbayAffiliate(fd), null)
 
   const campaignOk = campaign === '' || validCampaignId(campaign)
-  const url = ebaySearchUrl(sample, { ...initial, enabled, affiliateEnabled: affiliate, campaignId: campaign || null, customIdPrefix: customId || 'tcgtrade' })
+  const url = ebaySearchUrl(sample, { ...initial, enabled, affiliateEnabled: affiliate, campaignId: campaign || null, customIdPrefix: customId || 'tcgtracker' })
   const tracking = Boolean(url && affiliate && validCampaignId(campaign))
 
   return (
     <section className="admin-panel" aria-labelledby={`${uid}-h`} id="ebay">
       <h2 id={`${uid}-h`} className="admin-h2">eBay affiliate</h2>
-      <p className="muted text-sm">When a card has no TCG Trade listings, its Buy button links to an eBay Australia search for that exact card, language and grade. These details apply to every card link at once.</p>
+      <p className="muted text-sm">When a card has no TCGTracker listings, its Buy button links to an eBay Australia search for that exact card, language and grade. These details apply to every card link at once.</p>
       <form
         className="admin-form mt-4"
         onSubmit={(e) => {
@@ -59,7 +59,7 @@ export function EbayPanel({ initial, sample }: { initial: EbaySettings; sample: 
           <div className="field">
             <label htmlFor={`${uid}-p`}>Custom ID prefix</label>
             <input id={`${uid}-p`} name="custom_id" className="input" value={customId} maxLength={40} onChange={(e) => setCustomId(e.target.value)} aria-describedby={`${uid}-ph`} />
-            <span id={`${uid}-ph`} className="hint">The card id is appended (e.g. {customId || 'tcgtrade'}-&lt;card&gt;) so EPN reports show which cards earn.</span>
+            <span id={`${uid}-ph`} className="hint">The card id is appended (e.g. {customId || 'tcgtracker'}-&lt;card&gt;) so EPN reports show which cards earn.</span>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export function EbayPanel({ initial, sample }: { initial: EbaySettings; sample: 
         <summary className="prose-link">How to get a Campaign ID</summary>
         <ol className="admin-steps">
           <li>Sign in (or join) at <a className="prose-link" href="https://partnernetwork.ebay.com.au/" target="_blank" rel="noopener noreferrer">partnernetwork.ebay.com.au</a> with the business eBay account.</li>
-          <li>Open <strong>Campaigns</strong> and create one, e.g. “TCG Trade Buy button”.</li>
+          <li>Open <strong>Campaigns</strong> and create one, e.g. “TCGTracker Buy button”.</li>
           <li>Copy its 10-digit <strong>Campaign ID</strong> into the field above, switch tracking on and save.</li>
           <li>Check the preview link opens eBay Australia, then watch clicks arrive in EPN reports (usually within a day).</li>
         </ol>

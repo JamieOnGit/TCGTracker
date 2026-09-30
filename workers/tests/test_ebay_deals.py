@@ -261,7 +261,7 @@ def test_search_request_and_token_caching() -> None:
         "Charizard ex 199 PSA 10",
         max_price=Decimal("800.00"),
         campaign_id="5338000000",
-        reference="tcgtrade-abc",
+        reference="tcgtracker-abc",
     )
     assert len(results) == 11
     req = fake.searches[0]
@@ -274,7 +274,7 @@ def test_search_request_and_token_caching() -> None:
     assert req.headers["X-EBAY-C-MARKETPLACE-ID"] == "EBAY_AU"
     assert (
         req.headers["X-EBAY-C-ENDUSERCTX"]
-        == "affiliateCampaignId=5338000000,affiliateReferenceId=tcgtrade-abc"
+        == "affiliateCampaignId=5338000000,affiliateReferenceId=tcgtracker-abc"
     )
     assert req.headers["Authorization"] == "Bearer v^1.1#i^1#test-token"
 
