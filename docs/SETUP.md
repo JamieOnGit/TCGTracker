@@ -8,7 +8,7 @@ Rough monthly cost, similar to beforeyoufly.com.au:
 
 | Service | What for | Cost to start |
 |---|---|---|
-| GoDaddy | `tcgtracker.com.au` domain | about A$20–30 a year |
+| VentraIP | `tcgtracker.com.au` domain | about A$20–30 a year |
 | Cloudflare | DNS and website hosting (Workers) | Free. Workers Paid (US$5/mo) once traffic grows. |
 | Supabase | Database, sign-in, photo storage, realtime messaging | Free. Pro (US$25/mo) once you have real users, for daily backups and no pausing. |
 | Fly.io | The 24/7 drop monitor and alert sender, in Sydney | about US$2–5/mo |
@@ -27,13 +27,13 @@ Rough monthly cost, similar to beforeyoufly.com.au:
 5. Give Claude access: open https://github.com/apps/claude/installations/select_target, choose your account, then **Configure**. Under *Repository access*, add **TCGTracker** (or choose *All repositories*), and **Save**.
 6. Tell Claude: "repo is ready". Claude pushes all the work there and opens the pull request.
 
-## 2. Domain: tcgtracker.com.au (GoDaddy)
+## 2. Domain: tcgtracker.com.au (VentraIP)
 `.com.au` domains need an Australian presence. You'll be asked for an **ABN (or ACN)**, and the name must match or relate to your business. If you don't have an ABN, get a free one at https://www.abr.gov.au first.
-1. On godaddy.com.au, search `tcgtracker.com.au` and add it to the cart. **Untick** the extras (Microsoft email, website builder, "Full Domain Protection" isn't needed). Choose 1 or 2 years.
-2. At checkout, enter your ABN, entity name and eligibility type ("Company"/"Sole trader"), then pay.
+1. On https://ventraip.com.au, search `tcgtracker.com.au` and add it to the cart. Skip the hosting and email add-ons. Choose 1 or 2 years.
+2. At checkout, enter your ABN, the registrant name as it appears on the ABN, and eligibility type ("Company"/"Sole trader"), then pay. Confirm the registrant email VentraIP sends.
 3. **Move DNS to Cloudflare**, so hosting, email records and redirects are all managed in one place, as with beforeyoufly:
    1. In Cloudflare (https://dash.cloudflare.com), click **Add a domain**, enter `tcgtracker.com.au`, choose the **Free** plan, and continue. Cloudflare shows you **two nameservers** (for example `ada.ns.cloudflare.com`, `bob.ns.cloudflare.com`).
-   2. In GoDaddy, go to **My Products**, then `tcgtracker.com.au` → **DNS**, then **Nameservers** → **Change nameservers** → **I'll use my own nameservers**. Paste the two Cloudflare nameservers and save.
+   2. In VIPcontrol (https://vip.ventraip.com.au), go to **Domain Names**, click `tcgtracker.com.au`, then **Nameservers**. Choose custom nameservers, enter the two Cloudflare nameservers (and only those two), and save.
    3. Wait until Cloudflare emails "tcgtracker.com.au is now active". It's usually under an hour, but can take up to 24.
 4. In Cloudflare, under **SSL/TLS**, set the mode to **Full (strict)**. Under **SSL/TLS → Edge Certificates**, turn on **Always Use HTTPS**.
 5. (Later, Claude will ask) Add a redirect rule so `www.tcgtracker.com.au` goes to `https://tcgtracker.com.au` (301).

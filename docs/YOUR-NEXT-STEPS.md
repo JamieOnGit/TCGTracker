@@ -23,12 +23,13 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 - You can delete the unused **tcgtrade** repo you created earlier (and make sure it's gone or private). Go to *Settings → Danger Zone → Delete this repository*.
 
 ## Step 2 · Buy the domain and point it at Cloudflare (≈20 min + waiting)
-1. On **godaddy.com.au**, search `tcgtracker.com.au` and add it to the cart. **Untick every add-on** (email, website builder, protection).
-2. At checkout, enter your **ABN**, entity name and eligibility type (sole trader or company). No ABN yet? It's free at https://www.abr.gov.au.
-3. At **https://dash.cloudflare.com**, click **Add a domain** → `tcgtracker.com.au` → **Free** plan. Copy the **two nameservers** it shows.
-4. In GoDaddy, go to **My Products** → `tcgtracker.com.au` → **DNS** → **Nameservers** → **Change** → **I'll use my own nameservers**, paste both and save.
-5. Wait for Cloudflare's email "tcgtracker.com.au is now active". It usually takes under an hour.
-6. In Cloudflare, go to **SSL/TLS** → mode **Full (strict)**. Then **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
+1. On **https://ventraip.com.au**, search `tcgtracker.com.au` and add it to the cart. Choose 1 or 2 years. **Skip the hosting and email add-ons**: the site is hosted on Cloudflare and email goes through Resend.
+2. At checkout, fill in the **.au eligibility** details: your **ABN**, the registrant name exactly as it appears on the ABN, and eligibility type (sole trader or company). No ABN yet? It's free at https://www.abr.gov.au.
+3. VentraIP emails you to confirm the registrant details. Click the link, or the .au registry can suspend the domain.
+4. At **https://dash.cloudflare.com**, click **Add a domain** → `tcgtracker.com.au` → **Free** plan. Copy the **two nameservers** it shows.
+5. Log in to **VIPcontrol** (https://vip.ventraip.com.au) → **Domain Names** → click `tcgtracker.com.au` → **Nameservers**. Choose **custom nameservers**, replace VentraIP's nameservers with the two from Cloudflare, and save. Remove any extra nameserver rows, so only Cloudflare's two are left.
+6. Wait for Cloudflare's email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours.
+7. In Cloudflare, go to **SSL/TLS** → mode **Full (strict)**. Then **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
 
 ## Step 3 · Supabase: database, sign-in and photos (≈15 min)
 1. Go to **https://supabase.com/dashboard** → **New project**. Name `tcgtracker`, region **Sydney (ap-southeast-2)**, and a strong DB password saved in your password manager.
@@ -201,7 +202,7 @@ These give reliable stock and price data **with permission**, which beats any wo
 ## Monthly running costs (similar to beforeyoufly.com.au)
 | Service | Cost |
 |---|---|
-| Domain (GoDaddy) | ~A$25/yr |
+| Domain (VentraIP) | ~A$20–30/yr |
 | Cloudflare hosting | Free → US$5/mo as traffic grows |
 | Supabase | Free → US$25/mo once there are real users (daily backups) |
 | Fly.io (Sydney) | ~US$2–5/mo |
