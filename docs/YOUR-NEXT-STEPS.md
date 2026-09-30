@@ -37,20 +37,53 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 7. In Cloudflare, click **Check nameservers now**, then wait for the email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours.
 8. In Cloudflare, go to **SSL/TLS** → mode **Full (strict)**. Then **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
 
-## Step 3 · Supabase: database, sign-in and photos (≈15 min)
-1. Go to **https://supabase.com/dashboard** → **New project**. Name `tcgtracker`, region **Sydney (ap-southeast-2)**, and a strong DB password saved in your password manager.
-2. Under **Project Settings → API**, keep the tab open. You'll copy three values in Step 4:
-   - Project URL
-   - anon public key
-   - service_role key
-3. Under **Authentication → URL Configuration**, set Site URL to `https://tcgtracker.com.au` and add the Redirect URL `https://tcgtracker.com.au/**`.
-4. The **Magic link** email template can only be edited once custom SMTP is on. That happens in Step 5. Until then, sign-in links work on the same device and browser that requested them.
-5. ✉️ Tell Claude: **"Supabase project created"**. Claude then applies the database with `supabase db push`, which creates every table and the photo storage buckets. You'll be asked to run one command or to add the DB password as a secret.
-6. **Make yourself admin.** Sign in to the live site once, then open Supabase **SQL Editor**, paste this with your email, and click **Run**:
-   ```sql
-   update public.profile_private set role = 'admin'
-   where user_id = (select id from auth.users where email = 'jamieha1998@gmail.com');
-   ```
+## Step 3 · Supabase: database, sign-in and photos (≈20 min)
+
+### 3a · Create the project ✅ (you've done this)
+Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password saved in your password manager, and **Enable Data API** and **Automatically expose new tables** both ticked.
+
+### 3b · Sign-in address settings (2 min)
+1. In the Supabase dashboard, open the **tcgtracker** project.
+2. In the left sidebar, click **Authentication**. Under **Configuration**, click **URL Configuration**.
+3. **Site URL**: replace `http://localhost:3000` with `https://tcgtracker.com.au` and click **Save changes**.
+4. **Redirect URLs**: click **Add URL**, enter `https://tcgtracker.com.au/**` and click **Save URLs**.
+5. Skip the email templates for now. They unlock after custom SMTP in Step 5.
+
+### 3c · Collect three values for GitHub (5 min)
+These let GitHub load the database tables into Supabase for you. Don't paste them into the chat.
+1. **Project ID:** Supabase → **Project Settings** (gear icon, bottom of the sidebar) → **General** → copy **Project ID**. It's a 20-letter code like `abcdefghijklmnopqrst`.
+2. **Access token:** click your avatar (top right) → **Account preferences** → **Access Tokens** (or go to https://supabase.com/dashboard/account/tokens) → **Generate new token**. Name it `github-deploy`, then copy the token. It's shown once only.
+3. **Database password:** the one you saved from 3a. Forgot it? Go to **Project Settings → Database → Reset database password**, generate a new one and save it.
+
+### 3d · Add them to GitHub as secrets (3 min)
+1. Open **https://github.com/JamieOnGit/TCGTracker/settings/secrets/actions**. That's the repo → **Settings** → **Secrets and variables** → **Actions**.
+2. Click **New repository secret** three times, one per value. The names must match exactly:
+
+   | Name | Secret |
+   |---|---|
+   | `SUPABASE_PROJECT_REF` | the Project ID |
+   | `SUPABASE_ACCESS_TOKEN` | the access token |
+   | `SUPABASE_DB_PASSWORD` | the database password |
+
+### 3e · Merge the code into main (1 min)
+The "Deploy database" button only appears once the code is on `main`.
+1. Open **https://github.com/JamieOnGit/TCGTracker/pull/1**.
+2. Click **Ready for review**, then **Merge pull request** → **Confirm merge**. All checks are green.
+
+### 3f · Load the database (3 min)
+1. Open **https://github.com/JamieOnGit/TCGTracker/actions** → click **Deploy database** in the left list.
+2. Click **Run workflow** (right side). Keep branch `main`, type `deploy` in the box, then click the green **Run workflow**.
+3. Wait for the green tick (about a minute). Click into the run to see each step. "Apply migrations" lists every table set it created.
+4. Check in Supabase: **Table Editor** should now show tables like `cards`, `listings`, `sightings` and `release_events`. **Storage** should show the buckets `listing-images`, `message-attachments` and `sighting-photos`.
+5. ✉️ Tell Claude: **"database deployed"**. If the run is red, tell Claude and it will read the log.
+
+### 3g · Make yourself admin (after Step 4, once the site is live)
+Sign in on the live site once, then in Supabase open **SQL Editor** → **New query**, paste this and click **Run**:
+```sql
+update public.profile_private set role = 'admin'
+where user_id = (select id from auth.users where email = 'jamieha1998@gmail.com');
+```
+You'll need the keys under **Project Settings → API** (Project URL, anon key, service_role key) in Step 4.
 
 ## Step 4 · Cloudflare Workers: the website itself (≈15 min)
 1. In Cloudflare, go to **Workers & Pages → Create → Import a repository** → connect GitHub → pick **TCGTracker**.
@@ -200,7 +233,7 @@ These give reliable stock and price data **with permission**, which beats any wo
 ---
 
 ## What to send Claude, in order
-1. "Supabase project created" (Step 3)
+1. "database deployed" (Step 3f)
 2. "workers deployed" (Step 7)
 3. Whether you're registered for GST (Step 8)
 4. "PriceCharting subscribed" and, later, their reply about display rights (Step 9)

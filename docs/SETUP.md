@@ -94,6 +94,6 @@ Rough monthly cost, similar to beforeyoufly.com.au:
 
 ## What to send Claude
 - "Repo is ready" (step 1)
-- "Supabase project created" (step 4). Claude will then tell you exactly which secret to add.
+- "database deployed", after running the Deploy database workflow (see YOUR-NEXT-STEPS.md Step 3).
 - Whether you're registered for GST (step 7)
 - "PriceCharting subscribed" (step 8)
