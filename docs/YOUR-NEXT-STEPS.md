@@ -44,8 +44,7 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
    - anon public key
    - service_role key
 3. Under **Authentication → URL Configuration**, set Site URL to `https://tcgtracker.com.au` and add the Redirect URL `https://tcgtracker.com.au/**`.
-4. Under **Authentication → Emails → Templates → Magic Link**, set the link to:
-   `{{ .SiteURL }}/login/confirm/?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}`
+4. The **Magic link** email template can only be edited once custom SMTP is on. That happens in Step 5. Until then, sign-in links work on the same device and browser that requested them.
 5. ✉️ Tell Claude: **"Supabase project created"**. Claude then applies the database with `supabase db push`, which creates every table and the photo storage buckets. You'll be asked to run one command or to add the DB password as a secret.
 6. **Make yourself admin.** Sign in to the live site once, then open Supabase **SQL Editor**, paste this with your email, and click **Run**:
    ```sql
@@ -79,6 +78,9 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
    - Host `smtp.resend.com`, port `465`
    - User `resend`, password = the API key
    - Sender `TCGTracker <hello@tcgtracker.com.au>`
+6. Now that SMTP is on, open **Authentication → Emails → Templates → Magic link or OTP** and replace the link in the body with:
+   `{{ .SiteURL }}/login/confirm/?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}`
+   With this link, a sign-in email opened on a different device (e.g. your phone's email app) still works. Save.
 
 ## Step 6 · Push-notification keys (≈2 min) *new*
 These let the site send phone and desktop notifications with no app and no SMS cost.

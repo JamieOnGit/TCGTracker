@@ -48,7 +48,7 @@ Rough monthly cost, similar to beforeyoufly.com.au:
 1. Go to https://supabase.com/dashboard → **New project**. Name `tcgtracker`, **Region: Sydney (ap-southeast-2)**, and a strong database password (save it in your password manager).
 2. When it's ready, go to **Project Settings → API**. Copy **Project URL** and the **anon public** key into Cloudflare as `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Copy the **service_role** key into Cloudflare as the secret `SUPABASE_SERVICE_ROLE_KEY`.
 3. **Authentication → URL Configuration**: Site URL `https://tcgtracker.com.au`, Redirect URLs `https://tcgtracker.com.au/**`.
-4. **Authentication → Emails → Templates → Magic Link**: change the link to `{{ .SiteURL }}/login/confirm/?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}` so a sign-in link opened on a different device (e.g. phone email app) still works. Claude can paste the full branded template for you.
+4. **Authentication → Emails → Templates → Magic link or OTP** (editable only after custom SMTP in step 5 is on): change the link to `{{ .SiteURL }}/login/confirm/?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}` so a sign-in link opened on a different device (e.g. phone email app) still works. Claude can paste the full branded template for you.
 5. **Authentication → Emails → SMTP Settings**: enable custom SMTP using Resend (step 6) so sign-in emails come from `tcgtracker.com.au`. Host `smtp.resend.com`, port `465`, user `resend`, password = your Resend API key, sender `TCGTracker <hello@tcgtracker.com.au>`.
 6. Tell Claude when the project exists. Claude applies the database migrations with `supabase db push`. You'll be asked to run one command, or to add the database password as a secret.
 
