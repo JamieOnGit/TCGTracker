@@ -1,6 +1,6 @@
 # TCGTracker: your next steps
 
-Last updated 30 September 2026. Work top to bottom. Each step says **where to click**, **what to copy where**, and **what to tell Claude**.
+Last updated 30 September 2026 (evening). Work top to bottom. Each step says **where to click**, **what to copy where**, and **what to tell Claude**.
 
 > **Never paste passwords or secret keys into the chat.** Put them straight into Cloudflare, Fly.io or Supabase as described below. Claude only needs to hear "done".
 
@@ -15,6 +15,19 @@ Last updated 30 September 2026. Work top to bottom. Each step says **where to cl
 
 It isn't online yet. That needs the accounts below, which only you can open.
 
+## Progress
+| Step | What | Status |
+|---|---|---|
+| 1 | GitHub repo `JamieOnGit/TCGTracker` | ✅ Done |
+| 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Active. Finish the two SSL settings (2.8) if you haven't. |
+| 3a | Supabase project `tcgtracker` (Sydney) | ✅ Done |
+| 3b | Supabase sign-in URLs | ☐ Confirm Site URL and Redirect URL are set |
+| 3c–3d | Access token, Project ID and DB password saved as GitHub secrets | ✅ Done |
+| **3e** | **Merge pull request #1** | ⏭ **Do next.** All checks are green. |
+| **3f** | **Run "Deploy database"** | ⏭ Then tell Claude "database deployed" |
+| 3g | Make yourself admin | After Step 4 |
+| 4 onwards | Cloudflare site, Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
+
 ---
 
 ## Step 1 · GitHub repository ✅ done
@@ -22,7 +35,7 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 - Keep it **Private**: go to *Settings → General → Danger Zone → Change visibility*. The code contains no secrets, but there's no reason to publish it.
 - You can delete the unused **tcgtrade** repo you created earlier (and make sure it's gone or private). Go to *Settings → Danger Zone → Delete this repository*.
 
-## Step 2 · Buy the domain and point it at Cloudflare ✅ done (active on Cloudflare 30 Sep 2026; finish with the SSL settings in 8)
+## Step 2 · Buy the domain and point it at Cloudflare ✅ done (active on Cloudflare 30 Sep 2026)
 1. On **https://ventraip.com.au**, search `tcgtracker.com.au` and add it to the cart. Choose 1 or 2 years. **Skip the hosting and email add-ons**: the site is hosted on Cloudflare and email goes through Resend.
 2. At checkout, fill in the **.au eligibility** details: your **ABN**, the registrant name exactly as it appears on the ABN, and eligibility type (sole trader or company). No ABN yet? It's free at https://www.abr.gov.au.
 3. VentraIP emails you to confirm the registrant details. Click the link, or the .au registry can suspend the domain.
@@ -39,7 +52,7 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 
 ## Step 3 · Supabase: database, sign-in and photos (≈20 min)
 
-### 3a · Create the project ✅ (you've done this)
+### 3a · Create the project ✅ done
 Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password saved in your password manager, and **Enable Data API** and **Automatically expose new tables** both ticked.
 
 ### 3b · Sign-in address settings (2 min)
@@ -49,13 +62,16 @@ Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password sa
 4. **Redirect URLs**: click **Add URL**, enter `https://tcgtracker.com.au/**` and click **Save URLs**.
 5. Skip the email templates for now. They unlock after custom SMTP in Step 5.
 
-### 3c · Collect three values for GitHub (5 min)
+### 3c · Collect three values for GitHub ✅ done
 These let GitHub load the database tables into Supabase for you. Don't paste them into the chat.
 1. **Project ID:** Supabase → **Project Settings** (gear icon, bottom of the sidebar) → **General** → copy **Project ID**. It's a 20-letter code like `abcdefghijklmnopqrst`.
 2. **Access token:** click your avatar (top right) → **Account preferences** → **Access Tokens** (or go to https://supabase.com/dashboard/account/tokens) → **Generate new token**. Name it `github-deploy`, then copy the token. It's shown once only.
+   - What you chose: resource access **Project** (tcgtracker only), preset **Full access**, with **Infrastructure and delivery** and **Account and organization** set to **None**.
+   - If the deploy's "Link the project" step ever fails with *forbidden*, make a new token with **Projects (account-wide) → Read** added and update the secret.
+   - When the token expires, the deploy fails with an authorisation error. Generate a new one and update `SUPABASE_ACCESS_TOKEN` in GitHub.
 3. **Database password:** the one you saved from 3a. Forgot it? Go to **Project Settings → Database → Reset database password**, generate a new one and save it.
 
-### 3d · Add them to GitHub as secrets (3 min)
+### 3d · Add them to GitHub as secrets ✅ done
 1. Open **https://github.com/JamieOnGit/TCGTracker/settings/secrets/actions**. That's the repo → **Settings** → **Secrets and variables** → **Actions**.
 2. Click **New repository secret** three times, one per value. The names must match exactly:
 
@@ -65,7 +81,7 @@ These let GitHub load the database tables into Supabase for you. Don't paste the
    | `SUPABASE_ACCESS_TOKEN` | the access token |
    | `SUPABASE_DB_PASSWORD` | the database password |
 
-### 3e · Merge the code into main (1 min)
+### 3e · Merge the code into main (1 min) ⏭ next
 The "Deploy database" button only appears once the code is on `main`.
 1. Open **https://github.com/JamieOnGit/TCGTracker/pull/1**.
 2. Click **Ready for review**, then **Merge pull request** → **Confirm merge**. All checks are green.
