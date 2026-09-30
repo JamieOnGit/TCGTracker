@@ -22,7 +22,7 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 - Keep it **Private**: go to *Settings → General → Danger Zone → Change visibility*. The code contains no secrets, but there's no reason to publish it.
 - You can delete the unused **tcgtrade** repo you created earlier (and make sure it's gone or private). Go to *Settings → Danger Zone → Delete this repository*.
 
-## Step 2 · Buy the domain and point it at Cloudflare (≈20 min + waiting)
+## Step 2 · Buy the domain and point it at Cloudflare ✅ done (active on Cloudflare 30 Sep 2026; finish with the SSL settings in 8)
 1. On **https://ventraip.com.au**, search `tcgtracker.com.au` and add it to the cart. Choose 1 or 2 years. **Skip the hosting and email add-ons**: the site is hosted on Cloudflare and email goes through Resend.
 2. At checkout, fill in the **.au eligibility** details: your **ABN**, the registrant name exactly as it appears on the ABN, and eligibility type (sole trader or company). No ABN yet? It's free at https://www.abr.gov.au.
 3. VentraIP emails you to confirm the registrant details. Click the link, or the .au registry can suspend the domain.
