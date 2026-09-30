@@ -9,3 +9,4 @@ import type { Repository } from './types'
 export const getRepo = cache((): Repository => (supabaseConfigured() ? supabaseRepository() : demoRepository))
 
 export type * from './types'
+export { AU_STATES, AU_STATE_NAMES } from './types'

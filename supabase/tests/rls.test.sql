@@ -461,4 +461,185 @@ select tests.ok(exists (select 1 from public.email_outbox where template = 'save
 select tests.ok((select count(*) from public.email_outbox where dedupe_key is not null)
   = (select count(distinct dedupe_key) from public.email_outbox where dedupe_key is not null), 'no email is queued twice');
 
+-- ------------------------------------------------ sightings (2026-09-30)
+-- Alice (Free) reports an in-store sighting; nobody can insert directly.
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.throws($$insert into public.sightings (user_id, retailer_id, channel, state, suburb, game, product)
+  select auth.uid(), id, 'in_store', 'VIC', 'Chadstone', 'pokemon', 'ETB' from public.retailers limit 1$$,
+  'row-level security', 'sightings cannot be inserted directly (only via report_sighting)');
+select tests.throws($$select * from public.report_sighting('kmart', 'online', 'pokemon', 'Surging Sparks ETB', p_url => 'https://evil.example/etb')$$,
+  'link to the product', 'an online sighting must link to the retailer''s own site');
+select tests.throws($$select * from public.report_sighting('kmart', 'in_store', 'pokemon', 'Replica booster box', 'VIC', 'Chadstone')$$,
+  'not allowed', 'banned words are blocked in sightings');
+create temp table s1 as select * from public.report_sighting('kmart', 'in_store', 'pokemon', 'Surging Sparks Elite Trainer Box', 'VIC', 'Chadstone', p_price_aud => 69, p_purchase_limit => 2::smallint);
+grant select on s1 to authenticated, anon;
+select tests.ok((select status = 'pending' and not merged from s1), 'a new member''s sighting starts pending');
+select tests.throws($$insert into public.sighting_votes (sighting_id, user_id, vote) select sighting_id, auth.uid(), 'confirm' from s1$$,
+  'own sighting', 'reporters cannot confirm their own sighting');
+reset role;
+select tests.ok(not exists (select 1 from public.drop_events where sighting_id = (select sighting_id from s1)),
+  'a pending sighting does not alert anyone');
+
+-- Bob (Free) can't see pending sightings (that would leak Premium info) or confirm them.
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000b');
+select tests.ok(not exists (select 1 from public.sightings where id = (select sighting_id from s1)),
+  'Free members cannot see pending sightings');
+select tests.throws($$insert into public.sighting_votes (sighting_id, user_id, vote) select sighting_id, auth.uid(), 'confirm' from s1$$,
+  'row-level security', 'Free members cannot confirm sightings');
+-- A second report of the same store and game merges into a confirmation.
+create temp table s2 as select * from public.report_sighting('kmart', 'in_store', 'pokemon', 'SSP ETBs', 'VIC', ' chadstone ');
+grant select on s2 to authenticated, anon;
+select tests.ok((select merged and sighting_id = (select sighting_id from s1) from s2),
+  'a second report of the same store merges into the first (counts as a confirmation)');
+
+-- Premium member confirms: 2 confirmations without a photo -> confirmed -> drop event.
+select tests.login('00000000-0000-0000-0000-00000000000e');
+select tests.ok(exists (select 1 from public.sightings where id = (select sighting_id from s1)),
+  'Premium members see pending sightings live');
+insert into public.sighting_votes (sighting_id, user_id, vote) select sighting_id, auth.uid(), 'confirm' from s1;
+reset role;
+select tests.ok((select status = 'confirmed' and confirm_count = 2 from public.sightings where id = (select sighting_id from s1)),
+  'two member confirmations confirm the sighting');
+select tests.ok((select e.event_type = 'IN_STOCK' and e.retail_product_id is null and e.dedupe_key = 'sighting:' || s.id
+                 from public.sightings s join public.drop_events e on e.id = s.drop_event_id where s.id = (select sighting_id from s1)),
+  'a confirmed sighting becomes a drop event');
+select tests.ok(exists (select 1 from public.drop_alert_deliveries d join public.sightings s on s.drop_event_id = d.drop_event_id
+                        where s.id = (select sighting_id from s1) and d.user_id = '00000000-0000-0000-0000-00000000000e' and d.tier_at_enqueue = 'premium'),
+  'the sighting alert reaches Premium members instantly');
+select tests.ok((select d.deliver_at - e.occurred_at from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                  where e.sighting_id = (select sighting_id from s1) and d.user_id = '00000000-0000-0000-0000-00000000000c' and d.channel = 'email')
+                 = interval '1 day', 'and Free members 1 day later');
+select tests.ok(exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-00000000000a' and title = 'Your sighting was confirmed'),
+  'the scout is told their sighting was confirmed');
+
+-- Member filters: states, keywords and "no member reports".
+update public.drop_alert_filters set states = array['NSW']::public.au_state[] where user_id = '00000000-0000-0000-0000-00000000000c';
+update public.drop_alert_filters set keywords = array['booster box'] where user_id = '00000000-0000-0000-0000-00000000000b';
+update public.drop_alert_filters set include_sightings = false where user_id = '00000000-0000-0000-0000-00000000000d';
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000d');
+create temp table s3 as select * from public.report_sighting('big-w', 'in_store', 'pokemon', 'Prismatic Evolutions ETB', 'VIC', 'Box Hill');
+grant select on s3 to authenticated, anon;
+reset role;
+select tests.ok((select status = 'confirmed' from public.sightings where id = (select sighting_id from s3)),
+  'staff sightings alert straight away');
+select tests.ok(not exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                            where e.sighting_id = (select sighting_id from s3) and d.user_id = '00000000-0000-0000-0000-00000000000c'),
+  'a member filtering to NSW gets no VIC in-store alerts');
+select tests.ok(not exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                            where e.sighting_id = (select sighting_id from s3) and d.user_id = '00000000-0000-0000-0000-00000000000b'),
+  'keyword filters apply (ETB does not match "booster box")');
+select tests.ok(exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                        where e.sighting_id = (select sighting_id from s3) and d.user_id = '00000000-0000-0000-0000-00000000000e'),
+  'members without filters get it');
+
+-- Public visibility waits for the drop event's public_at.
+set role anon;
+select set_config('request.jwt.claims', '', false);
+select tests.ok(not exists (select 1 from public.sightings), 'the public cannot see sightings before the public delay');
+reset role;
+update public.drop_events set public_at = now() - interval '1 minute' where sighting_id = (select sighting_id from s1);
+set role anon;
+select set_config('request.jwt.claims', '', false);
+select tests.ok((select count(*) from public.sightings) = 1, '...and can see them after it');
+select tests.ok((select confirmed from public.scout_leaderboard(30, 10) where username = 'alice') = 1, 'the leaderboard counts confirmed sightings');
+reset role;
+
+-- "Sold out" votes close a sighting; a moderator rejection withdraws the alert.
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000b');
+insert into public.sighting_votes (sighting_id, user_id, vote) select sighting_id, auth.uid(), 'gone' from s1;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+insert into public.sighting_votes (sighting_id, user_id, vote) select sighting_id, auth.uid(), 'gone' from s1;
+reset role;
+select tests.ok((select gone_at is not null from public.sightings where id = (select sighting_id from s1)), 'two sold-out votes mark a sighting gone');
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000b');
+select tests.throws($$select public.review_sighting((select sighting_id from s1), 'reject', 'fake')$$, 'moderators only', 'only moderators review sightings');
+select tests.login('00000000-0000-0000-0000-00000000000d');
+select public.review_sighting((select sighting_id from s1), 'reject', 'photo was old');
+reset role;
+select tests.ok((select suppressed from public.drop_events where sighting_id = (select sighting_id from s1)), 'a rejected sighting''s alert is withdrawn');
+select tests.ok(not exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                            where e.sighting_id = (select sighting_id from s1) and d.status = 'queued'), '...including queued deliveries');
+
+-- Scout rewards: every N confirmed sightings earns Premium days.
+update public.site_settings set value = '1' where key = 'scouts.reward_every';
+update public.site_settings set value = '1' where key = 'sightings.confirmations_needed';
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+create temp table s4 as select * from public.report_sighting('target-au', 'in_store', 'one-piece', 'OP-10 booster box', 'NSW', 'Parramatta');
+grant select on s4 to authenticated, anon;
+select tests.login('00000000-0000-0000-0000-00000000000e');
+insert into public.sighting_votes (sighting_id, user_id, vote) select sighting_id, auth.uid(), 'confirm' from s4;
+reset role;
+select tests.ok(public.effective_tier('00000000-0000-0000-0000-00000000000c') = 'premium', 'a scout reward grants Premium');
+select tests.ok((select premium_until > now() + interval '29 days' from public.profile_private where user_id = '00000000-0000-0000-0000-00000000000c'),
+  '...for scouts.reward_days');
+update public.site_settings set value = '10' where key = 'scouts.reward_every';
+update public.site_settings set value = '2' where key = 'sightings.confirmations_needed';
+update public.profile_private set premium_until = null where user_id = '00000000-0000-0000-0000-00000000000c';
+
+-- Rate limit.
+update public.site_settings set value = '1' where key = 'sightings.daily_limit';
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.throws($$select * from public.report_sighting('kmart', 'in_store', 'pokemon', 'Another ETB', 'NSW', 'Penrith')$$,
+  'daily sighting limit', 'members are rate limited');
+reset role;
+update public.site_settings set value = '10' where key = 'sightings.daily_limit';
+
+-- Pending reports expire.
+update public.sightings set created_at = now() - interval '7 hours' where id = (select sighting_id from s1);
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000b');
+create temp table s5 as select * from public.report_sighting('kmart', 'in_store', 'pokemon', 'Mini tins', 'QLD', 'Chermside');
+grant select on s5 to authenticated, anon;
+reset role;
+update public.sightings set created_at = now() - interval '7 hours' where id = (select sighting_id from s5);
+select public.expire_sightings();
+select tests.ok((select status = 'expired' from public.sightings where id = (select sighting_id from s5)), 'unconfirmed sightings expire');
+
+-- Web push: owner-only subscriptions; drop alerts queue a push delivery.
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000e');
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://push.example/abc', 'k', 'a');
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok(not exists (select 1 from public.push_subscriptions), 'push subscriptions are private');
+select tests.throws($$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('00000000-0000-0000-0000-00000000000e', 'https://push.example/x', 'k', 'a')$$,
+  'row-level security', 'nobody can add a push subscription for someone else');
+select tests.login('00000000-0000-0000-0000-00000000000d');
+create temp table s6 as select * from public.report_sighting('jb-hi-fi', 'online', 'pokemon', 'Destined Rivals booster bundle', p_url => 'https://www.jbhifi.com.au/products/x');
+grant select on s6 to authenticated, anon;
+reset role;
+select tests.ok(exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                        where e.sighting_id = (select sighting_id from s6) and d.user_id = '00000000-0000-0000-0000-00000000000e' and d.channel = 'push'),
+  'members with a push subscription get push alerts');
+select tests.ok(not exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                            where e.sighting_id = (select sighting_id from s6) and d.channel = 'push' and d.user_id <> '00000000-0000-0000-0000-00000000000e'),
+  '...and nobody else gets a push delivery');
+
+-- ------------------------------------------------ release calendar
+insert into public.release_events (game, lang, slug, title, release_date, date_precision, published) values
+  ('pokemon', 'en', 'test-set', 'Test Set', (now() at time zone 'Australia/Sydney')::date + 1, 'day', true),
+  ('pokemon', 'en', 'hidden-set', 'Hidden Set', null, 'tbc', false);
+select tests.throws($$insert into public.release_events (game, lang, slug, title) values ('pokemon', 'en', 'no-date', 'No date')$$,
+  'check constraint', 'a release needs a date unless marked TBC');
+set role anon;
+select set_config('request.jwt.claims', '', false);
+select tests.ok((select count(*) from public.release_events) = 1, 'unpublished releases are hidden');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.throws($$insert into public.release_events (game, lang, slug, title, date_precision) values ('pokemon', 'en', 'x', 'X', 'tbc')$$,
+  'row-level security', 'only editors can add releases');
+insert into public.release_reminders (user_id, release_event_id) select auth.uid(), id from public.release_events where slug = 'test-set';
+reset role;
+select tests.ok(public.send_release_reminders() = 1, 'release reminders are sent the day before');
+select tests.ok(public.send_release_reminders() = 0, '...once');
+select tests.ok(exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-00000000000a' and type = 'release'),
+  'the reminder appears in the member''s notifications');
+
 \echo 'All database tests passed'

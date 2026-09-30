@@ -2,7 +2,8 @@ import 'server-only'
 import { rulesFromSettings } from '@/lib/domain/rules'
 import { supabasePublic } from '@/lib/supabase/server'
 import type { Game, Lang } from '@/lib/seo/urls'
-import type { ArticleRow, CardRow, DropRow, GradeRow, ListingRow, MarketRow, Repository, SetRow } from './types'
+import { DROP_SELECT, RELEASE_SELECT, sortReleases, toDrop, toRelease } from './drops'
+import type { ArticleRow, CardRow, GradeRow, ListingRow, MarketRow, Repository, SetRow } from './types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come from PostgREST as loosely typed JSON;
    generate types with `supabase gen types typescript` once the project exists and tighten this. */
@@ -232,27 +233,31 @@ export function supabaseRepository(): Repository {
     },
     async drops(filter) {
       // Anonymous client: RLS only returns events past their public_at delay.
-      let q = sb
-        .from('drop_events')
-        .select('id,event_type,price_aud,rrp_aud,rrp_tag,rrp_delta_pct,occurred_at,retail_products!inner(title,url,game,retailers!inner(slug,name))')
-        .order('occurred_at', { ascending: false })
-        .limit(filter?.limit ?? 50)
-      if (filter?.retailerSlug) q = q.eq('retail_products.retailers.slug', filter.retailerSlug)
+      let select = DROP_SELECT
+      if (filter?.state || filter?.source === 'member') select = select.replace('sightings!drop_events_sighting_id_fkey(', 'sightings!drop_events_sighting_id_fkey!inner(')
+      if (filter?.retailerSlug) select = select.replace('retailers(', 'retailers!inner(')
+      let q = sb.from('drop_events').select(select).order('occurred_at', { ascending: false }).limit(filter?.limit ?? 50)
+      if (filter?.retailerSlug) q = q.eq('retailers.slug', filter.retailerSlug)
+      if (filter?.state) q = q.eq('sightings.state', filter.state)
+      if (filter?.game) q = q.eq('game', filter.game)
+      if (filter?.source === 'monitor') q = q.is('sighting_id', null)
       const { data } = await q
-      return (data ?? []).map((r: any): DropRow => ({
-        id: r.id,
-        retailerSlug: r.retail_products.retailers.slug,
-        retailerName: r.retail_products.retailers.name,
-        title: r.retail_products.title,
-        url: r.retail_products.url,
-        eventType: r.event_type,
-        priceAud: r.price_aud === null ? null : Number(r.price_aud),
-        rrpAud: r.rrp_aud === null ? null : Number(r.rrp_aud),
-        rrpTag: r.rrp_tag,
-        rrpDeltaPct: r.rrp_delta_pct === null ? null : Number(r.rrp_delta_pct),
-        game: r.retail_products.game as Game | null,
-        occurredAt: r.occurred_at,
-      }))
+      return (data ?? []).map(toDrop)
+    },
+    async scoutLeaderboard(days, limit = 20) {
+      const { data } = await sb.rpc('scout_leaderboard', { p_days: days, p_limit: limit })
+      return (data ?? []).map((r: any) => ({ username: r.username, confirmed: r.confirmed, states: r.states ?? [] }))
+    },
+    async releases(filter) {
+      let q = sb.from('release_events').select(RELEASE_SELECT).limit(500)
+      if (filter?.game) q = q.eq('game', filter.game)
+      if (filter?.from) q = q.or(`release_date.gte.${filter.from},release_date.is.null`)
+      const { data } = await q
+      return sortReleases((data ?? []).map(toRelease))
+    },
+    async getRelease(game, slug) {
+      const { data } = await sb.from('release_events').select(RELEASE_SELECT).eq('game', game).eq('slug', slug).maybeSingle()
+      return data ? toRelease(data) : null
     },
     async articles(filter) {
       let q = sb.from('articles').select('*, article_tags(*)').eq('status', 'published').order('published_at', { ascending: false }).limit(filter?.limit ?? 50)

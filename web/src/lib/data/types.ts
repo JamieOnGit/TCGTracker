@@ -143,12 +143,42 @@ export interface RetailerRow {
   enabled: boolean
 }
 
+export const AU_STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'] as const
+export type AuState = (typeof AU_STATES)[number]
+export const AU_STATE_NAMES: Record<AuState, string> = {
+  ACT: 'Australian Capital Territory',
+  NSW: 'New South Wales',
+  NT: 'Northern Territory',
+  QLD: 'Queensland',
+  SA: 'South Australia',
+  TAS: 'Tasmania',
+  VIC: 'Victoria',
+  WA: 'Western Australia',
+}
+
+/** A member report attached to a drop event (source = 'member'). */
+export interface SightingInfo {
+  id: number
+  channel: 'in_store' | 'online'
+  state: AuState | null
+  suburb: string | null
+  storeName: string | null
+  quantity: 'few' | 'some' | 'plenty' | null
+  purchaseLimit: number | null
+  photoUrl: string | null
+  note: string | null
+  confirmations: number
+  goneAt: string | null
+  reporter: string | null
+}
+
 export interface DropRow {
   id: number
+  source: 'monitor' | 'member'
   retailerSlug: string
   retailerName: string
   title: string
-  url: string
+  url: string | null // retailer product page (monitor, online sighting); null for in-store
   eventType: 'NEW_LISTING' | 'PREORDER_OPEN' | 'IN_STOCK' | 'PRICE_CHANGE' | 'QUEUE_LIVE'
   priceAud: number | null
   rrpAud: number | null
@@ -156,6 +186,49 @@ export interface DropRow {
   rrpDeltaPct: number | null
   game: Game | null
   occurredAt: string
+  sighting: SightingInfo | null
+}
+
+export interface DropFilter {
+  retailerSlug?: string
+  state?: AuState
+  game?: Game
+  source?: 'monitor' | 'member'
+  limit?: number
+}
+
+export interface ScoutRow {
+  username: string
+  confirmed: number
+  states: AuState[]
+}
+
+export type ReleaseKind = 'set_release' | 'product_release' | 'prerelease' | 'preorder_open' | 'retailer_date'
+
+export interface ReleaseProduct {
+  name: string
+  type: string | null // booster-box, etb, booster-bundle, ...
+  rrpAud: number | null
+}
+
+export interface ReleaseRow {
+  id: string
+  game: Game
+  lang: Lang
+  slug: string
+  title: string
+  kind: ReleaseKind
+  releaseDate: string | null // YYYY-MM-DD
+  datePrecision: 'day' | 'month' | 'quarter' | 'tbc'
+  confidence: 'official' | 'retailer' | 'unconfirmed'
+  set: { game: Game; lang: Lang; slug: string; name: string } | null
+  products: ReleaseProduct[]
+  retailerSlugs: string[]
+  summary: string | null
+  bodyMd: string | null
+  sourceName: string | null
+  sourceUrl: string | null
+  updatedAt: string
 }
 
 export interface ArticleRow {
@@ -202,8 +275,13 @@ export interface Repository {
   getSeller(username: string): Promise<SellerRow | null>
   listingsBySeller(username: string): Promise<ListingRow[]>
   retailers(): Promise<RetailerRow[]>
-  /** Public, delayed drop history. Instant events need a Premium session (RLS). */
-  drops(filter?: { retailerSlug?: string; limit?: number }): Promise<DropRow[]>
+  /** Public, delayed drop history (monitors + confirmed member sightings). Instant events need a Premium session (RLS). */
+  drops(filter?: DropFilter): Promise<DropRow[]>
+  /** Top scouts by confirmed sightings over the last N days. */
+  scoutLeaderboard(days: number, limit?: number): Promise<ScoutRow[]>
+  /** Published release calendar entries, soonest first; TBC last. */
+  releases(filter?: { game?: Game; from?: string }): Promise<ReleaseRow[]>
+  getRelease(game: Game, slug: string): Promise<ReleaseRow | null>
   articles(filter?: { category?: string; limit?: number }): Promise<ArticleRow[]>
   getArticle(year: number, slug: string): Promise<ArticleRow | null>
   articlesForCard(cardId: string): Promise<ArticleRow[]>

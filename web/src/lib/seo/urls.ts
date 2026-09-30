@@ -56,7 +56,16 @@ export const listingPath = (id: number | string, title: string) => {
 }
 export const sellerPath = (username: string) => `/sellers/${username.toLowerCase()}/`
 export const dropsPath = (retailerSlug?: string) => (retailerSlug ? `/drops/${retailerSlug}/` : '/drops/')
+/** Drops by state: /drops/vic/ (state codes never collide with retailer slugs). */
+export const dropsStatePath = (state: string) => `/drops/${state.toLowerCase()}/`
+export const scoutsPath = () => '/drops/scouts/'
+export const releasesHubPath = () => '/releases/'
 export const releasesPath = (game: Game) => `/releases/${game}/`
+export const releasePath = (game: Game, slug: string) => `/releases/${game}/${slug}/`
+export const releasesIcsPath = (game?: Game) => (game ? `/releases/${game}/calendar.ics` : '/releases/calendar.ics')
+export const guidesPath = (slug?: string) => (slug ? `/guides/${slug}/` : '/guides/')
+export const accountSightingsPath = () => '/account/sightings/'
+export const accountDropAlertsPath = () => '/account/alerts/drops/'
 export const newsPath = (category?: string) => (category ? `/news/${category}/` : '/news/')
 export const articlePath = (publishedAt: Date, slug: string) => `/news/${publishedAt.getUTCFullYear()}/${slug}/`
 export const sellPath = (opts: { cardId?: string; gradeKey?: string | null } = {}) => {
