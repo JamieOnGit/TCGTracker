@@ -2,7 +2,7 @@ import 'server-only'
 import { rulesFromSettings } from '@/lib/domain/rules'
 import { supabasePublic } from '@/lib/supabase/server'
 import type { Game, Lang } from '@/lib/seo/urls'
-import { DROP_SELECT, RELEASE_SELECT, sortReleases, toDrop, toRelease } from './drops'
+import { DROP_SELECT, RELEASE_SELECT, SEALED_SELECT, sortReleases, toDrop, toRelease, toSealedProduct } from './drops'
 import type { ArticleRow, CardRow, GradeRow, ListingRow, MarketRow, Repository, SetRow } from './types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come from PostgREST as loosely typed JSON;
@@ -228,8 +228,19 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toListing)
     },
     async retailers() {
-      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored').order('name')
-      return (data ?? []).map((r: any) => ({ slug: r.slug, name: r.name, baseUrl: r.base_url, enabled: r.enabled, monitored: r.monitored !== false }))
+      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored,platform,kind,state,blocked_reason,last_checked_at').order('name')
+      return (data ?? []).map((r: any) => ({
+        slug: r.slug,
+        name: r.name,
+        baseUrl: r.base_url,
+        enabled: r.enabled,
+        monitored: r.monitored !== false,
+        platform: r.platform ?? 'custom',
+        kind: r.kind ?? null,
+        state: r.state ?? null,
+        blockedReason: r.blocked_reason ?? null,
+        lastCheckedAt: r.last_checked_at ?? null,
+      }))
     },
     async drops(filter) {
       // Anonymous client: RLS only returns events past their public_at delay.
@@ -280,6 +291,37 @@ export function supabaseRepository(): Repository {
         foundAt: r.found_at,
         goneAt: r.gone_at,
       }))
+    },
+    async inStock(filter) {
+      // Products with at least one listing in stock or on pre-order right now.
+      let q = sb
+        .from('sealed_products')
+        .select(SEALED_SELECT.replace('retail_products(', 'retail_products!inner('))
+        .in('retail_products.current_availability', ['in_stock_online', 'in_stock_cnc', 'in_stock_both', 'preorder'])
+        .limit(filter?.limit ?? 100)
+      if (filter?.game) q = q.eq('game', filter.game)
+      if (filter?.retailerSlug) q = q.eq('retail_products.retailers.slug', filter.retailerSlug)
+      const { data } = await q
+      return (data ?? []).map(toSealedProduct).sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
+    },
+    async listSealedProducts(filter) {
+      let q = sb.from('sealed_products').select(SEALED_SELECT).order('updated_at', { ascending: false }).limit(filter?.limit ?? 500)
+      if (filter?.game) q = q.eq('game', filter.game)
+      if (filter?.lang) q = q.eq('lang', filter.lang)
+      const { data } = await q
+      return (data ?? []).map(toSealedProduct)
+    },
+    async getSealedProduct(game, lang, slug) {
+      const { data } = await sb.from('sealed_products').select(SEALED_SELECT).eq('game', game).eq('lang', lang).eq('slug', slug).maybeSingle()
+      return data ? toSealedProduct(data) : null
+    },
+    async productDrops(sealedProductId, limit = 50) {
+      const { data } = await sb.from('drop_events').select(DROP_SELECT).eq('sealed_product_id', sealedProductId).order('occurred_at', { ascending: false }).limit(limit)
+      return (data ?? []).map(toDrop)
+    },
+    async productWatchCount(sealedProductId) {
+      const { data } = await sb.rpc('product_watch_count', { p_sealed_product: sealedProductId })
+      return typeof data === 'number' ? data : 0
     },
     async getRelease(game, slug) {
       const { data } = await sb.from('release_events').select(RELEASE_SELECT).eq('game', game).eq('slug', slug).maybeSingle()

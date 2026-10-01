@@ -1,12 +1,12 @@
 import type { Game } from '@/lib/seo/urls'
-import type { DropRow, ReleaseRow } from './types'
+import type { Availability, DropRow, OfferRow, ReleaseRow, SealedProductRow } from './types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- PostgREST rows are loosely typed JSON. */
 
 /** One select for every drop feed (server history and the Premium live panel). */
 export const DROP_SELECT =
-  'id,event_type,price_aud,rrp_aud,rrp_tag,rrp_delta_pct,occurred_at,game,' +
-  'retailers(slug,name),retail_products(title,url),' +
+  'id,event_type,price_aud,previous_price_aud,rrp_aud,rrp_tag,rrp_delta_pct,occurred_at,game,' +
+  'retailers(slug,name),retail_products(title,url,image_url),sealed_products(id,game,lang,slug,name),' +
   'sightings!drop_events_sighting_id_fkey(id,channel,state,suburb,store_name,product,quantity,purchase_limit,photo_path,note,url,confirm_count,gone_at)'
 
 export function sightingPhotoUrl(path: string | null): string | null {
@@ -32,6 +32,11 @@ export function toDrop(r: any): DropRow {
     rrpDeltaPct: num(r.rrp_delta_pct),
     game: (r.game ?? null) as Game | null,
     occurredAt: r.occurred_at,
+    previousPriceAud: num(r.previous_price_aud),
+    product: r.sealed_products
+      ? { id: r.sealed_products.id, game: r.sealed_products.game, lang: r.sealed_products.lang, slug: r.sealed_products.slug, name: r.sealed_products.name }
+      : null,
+    imageUrl: p?.image_url ?? null,
     sighting: s
       ? {
           id: s.id,
@@ -87,4 +92,51 @@ export function sortReleases(rows: ReleaseRow[]): ReleaseRow[] {
     if (!b.releaseDate) return -1
     return a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title)
   })
+}
+
+/** Select for product pages and the in-stock list: a sealed product with every store's listing. */
+export const SEALED_SELECT =
+  'id,game,lang,slug,name,type,rrp_aud,release_date,updated_at,sets(slug,name),' +
+  'retail_products(title,url,image_url,current_availability,current_price_aud,last_change_at,is_marketplace_seller,retailers!inner(slug,name,enabled))'
+
+const IN_STOCK: Availability[] = ['in_stock_online', 'in_stock_cnc', 'in_stock_both']
+export const isInStock = (a: Availability) => IN_STOCK.includes(a)
+const offerRank = (o: OfferRow) => (isInStock(o.availability) ? 0 : o.availability === 'preorder' ? 1 : 2)
+
+export function sortOffers(offers: OfferRow[]): OfferRow[] {
+  return [...offers].sort((a, b) => offerRank(a) - offerRank(b) || (a.priceAud ?? 1e9) - (b.priceAud ?? 1e9) || a.retailerName.localeCompare(b.retailerName))
+}
+
+export function toSealedProduct(r: any): SealedProductRow {
+  const offers = sortOffers(
+    (r.retail_products ?? [])
+      .filter((p: any) => !p.is_marketplace_seller)
+      .map((p: any): OfferRow => ({
+        retailerSlug: p.retailers?.slug ?? '',
+        retailerName: p.retailers?.name ?? '',
+        title: p.title,
+        url: p.url,
+        availability: p.current_availability ?? 'unknown',
+        priceAud: p.current_price_aud === null || p.current_price_aud === undefined ? null : Number(p.current_price_aud),
+        lastChangeAt: p.last_change_at ?? null,
+        imageUrl: p.image_url ?? null,
+      })),
+  )
+  const inStock = offers.filter((o) => isInStock(o.availability))
+  const prices = inStock.map((o) => o.priceAud).filter((x): x is number => x !== null)
+  return {
+    id: r.id,
+    game: r.game,
+    lang: r.lang,
+    slug: r.slug,
+    name: r.name,
+    type: r.type,
+    rrpAud: r.rrp_aud === null || r.rrp_aud === undefined ? null : Number(r.rrp_aud),
+    releaseDate: r.release_date ?? null,
+    set: r.sets ? { slug: r.sets.slug, name: r.sets.name } : null,
+    offers,
+    inStockCount: inStock.length,
+    lowestInStockAud: prices.length ? Math.min(...prices) : null,
+    updatedAt: offers.map((o) => o.lastChangeAt).filter(Boolean).sort().at(-1) ?? r.updated_at ?? null,
+  }
 }

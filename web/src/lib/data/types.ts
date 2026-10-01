@@ -136,12 +136,53 @@ export interface SellerRow {
   responseRate: number | null
 }
 
+export type RetailerKind = 'specialist' | 'big-box' | 'toy' | 'department' | 'marketplace' | 'official' | 'other'
+
 export interface RetailerRow {
   slug: string
   name: string
   baseUrl: string
   enabled: boolean // our monitor is running
   monitored: boolean // a monitor exists (false = member sightings only)
+  platform: 'custom' | 'shopify' | 'woocommerce' | 'none'
+  kind: RetailerKind | null
+  state: AuState | null
+  blockedReason: string | null // set when the store blocks automated access (never worked around)
+  lastCheckedAt: string | null
+}
+
+export type Availability = 'unknown' | 'out_of_stock' | 'preorder' | 'in_stock_online' | 'in_stock_cnc' | 'in_stock_both'
+
+/** A sealed product (one product page), e.g. "Prismatic Evolutions Elite Trainer Box" (EN). */
+export interface SealedProductRef {
+  id: string
+  game: Game
+  lang: Lang
+  slug: string
+  name: string
+}
+
+/** One store's listing of a sealed product, with its current status. */
+export interface OfferRow {
+  retailerSlug: string
+  retailerName: string
+  title: string
+  url: string
+  availability: Availability
+  priceAud: number | null
+  lastChangeAt: string | null
+  imageUrl: string | null
+}
+
+export interface SealedProductRow extends SealedProductRef {
+  type: string // booster-box, etb, booster-bundle, tin, ...
+  rrpAud: number | null
+  releaseDate: string | null
+  set: { slug: string; name: string } | null
+  offers: OfferRow[] // in stock / pre-order first, then cheapest
+  inStockCount: number
+  lowestInStockAud: number | null
+  updatedAt: string | null
 }
 
 /** An eBay listing well under market value (found via eBay's Browse API). */
@@ -208,6 +249,9 @@ export interface DropRow {
   game: Game | null
   occurredAt: string
   sighting: SightingInfo | null
+  previousPriceAud: number | null // PRICE_CHANGE: below priceAud means a price drop
+  product: SealedProductRef | null // the product page this event belongs to (Notify me watches this)
+  imageUrl: string | null
 }
 
 export interface DropFilter {
@@ -303,6 +347,13 @@ export interface Repository {
   /** Published release calendar entries, soonest first; TBC last. */
   releases(filter?: { game?: Game; from?: string }): Promise<ReleaseRow[]>
   getRelease(game: Game, slug: string): Promise<ReleaseRow | null>
+  /** Products currently in stock or on pre-order somewhere, most recently changed first. */
+  inStock(filter?: { game?: Game; retailerSlug?: string; limit?: number }): Promise<SealedProductRow[]>
+  /** Sealed products (product pages), most recently active first. */
+  listSealedProducts(filter?: { game?: Game; lang?: Lang; limit?: number }): Promise<SealedProductRow[]>
+  getSealedProduct(game: Game, lang: Lang, slug: string): Promise<SealedProductRow | null>
+  productDrops(sealedProductId: string, limit?: number): Promise<DropRow[]>
+  productWatchCount(sealedProductId: string): Promise<number>
   /** eBay deals, newest first. Anonymous/Free readers only get deals past their public delay (RLS). */
   deals(filter?: { limit?: number }): Promise<DealRow[]>
   articles(filter?: { category?: string; limit?: number }): Promise<ArticleRow[]>
