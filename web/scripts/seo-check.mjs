@@ -8,8 +8,9 @@
  *  - a sitemap that doesn't build, or lists a URL that isn't a 200,
  *    indexable, self-canonical page
  *  - URL normalisation that isn't a 301 (trailing slash, uppercase)
- *  - key routes (releases, guides, drops by state, scouts) missing, not
- *    indexable or without their structured data; .ics feeds with the wrong
+ *  - key routes (releases, guides, drops by state, scouts, in stock now,
+ *    store coverage, products) missing, not indexable or without their
+ *    structured data (product pages need Product JSON-LD); .ics feeds with the wrong
  *    content type or a trailing-slash redirect; unknown slugs that aren't 404
  * Warns (doesn't fail) on titles over 70 characters and descriptions outside
  * 70–170 characters, since Google truncates them in results.
@@ -25,7 +26,7 @@ const warn = (msg) => warnings.push(msg)
 
 // Always crawled, even if nothing links to them yet.
 const PRIVATE = ['/account/', '/messages/', '/admin/', '/login/', '/report/']
-const SEEDS = ['/', '/releases/', '/releases/pokemon/', '/releases/one-piece/', '/guides/', '/drops/', '/drops/vic/', '/drops/scouts/']
+const SEEDS = ['/', '/releases/', '/releases/pokemon/', '/releases/one-piece/', '/guides/', '/drops/', '/drops/vic/', '/drops/scouts/', '/drops/in-stock/', '/drops/stores/', '/products/']
 
 async function get(path) {
   const res = await fetch(BASE + path, { redirect: 'manual' })
@@ -172,7 +173,7 @@ async function checkNormalisation() {
   if (robots.status !== 200 || !/Disallow: \/account\//.test(robots.body) || !/Sitemap:/.test(robots.body)) fail('/robots.txt: missing disallow rules or sitemap')
   const llms = await get('/llms.txt')
   if (llms.status !== 200 || !llms.body.includes('/methodology/')) fail('/llms.txt: missing')
-  for (const section of ['/releases/', '/guides/', '/deals/']) if (!llms.body.includes(section)) fail(`/llms.txt: no ${section} section`)
+  for (const section of ['/releases/', '/guides/', '/deals/', '/drops/in-stock/', '/products/']) if (!llms.body.includes(section)) fail(`/llms.txt: no ${section} section`)
 }
 
 async function checkNewRoutes() {
@@ -187,6 +188,13 @@ async function checkNewRoutes() {
   const releases = crawledPaths.filter((p) => /^\/releases\/[a-z-]+\/[a-z0-9-]+\/$/.test(p))
   if (!releases.length) warn('no release detail pages found to check (empty calendar?)')
   for (const p of releases) if (!pageInfo.get(p).jsonld.includes('"Event"')) fail(`${p}: release page without Event JSON-LD`)
+  // Indexable product pages carry Product JSON-LD with an AggregateOffer when a store has a price.
+  const products = crawledPaths.filter((p) => /^\/products\/[a-z-]+\/(en|jp)\/[a-z0-9-]+\/$/.test(p))
+  if (!products.length) warn('no product pages found to check (no sealed products yet?)')
+  for (const p of products) {
+    const info = pageInfo.get(p)
+    if (info.indexable && !info.jsonld.includes('"Product"')) fail(`${p}: product page without Product JSON-LD`)
+  }
   const guides = crawledPaths.filter((p) => /^\/guides\/[a-z0-9-]+\/$/.test(p))
   if (!guides.length) fail('no guide pages reachable from /guides/')
   for (const p of guides) if (!pageInfo.get(p).jsonld.includes('"Article"')) fail(`${p}: guide without Article JSON-LD`)
@@ -204,7 +212,7 @@ async function checkNewRoutes() {
   const slashed = await get('/releases/calendar.ics/')
   if (slashed.status === 200) warn('/releases/calendar.ics/: served as 200; should 301 to /releases/calendar.ics (middleware)')
   // Unknown slugs are real 404s, not soft 404s.
-  for (const path of ['/releases/pokemon/no-such-release-xyz/', '/guides/no-such-guide-xyz/', '/releases/not-a-game/']) {
+  for (const path of ['/releases/pokemon/no-such-release-xyz/', '/guides/no-such-guide-xyz/', '/releases/not-a-game/', '/products/pokemon/en/no-such-product-xyz/', '/products/not-a-game/']) {
     const r = await get(path)
     if (r.status !== 404) fail(`${path}: expected 404, got ${r.status}`)
   }

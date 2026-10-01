@@ -1,0 +1,1326 @@
+[
+  {
+    "slug": "toysrus",
+    "name": "Toys\"R\"Us Australia",
+    "base_url": "https://www.toysrus.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "toy",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Shopify; 750+ collections (handle found on page 3). pokemon-tcg verified (booster box first). Only One Piece collection is LEGO; no OP TCG collection."
+  },
+  {
+    "slug": "light-of-cards",
+    "name": "Light of Cards",
+    "base_url": "https://lightofcards.com.au",
+    "platform": "shopify",
+    "state": "NSW",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "ptcg-en",
+      "one-piece-en"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Zetland, Sydney. ptcg-en verified ('[Sealed]' prefix in titles). Also pokemon-booster-box, booster-bundle, ptcg-sealed-case, one-piece-booster-box-en; 'pokemon' mixes singles."
+  },
+  {
+    "slug": "pokebox",
+    "name": "PokeBox Australia",
+    "base_url": "https://www.pokebox.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "english-sealed-pokemon-trading-cards",
+      "one-piece-card-game-english"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Pascoe Vale, Melbourne. Both handles verified. Also english-pokemon-tcg-booster-boxes / -elite-trainer-boxes / -tins / -booster-bundles. 250+ collections."
+  },
+  {
+    "slug": "trainer-town",
+    "name": "Trainer Town",
+    "base_url": "https://trainertown.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-cards",
+      "one-piece-trading-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Both verified. Granular: pokemon-booster-boxes, pokemon-elite-trainer-box, one-piece-booster-boxes. Beware lookalike domain trainertownshop.shop seen in search (not probed, possibly a scam clone)."
+  },
+  {
+    "slug": "good-games",
+    "name": "Good Games",
+    "base_url": "https://www.goodgames.com.au",
+    "platform": "shopify",
+    "state": "NSW",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg-scarlet-violet-sealed-product",
+      "pokemon",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Chain HQ Sydney; 700+ collections. sealed + one-piece-card-game verified; 'pokemon' (page 3) unverified. Also one-piece-card-game-booster-boxes-available."
+  },
+  {
+    "slug": "good-games-tcg",
+    "name": "Good Games TCG (tcg subdomain)",
+    "base_url": "https://tcg.goodgames.com.au",
+    "platform": "shopify",
+    "state": "NSW",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [
+      "pokemon-sealed-products",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Feed works but pokemon-sealed-products, pokemon-elite-trainer-boxes and one-piece-card-game all returned 0 products; looks like a legacy/singles storefront. Monitor www.goodgames.com.au instead; recheck later."
+  },
+  {
+    "slug": "gameology",
+    "name": "Gameology",
+    "base_url": "https://www.gameology.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-booster-boxes",
+      "pokemon",
+      "one-piece-booster-boxs",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "1000+ collections (handles on page 4). pokemon-booster-boxes and one-piece-card-game verified (mixes JP/CN). Note handle typo 'one-piece-booster-boxs' is real (from site URL)."
+  },
+  {
+    "slug": "zing-pop-culture",
+    "name": "ZiNG Pop Culture",
+    "base_url": "https://www.zingpopculture.com.au",
+    "platform": "other",
+    "state": "QLD",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "EB Games group sister site. Cloudflare challenge (403) even on /robots.txt from US cloud IP."
+  },
+  {
+    "slug": "eb-games",
+    "name": "EB Games Australia",
+    "base_url": "https://www.ebgames.com.au",
+    "platform": "other",
+    "state": "QLD",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Cloudflare challenge (403) on /robots.txt from US cloud IP. Might pass from AU IP; do not work around."
+  },
+  {
+    "slug": "jb-hi-fi",
+    "name": "JB Hi-Fi",
+    "base_url": "https://www.jbhifi.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "NOT blocked: Shopify (Plus) robots/products.json/collections.json all 200. But 750+ collections without a TCG one; /collections/pokemon-trading-cards exists but is empty, site category is a nested path (collectibles-merchandise/pokemon-trading-cards, 404 as JSON) likely driven by search (Algolia). Option: watch known product handles via /products/<handle>.json."
+  },
+  {
+    "slug": "big-w",
+    "name": "BIG W",
+    "base_url": "https://www.bigw.com.au",
+    "platform": "other",
+    "state": "NSW",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "403 challenge on /robots.txt (Akamai-style) from US cloud IP."
+  },
+  {
+    "slug": "kmart",
+    "name": "Kmart Australia",
+    "base_url": "https://www.kmart.com.au",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Akamai (AkamaiGHost) 403 on /robots.txt from US cloud IP."
+  },
+  {
+    "slug": "target-au",
+    "name": "Target Australia",
+    "base_url": "https://www.target.com.au",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "robots.txt reachable (Akamai NetStorage); not Shopify/Woo. See 07-retailers-pricing-ebay.md for api.target.com.au findings; would need a custom adapter."
+  },
+  {
+    "slug": "myer",
+    "name": "Myer",
+    "base_url": "https://www.myer.com.au",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "department",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "robots.txt reachable; custom platform, no public JSON feed. Low TCG range."
+  },
+  {
+    "slug": "david-jones",
+    "name": "David Jones",
+    "base_url": "https://www.davidjones.com",
+    "platform": "other",
+    "state": "NSW",
+    "kind": "department",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "robots.txt reachable; custom SPA (feed paths return HTML 200). Minimal TCG range."
+  },
+  {
+    "slug": "amazon-au",
+    "name": "Amazon Australia",
+    "base_url": "https://www.amazon.com.au",
+    "platform": "other",
+    "state": "NSW",
+    "kind": "big-box",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "robots.txt ok but other paths returned 503 (Amazon robot check). Use PA-API / affiliate API instead of scraping."
+  },
+  {
+    "slug": "kidstuff",
+    "name": "Kidstuff",
+    "base_url": "https://www.kidstuff.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "toy",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Shopify; 'pokemon' verified but is general Pokemon toys/games - filter by product_type/title for TCG. 'tcg' collection exists but empty."
+  },
+  {
+    "slug": "mr-toys",
+    "name": "Mr Toys Toyworld",
+    "base_url": "https://www.mrtoys.com.au",
+    "platform": "other",
+    "state": null,
+    "kind": "toy",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Cloudflare 403 challenge on /robots.txt."
+  },
+  {
+    "slug": "toyworld",
+    "name": "Toyworld Australia",
+    "base_url": "https://www.toyworld.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "toy",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "trading-cards",
+      "pokemon",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Shopify; trading-cards verified (mixed accessories). 'pokemon'/'one-piece' are mostly LEGO/toys - filter by title. Franchise network; online stock only."
+  },
+  {
+    "slug": "ozzie-collectables",
+    "name": "Ozzie Collectables",
+    "base_url": "https://www.ozziecollectables.com",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "manufacturer-pokemon",
+      "manufacturer-one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Both verified. Exclude 'live-break-*' products (titles prefixed '[ Live Break ]'). Also pokemon-booster-boxes, one-piece-booster-box. 750+ collections."
+  },
+  {
+    "slug": "cherry-collectables",
+    "name": "Cherry Collectables",
+    "base_url": "https://www.cherrycollectables.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "all-pokemon",
+      "all-one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "all-pokemon verified. Also pokemon-booster-boxes (from site URL). Collections include many singles-by-character; filter sealed by product_type."
+  },
+  {
+    "slug": "gamerholic",
+    "name": "Gamer Holic",
+    "base_url": "https://gamerholic.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "english-pokemon-sets",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Both verified (english-one-piece-sets is empty). Also pokemon-booster-boxes, one-piece-booster-boxes; carries JP/CN too."
+  },
+  {
+    "slug": "tc-game",
+    "name": "TC Game",
+    "base_url": "https://tcgame.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-booster-boxes-and-packs",
+      "one-piece-card-game-japanese-booster-boxes-packs"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Japanese-product specialist. pokemon handle verified."
+  },
+  {
+    "slug": "the-feisty-lizard",
+    "name": "The Feisty Lizard",
+    "base_url": "https://www.thefeistylizard.com.au",
+    "platform": "other",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Unreachable from research env (proxy connect error twice) - unknown platform; retry from AU server."
+  },
+  {
+    "slug": "pokemon-world-australia",
+    "name": "Pokeworld Australia",
+    "base_url": "https://www.pokemonworldaustralia.com",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "booster-boxes",
+      "elite-trainer-boxes",
+      "collection-tins-boxes",
+      "booster-packs",
+      "one-piece-booster-box"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Small Pokemon-focused store (23 collections). booster-boxes and collection-tins-boxes verified."
+  },
+  {
+    "slug": "that-tcg-store",
+    "name": "That TCG Store",
+    "base_url": "https://thattcgstore.com",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "403",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Headless storefront on Vercel; no products.json; /wp-json/wc/store/v1/products returned 403 JSON. Not retried."
+  },
+  {
+    "slug": "mighty-collectibles",
+    "name": "Mighty Collectibles",
+    "base_url": "https://mightycollectibles.com.au",
+    "platform": "woocommerce",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "categories": [
+      {
+        "id": 82,
+        "slug": "pokemon"
+      },
+      {
+        "id": 116,
+        "slug": "japanese-pokemon-cards"
+      },
+      {
+        "id": 237,
+        "slug": "one-piece"
+      }
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "WooCommerce Store API open. Categories: 82 pokemon (21), 116 japanese-pokemon-cards (36), 237 one-piece (13). Store API exposes is_in_stock/is_purchasable."
+  },
+  {
+    "slug": "cards-by-brammers",
+    "name": "Cards by Brammers",
+    "base_url": "https://www.cardsbybrammers.com.au",
+    "platform": "other",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Not Shopify/Woo; URL style (/booster-packs-boxes/) + crawl-delay 1 suggests Neto/Maropost. Would need HTML/sitemap parsing."
+  },
+  {
+    "slug": "cardbot",
+    "name": "Cardbot",
+    "base_url": "https://cardbot.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "english-pokemon-tcg",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Both from collections.json; english-pokemon-tcg and pokemon verified. Many singles collections."
+  },
+  {
+    "slug": "games-portal",
+    "name": "Games Portal",
+    "base_url": "https://gamesportal.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "one-piece-card-game"
+    ],
+    "games": [
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "One Piece sealed collection verified; no Pokemon collection found."
+  },
+  {
+    "slug": "good-deals-games",
+    "name": "Good Deals Games (GD Games)",
+    "base_url": "https://www.gdgames.com.au",
+    "platform": "shopify",
+    "state": "QLD",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "english-pokemon-tcg",
+      "one-piece-tcg"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Brisbane. english-pokemon-tcg verified; also pokemon-tcg-australia."
+  },
+  {
+    "slug": "jtoys",
+    "name": "JToys",
+    "base_url": "https://www.jtoys.com.au",
+    "platform": "other",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Every path incl. robots.txt returned HTTP 202 text/html from nginx (SiteGround-style JS bot challenge). Site URLs suggest WooCommerce."
+  },
+  {
+    "slug": "mind-games",
+    "name": "Mind Games",
+    "base_url": "https://www.m-g.com.au",
+    "platform": "woocommerce",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "categories": [
+      {
+        "id": 66,
+        "slug": "pokemon"
+      },
+      {
+        "id": 603,
+        "slug": "one-piece"
+      }
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "WooCommerce on WP Engine; robots crawl-delay 10. Categories (page 2): 66 pokemon (246), 603 one-piece (134). Exclude 705 pokemon-lego / 673 one-piece-lego."
+  },
+  {
+    "slug": "kollecter",
+    "name": "Kollecter",
+    "base_url": "https://www.kollecter.com.au",
+    "platform": "shopify",
+    "state": "WA",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon",
+      "english-one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Ellenbrook WA. Both verified. Granular: pokemon-tcg-booster-box, pokemon-tcg-booster-bundles, one-piece-card-game-booster-boxes-english-1."
+  },
+  {
+    "slug": "pocket-games",
+    "name": "Pocket Games Australia",
+    "base_url": "https://pocketgames.com.au",
+    "platform": "shopify",
+    "state": "NSW",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg-cards",
+      "one-piece-tcg-cards"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Sydney. pokemon-tcg-cards verified (includes JP)."
+  },
+  {
+    "slug": "pro-gamers",
+    "name": "Pro Gamers Australia",
+    "base_url": "https://progamers.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-sealed-booster-boxes",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-sealed-booster-boxes verified."
+  },
+  {
+    "slug": "tcgroup-au",
+    "name": "TCGroup AU",
+    "base_url": "https://www.tcgroupau.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "english-pokemon",
+      "english-one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Epping VIC. Both verified. Granular english-pokemon-booster-box / -elite-trainer-box / -tins."
+  },
+  {
+    "slug": "kawaii-collector",
+    "name": "Kawaii Collector",
+    "base_url": "https://kawaiicollector.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-sealed-products"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-sealed-products verified. Only One Piece collection is figurines."
+  },
+  {
+    "slug": "goldfields-games",
+    "name": "Goldfields Toys & Games",
+    "base_url": "https://goldfieldsgames.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "toy",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-trading-card-game",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Both verified (handles on pages 2-3). Also pokemon-tcg-elite-trainer-boxes, pokemon-tcg-booster-pack-display-boxes."
+  },
+  {
+    "slug": "collectible-madness",
+    "name": "Collectible Madness",
+    "base_url": "https://collectiblemadness.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-trading-card-game",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-trading-card-game verified. Also pokemon-booster-boxes, pokemon-elite-trainer-boxes, one-piece-card-game-booster-boxes."
+  },
+  {
+    "slug": "trainerhub",
+    "name": "TrainerHub Australia",
+    "base_url": "https://www.trainerhub.net.au",
+    "platform": "other",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Not Shopify/Woo; URL style + crawl-delay 1 suggests Neto/Maropost. HTML parsing needed."
+  },
+  {
+    "slug": "hobby-collectors-australia",
+    "name": "Hobby Collectors Australia",
+    "base_url": "https://hobbycollectorsaustralia.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-sealed",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-sealed verified."
+  },
+  {
+    "slug": "drop-store",
+    "name": "Drop Store Collectables",
+    "base_url": "https://dropstore.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg",
+      "one-piece-tcg"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Melbourne; sealed-only. pokemon-tcg verified."
+  },
+  {
+    "slug": "pokesource",
+    "name": "PokeSource Australia",
+    "base_url": "https://pokesource.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "all",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "No single Pokemon sealed collection (price-band collections only); use 'all' and filter singles by title/product_type."
+  },
+  {
+    "slug": "ace-collectibles",
+    "name": "Ace Collectibles",
+    "base_url": "https://www.acecollectibles.com.au",
+    "platform": "shopify",
+    "state": "SA",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "all-products-pokemon",
+      "one-piece-1"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Adelaide. Both verified; one-piece-1 includes books - filter."
+  },
+  {
+    "slug": "leo-games",
+    "name": "Leo Games",
+    "base_url": "https://www.leogames.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon",
+      "one-piece-card-game"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon verified."
+  },
+  {
+    "slug": "trading-card-masters",
+    "name": "Trading Card Masters",
+    "base_url": "https://www.tradingcardmasters.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-english-tcg"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-english-tcg verified. One Piece collections are singles only."
+  },
+  {
+    "slug": "tcg-collectors",
+    "name": "TCG Collectors",
+    "base_url": "https://tcgcollectors.com.au",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "robots",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "robots.txt disallows all feed paths for User-agent *; respected, no further requests."
+  },
+  {
+    "slug": "loot-vault",
+    "name": "Loot Vault",
+    "base_url": "https://lootvault.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-tcg verified."
+  },
+  {
+    "slug": "vault-of-the-cards",
+    "name": "Vault of the Cards",
+    "base_url": "https://vaultofthecards.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Shopify, but /products.json returned 401 and an HTML page with challenge/captcha markers; treated as blocked, not retried."
+  },
+  {
+    "slug": "mint-collectables",
+    "name": "Mint Collectables",
+    "base_url": "https://mintcollectables.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon verified. Also sealed-japanese-pokemon."
+  },
+  {
+    "slug": "grailborne",
+    "name": "Grailborne",
+    "base_url": "https://grailborne.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg",
+      "one-piece"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "pokemon-tcg verified."
+  },
+  {
+    "slug": "gb-toys",
+    "name": "GB Toys",
+    "base_url": "https://gbtoys.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-tcg-english",
+      "one-piece-english"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Both verified. Also one-piece-card-game-booster-boxes-english."
+  },
+  {
+    "slug": "eternal-magic",
+    "name": "Eternal Magic",
+    "base_url": "https://eternalmagic.cc",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "one-piece-sealed"
+    ],
+    "games": [
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "One Piece specialist (.cc domain, AU store, AUD). one-piece-sealed from collections.json (verified handle was a guide page)."
+  },
+  {
+    "slug": "mochi-pals",
+    "name": "Mochi Pals",
+    "base_url": "https://www.mochipalaus.com",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Unreachable from research env (proxy connect error twice); retry from AU server."
+  },
+  {
+    "slug": "toyland-treasures",
+    "name": "Toyland Treasures",
+    "base_url": "https://www.toylandtreasures.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-cards-australia"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Online-only Melbourne. pokemon-cards-australia verified."
+  },
+  {
+    "slug": "plenty-of-games",
+    "name": "Plenty of Games",
+    "base_url": "https://www.plentyofgames.com.au",
+    "platform": "shopify",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-sealed",
+      "one-piece-sealed"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Melbourne LGS. pokemon-sealed verified."
+  },
+  {
+    "slug": "good-games-adelaide",
+    "name": "Good Games Adelaide",
+    "base_url": "https://ggadelaide.com.au",
+    "platform": "shopify",
+    "state": "SA",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [
+      "pokemon"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Feed works but 'pokemon' collection empty; singles-focused. Low priority."
+  },
+  {
+    "slug": "mistys-collectables",
+    "name": "Misty's Collectables",
+    "base_url": "https://mistyscollectables.com.au",
+    "platform": "other",
+    "state": "QLD",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Brisbane. Not Shopify/Woo; platform unidentified from headers."
+  },
+  {
+    "slug": "card-traders-australia",
+    "name": "Card Traders Australia",
+    "base_url": "https://cardtradersaustralia.com.au",
+    "platform": "shopify",
+    "state": "SA",
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "all"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Semaphore SA. 1000+ collections with no TCG-named one; 'all' works but mixes sports cards - filter by vendor/title."
+  },
+  {
+    "slug": "troll-australia",
+    "name": "Troll Australia",
+    "base_url": "https://www.trollaustralia.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon-sealed",
+      "one-piece-sealed"
+    ],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Troll and Toad AU partner. pokemon-sealed verified."
+  },
+  {
+    "slug": "mystical-merchants",
+    "name": "Mystical Merchants",
+    "base_url": "https://mysticalmerchants.com.au",
+    "platform": "other",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "All paths returned HTTP 202 HTML (SiteGround-style JS bot challenge)."
+  },
+  {
+    "slug": "overhauled-games",
+    "name": "Overhauled Games",
+    "base_url": "https://overhauledgames.com.au",
+    "platform": "other",
+    "state": "VIC",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "challenge",
+    "collections": [],
+    "games": [
+      "pokemon",
+      "one-piece"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Cloudflare 403 challenge on /robots.txt."
+  },
+  {
+    "slug": "chaotic-factory",
+    "name": "Chaotic Factory",
+    "base_url": "https://www.chaoticfactory.com.au",
+    "platform": "other",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": null,
+    "notes": "Not Shopify/Woo; crawl-delay 1, likely Neto/Maropost."
+  },
+  {
+    "slug": "mastercoins",
+    "name": "Mastercoins",
+    "base_url": "https://www.mastercoins.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": true,
+    "blocked_reason": null,
+    "collections": [
+      "pokemon"
+    ],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Coins & collectibles; pokemon verified but mostly JP/foreign-language and memorabilia. Low priority."
+  },
+  {
+    "slug": "curacards",
+    "name": "CuraCards",
+    "base_url": "https://curacards.com.au",
+    "platform": "shopify",
+    "state": null,
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Feed works but catalogue is singles-only (artist/character collections); no sealed collection."
+  },
+  {
+    "slug": "monster-mart",
+    "name": "Monster Mart",
+    "base_url": "https://www.monstermart.com.au",
+    "platform": "shopify",
+    "state": "QLD",
+    "kind": "specialist",
+    "feed_ok": false,
+    "blocked_reason": "no-feed",
+    "collections": [],
+    "games": [
+      "pokemon"
+    ],
+    "gst_inclusive_aud": true,
+    "available_exposed": true,
+    "notes": "Brisbane; raw singles only (per-Pokemon collections); no sealed collection."
+  }
+]

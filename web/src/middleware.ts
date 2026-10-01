@@ -15,7 +15,7 @@ import { listingPath, parseListingSegment } from '@/lib/seo/urls'
  */
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SB_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const REDIRECT_PREFIXES = ['/cards/', '/marketplace/', '/market-cap/', '/releases/', '/guides/', '/drops/', '/news/', '/sellers/']
+const REDIRECT_PREFIXES = ['/cards/', '/marketplace/', '/market-cap/', '/releases/', '/guides/', '/drops/', '/news/', '/sellers/', '/products/']
 const PRIVATE_PREFIXES = ['/account/', '/messages/', '/admin/', '/report/']
 
 // Small per-instance cache of redirect lookups (positive and negative).

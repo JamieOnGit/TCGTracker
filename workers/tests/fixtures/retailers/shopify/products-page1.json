@@ -1,0 +1,697 @@
+{
+ "products": [
+  {
+   "id": 8101,
+   "title": "Pokémon TCG: Prismatic Evolutions Elite Trainer Box",
+   "handle": "pokemon-tcg-prismatic-evolutions-elite-trainer-box",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon Sealed",
+   "tags": [
+    "English",
+    "Pokemon",
+    "Sealed"
+   ],
+   "variants": [
+    {
+     "id": 81011,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81011",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "89.95",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8101,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810100,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8101,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/pokemon-tcg-prismatic-evolutions-elite-trainer-box.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8102,
+   "title": "Pokémon TCG: Surging Sparks Booster Box",
+   "handle": "pokemon-tcg-surging-sparks-booster-box",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon Sealed",
+   "tags": [
+    "Booster Box",
+    "Pokemon"
+   ],
+   "variants": [
+    {
+     "id": 81021,
+     "title": "Single box",
+     "option1": "Single box",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81021",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "229.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8102,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": false
+    },
+    {
+     "id": 81022,
+     "title": "Case of 6",
+     "option1": "Case of 6",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81022",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "1299.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 2,
+     "product_id": 8102,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": false
+    }
+   ],
+   "images": [
+    {
+     "id": 810200,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8102,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/pokemon-tcg-surging-sparks-booster-box.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Single box",
+      "Case of 6"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8103,
+   "title": "Pokémon TCG: Mega Evolution Phantasmal Flames Booster Bundle - PRE-ORDER",
+   "handle": "phantasmal-flames-booster-bundle",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon Sealed",
+   "tags": [
+    "Pokemon",
+    "Pre-Order"
+   ],
+   "variants": [
+    {
+     "id": 81031,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81031",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "54.95",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8103,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810300,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8103,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/phantasmal-flames-booster-bundle.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8104,
+   "title": "Stellar Crown Mini Tin",
+   "handle": "stellar-crown-mini-tin",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon TCG",
+   "tags": [
+    "pokemon",
+    "tins"
+   ],
+   "variants": [
+    {
+     "id": 81041,
+     "title": "Random",
+     "option1": "Random",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81041",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "17.95",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8104,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    },
+    {
+     "id": 81042,
+     "title": "Set of 5",
+     "option1": "Set of 5",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81042",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "84.95",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 2,
+     "product_id": 8104,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810400,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8104,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/stellar-crown-mini-tin.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Random",
+      "Set of 5"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8105,
+   "title": "Charizard ex 199/165 SIR - Pokemon 151",
+   "handle": "charizard-ex-199-165",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon Singles",
+   "tags": [
+    "Singles",
+    "151"
+   ],
+   "variants": [
+    {
+     "id": 81051,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81051",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "349.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8105,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810500,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8105,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/charizard-ex-199-165.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8106,
+   "title": "[ Live Break ] Prismatic Evolutions Booster Box",
+   "handle": "live-break-prismatic-evolutions",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Live Break",
+   "tags": [
+    "Breaks"
+   ],
+   "variants": [
+    {
+     "id": 81061,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81061",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "35.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8106,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810600,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8106,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/live-break-prismatic-evolutions.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8107,
+   "title": "LEGO Pokémon Pikachu and Poké Ball",
+   "handle": "lego-pokemon-pikachu",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "LEGO",
+   "product_type": "LEGO",
+   "tags": [
+    "LEGO"
+   ],
+   "variants": [
+    {
+     "id": 81071,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81071",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "79.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8107,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810700,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8107,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/lego-pokemon-pikachu.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8108,
+   "title": "Yu-Gi-Oh! TCG Rarity Collection 5 Booster Box",
+   "handle": "yugioh-rarity-collection-5-booster-box",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Konami",
+   "product_type": "Yu-Gi-Oh Sealed",
+   "tags": [
+    "Yu-Gi-Oh"
+   ],
+   "variants": [
+    {
+     "id": 81081,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81081",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "189.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8108,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 810800,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8108,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/yugioh-rarity-collection-5-booster-box.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8109,
+   "title": "One Piece Card Game OP-09 Emperors in the New World Booster Box (Japanese)",
+   "handle": "op09-emperors-booster-box-jp",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Bandai",
+   "product_type": "One Piece Sealed",
+   "tags": [
+    "Japanese",
+    "One Piece"
+   ],
+   "variants": [
+    {
+     "id": 81091,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81091",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "199.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8109,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00"
+    }
+   ],
+   "images": [
+    {
+     "id": 810900,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8109,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/op09-emperors-booster-box-jp.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8110,
+   "title": "Pok&eacute;mon TCG: Destined Rivals Booster Bundle",
+   "handle": "destined-rivals-booster-bundle",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon Sealed",
+   "tags": [
+    "Pokemon"
+   ],
+   "variants": [
+    {
+     "id": 81101,
+     "title": "Default Title",
+     "option1": "Default Title",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81101",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "59.95",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8110,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 811000,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8110,
+     "variant_ids": [],
+     "src": "http://cdn.example.com/destined-rivals.jpg",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Default Title"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8111,
+   "title": "Pokemon TCG 151 Ultra Premium Collection",
+   "handle": "pokemon-151-upc",
+   "body_html": "<p>Sealed product.</p>",
+   "published_at": "2026-09-20T10:00:00+10:00",
+   "created_at": "2026-09-20T10:00:00+10:00",
+   "updated_at": "2026-09-30T09:00:00+10:00",
+   "vendor": "Pokémon",
+   "product_type": "Pokemon Sealed",
+   "tags": [
+    "Pokemon"
+   ],
+   "variants": [
+    {
+     "id": 81111,
+     "title": "Mint box",
+     "option1": "Mint box",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81111",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "199.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 1,
+     "product_id": 8111,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": false
+    },
+    {
+     "id": 81112,
+     "title": "Damaged box",
+     "option1": "Damaged box",
+     "option2": null,
+     "option3": null,
+     "sku": "SKU81112",
+     "requires_shipping": true,
+     "taxable": true,
+     "featured_image": null,
+     "price": "179.00",
+     "grams": 500,
+     "compare_at_price": null,
+     "position": 2,
+     "product_id": 8111,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "updated_at": "2026-09-30T09:00:00+10:00",
+     "available": true
+    }
+   ],
+   "images": [
+    {
+     "id": 811100,
+     "created_at": "2026-09-20T10:00:00+10:00",
+     "position": 1,
+     "updated_at": "2026-09-20T10:00:00+10:00",
+     "product_id": 8111,
+     "variant_ids": [],
+     "src": "//cdn.shopify.com/s/files/1/0612/products/pokemon-151-upc.jpg?v=1727740800",
+     "width": 1000,
+     "height": 1000
+    }
+   ],
+   "options": [
+    {
+     "name": "Title",
+     "position": 1,
+     "values": [
+      "Mint box",
+      "Damaged box"
+     ]
+    }
+   ]
+  }
+ ]
+}

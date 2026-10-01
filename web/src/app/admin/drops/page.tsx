@@ -1,8 +1,9 @@
 import { ActionButton, ActionSwitch } from '@/components/admin/ActionButton'
 import { ActionForm } from '@/components/admin/ActionForm'
 import { AdminHeader, HealthDot } from '@/components/admin/bits'
+import { StoreFields } from '@/components/admin/StoreFields'
 import { fmtAud2 } from '@/components/Format'
-import { addRrpForm, addWatchForm, deleteRrp, deleteWatch, sendManualAlert, setRetailerEnabled, setRetailerIntervals, setWatchEnabled } from '@/lib/actions/admin'
+import { addRrpForm, addStore, addWatchForm, deleteRrp, deleteWatch, saveStoreSettings, sendManualAlert, setRetailerEnabled, setRetailerIntervals, setWatchEnabled } from '@/lib/actions/admin'
 import { dropsData, retailers, settingValues } from '@/lib/admin/data'
 import { fmtAgo, retailerHealth } from '@/lib/admin/format'
 import { requireSection } from '@/lib/admin/guard'
@@ -21,7 +22,7 @@ export default async function AdminDrops() {
 
   return (
     <>
-      <AdminHeader title="Drops" lead="Retailer adapters, alert delivery, the RRP table and the watchlist. Only switch a retailer on after its terms review is signed off." />
+      <AdminHeader title="Drops" lead="Stores and their monitors, alert delivery, the RRP table and the watchlist. Only switch a store on after its terms and robots.txt review is signed off." />
 
       <section className="admin-section" aria-labelledby="ret-h">
         <h2 id="ret-h" className="admin-h2">Retailers</h2>
@@ -31,7 +32,7 @@ export default async function AdminDrops() {
             <thead>
               <tr>
                 <th scope="col">Retailer</th><th scope="col">Health</th><th scope="col">Enabled</th><th scope="col">Intervals (s)</th>
-                <th scope="col">Last success</th><th scope="col">Last error</th><th scope="col" className="n">Errors</th><th scope="col" className="n">Empty cycles</th>
+                <th scope="col">Last checked</th><th scope="col">Last success</th><th scope="col">Last error</th><th scope="col" className="n">Errors</th><th scope="col" className="n">Empty cycles</th>
               </tr>
             </thead>
             <tbody>
@@ -39,7 +40,8 @@ export default async function AdminDrops() {
                 <tr key={r.id} data-retailer={r.slug}>
                   <th scope="row" className="nowrap">
                     <span className="font-medium">{r.name}</span>
-                    <p className="muted text-xs">{r.adapter}</p>
+                    <p className="muted text-xs">{r.platform} · {r.adapter}</p>
+                    {r.blocked_reason && <p className="admin-warn-text text-xs">Blocked: {r.blocked_reason}</p>}
                   </th>
                   <td><HealthDot health={retailerHealth(r, threshold)} /></td>
                   <td><ActionSwitch action={setRetailerEnabled.bind(null, r.slug)} checked={r.enabled} label={`${r.name} enabled`} /></td>
@@ -51,6 +53,7 @@ export default async function AdminDrops() {
                       <input id={`d-${r.slug}`} name="discovery" type="number" min={300} className="input input-sm" defaultValue={r.discovery_interval_seconds} title="Discovery interval (s)" />
                     </ActionForm>
                   </td>
+                  <td className="nowrap">{fmtAgo(r.last_checked_at)}</td>
                   <td className="nowrap">{fmtAgo(r.last_success_at)}</td>
                   <td>{r.last_error ? <><span className="muted text-xs">{fmtAgo(r.last_error_at)}</span><p className="err-text">{r.last_error.slice(0, 160)}</p></> : <span className="muted">—</span>}</td>
                   <td className="n">{r.consecutive_errors}</td>
@@ -61,6 +64,47 @@ export default async function AdminDrops() {
           </table>
         </div>
         <p className="provenance">Health: failing after 3 consecutive errors or no success for 10 watch intervals; degraded on any error or {threshold}+ empty cycles.</p>
+      </section>
+
+      <section className="admin-section admin-panel" aria-labelledby="add-h">
+        <h2 id="add-h" className="admin-h2">Add a store</h2>
+        <p className="muted text-sm">Shopify and WooCommerce stores are read from the catalogue they publish openly (collections or Store API categories). Check the store&apos;s terms and robots.txt first. If a store blocks automated access, record the reason below and leave it to member sightings; never work around a block.</p>
+        <ActionForm action={addStore} submitLabel="Add store" submitVariant="primary" reset ariaLabel="Add a store">
+          <div className="admin-grid-2">
+            <div className="field">
+              <label htmlFor="ns-name">Store name</label>
+              <input id="ns-name" name="name" className="input" required minLength={2} maxLength={80} placeholder="e.g. Good Games Melbourne" />
+            </div>
+            <div className="field">
+              <label htmlFor="ns-url">Base URL</label>
+              <input id="ns-url" name="base_url" type="url" className="input" required maxLength={200} placeholder="https://example.com.au" />
+            </div>
+          </div>
+          <StoreFields id="ns" />
+          <label className="check"><input type="checkbox" name="enabled" /> Start monitoring now (Shopify / WooCommerce only)</label>
+        </ActionForm>
+      </section>
+
+      <section className="admin-section" aria-labelledby="cfg-h">
+        <h2 id="cfg-h" className="admin-h2">Store settings</h2>
+        <p className="muted text-sm">Platform, what to read and the blocked reason for each store. A blocked reason shows the store as &ldquo;Not reachable&rdquo; on /drops/stores/; the monitor skips it.</p>
+        <div className="mt-3 grid gap-2">
+          {rets.map((r) => (
+            <details key={r.id} className="admin-panel" data-store-settings={r.slug}>
+              <summary className="cursor-pointer">
+                <span className="font-medium">{r.name}</span> <span className="muted text-xs">{r.platform} · {r.consecutive_errors} consecutive errors · checked {fmtAgo(r.last_checked_at)}{r.blocked_reason ? ` · blocked: ${r.blocked_reason}` : ''}</span>
+              </summary>
+              <ActionForm action={saveStoreSettings.bind(null, r.slug)} submitLabel="Save store" ariaLabel={`${r.name} settings`}>
+                <StoreFields id={`s-${r.slug}`} store={r} allowNone />
+                <div className="field">
+                  <label htmlFor={`s-${r.slug}-b`}>Blocked reason</label>
+                  <input id={`s-${r.slug}-b`} name="blocked_reason" className="input" maxLength={200} defaultValue={r.blocked_reason ?? ''} placeholder="Empty = reachable" />
+                </div>
+                <p className="muted text-xs">Config: <code>{JSON.stringify(r.config ?? {})}</code></p>
+              </ActionForm>
+            </details>
+          ))}
+        </div>
       </section>
 
       <section className="admin-section" aria-labelledby="del-h">

@@ -60,6 +60,13 @@ export const dropsPath = (retailerSlug?: string) => (retailerSlug ? `/drops/${re
 /** Drops by state: /drops/vic/ (state codes never collide with retailer slugs). */
 export const dropsStatePath = (state: string) => `/drops/${state.toLowerCase()}/`
 export const scoutsPath = () => '/drops/scouts/'
+/** Products in stock or on pre-order right now, at any store we watch. */
+export const inStockPath = () => '/drops/in-stock/'
+/** Every store we watch and how (store coverage). */
+export const storesPath = () => '/drops/stores/'
+/** One page per sealed product: /products/pokemon/en/prismatic-evolutions-elite-trainer-box/. */
+export const productPath = (p: { game: Game; lang: Lang; slug: string }) => `/products/${p.game}/${p.lang}/${p.slug}/`
+export const productsPath = (game?: Game) => (game ? `/products/${game}/` : '/products/')
 export const releasesHubPath = () => '/releases/'
 export const releasesPath = (game: Game) => `/releases/${game}/`
 export const releasePath = (game: Game, slug: string) => `/releases/${game}/${slug}/`

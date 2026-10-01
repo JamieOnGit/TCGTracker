@@ -104,7 +104,7 @@ def test_run_once_isolates_an_adapter_that_raises():
     assert bad.failures == 2 and harness.results["bad-shop"][-1].error == "retailer changed its API"
     assert good.failures == 0
     events = [e.event_type.value for e in harness.stores["good-shop"].events.values()]
-    assert events == ["NEW_LISTING", "IN_STOCK"]
+    assert events == ["NEW_LISTING", "IN_STOCK"]  # listed out of stock, then restocked
     # Two failed cycles >= threshold -> admin alert for the bad retailer only.
     assert harness.alerts == ["bad-shop"]
 

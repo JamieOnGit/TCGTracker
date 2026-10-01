@@ -29,6 +29,8 @@ export interface Rules {
   rankByPriceUntilPopulation: boolean
   ebay: EbaySettings
   sightings: SightingRules
+  /** `stock.show_retailer_images`: show stores' product photos on stock pages (off until image rights are settled). */
+  stockShowRetailerImages: boolean
 }
 
 /**
@@ -115,6 +117,7 @@ export const DEFAULT_RULES: Rules = {
   rankByPriceUntilPopulation: true,
   ebay: DEFAULT_EBAY,
   sightings: DEFAULT_SIGHTING_RULES,
+  stockShowRetailerImages: false,
 }
 
 const KEY_MAP: Record<string, keyof Rules> = {
@@ -147,6 +150,9 @@ export function rulesFromSettings(rows: { key: string; value: unknown }[]): Rule
   }
   rules.ebay = ebaySettingsFromRows(rows)
   rules.sightings = sightingRulesFromRows(rows)
+  // Only an explicit true switches retailer photos on.
+  const img = rows.find((r) => r.key === 'stock.show_retailer_images')?.value
+  rules.stockShowRetailerImages = img === true || img === 'true'
   return rules
 }
 

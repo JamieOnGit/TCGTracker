@@ -31,3 +31,11 @@ describe('settings form parsing', () => {
     expect(parseSettingInput(f.kind, 'x'.repeat(201)).ok).toBe(false)
   })
 })
+
+describe('every admin setting is editable', () => {
+  it('has a server-side validator for each field on the settings page', async () => {
+    const { SETTING_VALIDATORS } = await import('@/lib/admin/settingValidators')
+    const missing = ALL_SETTING_KEYS.filter((k) => !(k in SETTING_VALIDATORS))
+    expect(missing).toEqual([])
+  })
+})

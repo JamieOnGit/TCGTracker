@@ -6,19 +6,21 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { CopyIntro, Faq } from '@/components/DropsCopy'
 import { LiveDrops } from '@/components/LiveDrops'
+import { ProductCard } from '@/components/ProductCard'
 import { PageIntro } from '@/components/ui'
 import { RETAILER_COPY, STATE_COPY } from '@/content/drops-copy'
 import { getRepo } from '@/lib/data'
-import { AU_STATES, AU_STATE_NAMES, type AuState, type DropRow, type RetailerRow } from '@/lib/data/types'
+import { AU_STATES, AU_STATE_NAMES, type AuState, type DropRow, type RetailerRow, type SealedProductRow } from '@/lib/data/types'
 import { hasRecentDrops, stateFromSlug } from '@/lib/domain/drops'
+import { feedHref } from '@/lib/domain/stock'
 import { buildMetadata } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, dropsStatePath } from '@/lib/seo/urls'
+import { accountSightingsPath, dropsPath, dropsStatePath, inStockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
 type Props = { params: Promise<{ slug: string }> }
 
 type Page =
-  | { kind: 'retailer'; retailer: RetailerRow; retailers: RetailerRow[]; rows: DropRow[]; indexable: boolean }
+  | { kind: 'retailer'; retailer: RetailerRow; retailers: RetailerRow[]; rows: DropRow[]; inStock: SealedProductRow[]; showImages: boolean; indexable: boolean }
   | { kind: 'state'; state: AuState; retailers: RetailerRow[]; rows: DropRow[]; indexable: boolean }
 
 /**
@@ -36,8 +38,8 @@ const load = cache(async (slug: string): Promise<Page | null> => {
   }
   const retailer = retailers.find((r) => r.slug === slug)
   if (!retailer) return null
-  const rows = await repo.drops({ retailerSlug: retailer.slug, limit: 100 })
-  return { kind: 'retailer', retailer, retailers, rows, indexable: Boolean(RETAILER_COPY[retailer.slug]) || hasRecentDrops(rows, new Date()) }
+  const [rows, inStock, rules] = await Promise.all([repo.drops({ retailerSlug: retailer.slug, limit: 100 }), repo.inStock({ retailerSlug: retailer.slug, limit: 60 }), repo.getRules()])
+  return { kind: 'retailer', retailer, retailers, rows, inStock, showImages: rules.stockShowRetailerImages, indexable: Boolean(RETAILER_COPY[retailer.slug]) || hasRecentDrops(rows, new Date()) }
 })
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -81,6 +83,20 @@ function RetailerDrops({ p }: { p: Extract<Page, { kind: 'retailer' }> }) {
         <ReportCta />
       </PageIntro>
       <LiveDrops />
+      {p.inStock.length > 0 && (
+        <section className="section" aria-labelledby="now-h">
+          <h2 id="now-h">In stock now at {r.name}</h2>
+          <p className="muted mt-2 text-sm">Products {r.name} lists as in stock or on pre-order right now. Each product page compares every store we watch.</p>
+          <div className="mt-6 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {p.inStock.slice(0, 12).map((x) => <ProductCard key={x.id} p={x} showImages={p.showImages} />)}
+          </div>
+          <p className="mt-6 flex flex-wrap gap-4 text-sm">
+            {p.inStock.length > 12 && <Link href={feedHref(inStockPath(), { retailer: r.slug })} className="prose-link">All {p.inStock.length} products in stock at {r.name}</Link>}
+            <Link href={inStockPath()} className="prose-link">In stock at every store</Link>
+            <Link href={storesPath()} className="prose-link">How we watch {r.name}</Link>
+          </p>
+        </section>
+      )}
       <section className="section" aria-labelledby="hist-h"><h2 id="hist-h">History</h2><div className="mt-6"><DropFeed rows={p.rows} empty={r.monitored ? undefined : `No confirmed sightings at ${r.name} yet. Seen stock in store? Report it and other members will confirm it.`} /></div></section>
       <Faq faqs={copy?.faqs} title={`${r.name} restock questions`} />
     </div>

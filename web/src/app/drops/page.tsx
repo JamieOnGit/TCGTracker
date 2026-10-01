@@ -7,38 +7,67 @@ import { PageIntro, SegLinks } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
 import { durationLabel, parseDropSource } from '@/lib/domain/drops'
-import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, dropsStatePath, scoutsPath } from '@/lib/seo/urls'
+import { countByStatus, dropStatus, feedHref, parseGame, parseSort, parseStatus, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
+import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, productsPath, scoutsPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
 type Props = { searchParams: Promise<SearchParams> }
 
-// ?source= views are noindex,follow and canonicalise to /drops/ (buildMetadata treats any param as a facet).
+// ?status= / ?game= / ?sort= views are noindex,follow and canonicalise to
+// /drops/ (buildMetadata treats any param as a facet); ?page= is noindex too.
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const sp = await searchParams
   return buildMetadata({
     path: '/drops/',
     title: 'Pokémon & One Piece TCG Restocks & Pre-orders in Australia',
     description: 'Pokémon TCG and One Piece Card Game restocks, pre-orders and member in-store sightings at JB Hi-Fi, BIG W, Kmart, Target, EB Games and Premium Bandai AU, tagged against RRP.',
-    searchParams: await searchParams,
+    searchParams: sp,
+    noindex: pageNumber(sp) > 1,
   })
 }
 
-const EMPTY = {
+/** Events loaded per view (counts are over these); the first page is server-rendered. */
+const FEED_LOAD = 300
+const PAGE_SIZE = 50
+
+const EMPTY: Record<StatusKey, string | undefined> = {
   all: undefined,
-  monitor: 'No retailer monitor events in the public history yet.',
-  member: 'No confirmed member sightings in the public history yet. Seen stock in store? Report it.',
+  restock: 'No restocks in the public history yet.',
+  new: 'No new listings in the public history yet.',
+  preorder: 'No pre-orders in the public history yet.',
+  'price-drop': 'No price drops in the public history yet.',
+  sighting: 'No confirmed member sightings in the public history yet. Seen stock in store? Report it.',
 }
 
 /** Public, delayed history (RLS enforces the delay) + the Premium live panel. */
 export default async function Drops({ searchParams }: Props) {
-  const source = parseDropSource((await searchParams).source)
+  const sp = await searchParams
+  // Legacy ?source=member is the "Member sightings" chip; ?source=monitor still filters at the source.
+  const legacy = parseDropSource(sp.source)
+  const status = sp.status ? parseStatus(sp.status) : legacy === 'member' ? 'sighting' : 'all'
+  const game = parseGame(sp.game)
+  const sort = parseSort(sp.sort)
+  const page = Math.min(pageNumber(sp), Math.ceil(FEED_LOAD / PAGE_SIZE))
   const repo = getRepo()
-  const [rows, retailers, rules, scouts] = await Promise.all([repo.drops({ source, limit: 100 }), repo.retailers(), repo.getRules(), repo.scoutLeaderboard(30, 5)])
+  const [loaded, retailers, rules, scouts] = await Promise.all([
+    repo.drops({ game, source: legacy === 'monitor' ? 'monitor' : undefined, limit: FEED_LOAD }),
+    repo.retailers(),
+    repo.getRules(),
+    repo.scoutLeaderboard(30, 5),
+  ])
+  const counts = countByStatus(loaded)
+  const matching = loaded
+    .filter((d) => status === 'all' || dropStatus(d).key === status)
+    .sort((a, b) => (sort === 'oldest' ? a.occurredAt.localeCompare(b.occurredAt) : b.occurredAt.localeCompare(a.occurredAt)))
+  const rows = matching.slice(0, page * PAGE_SIZE)
+  const q = { status, game, sort }
   const publicDelay = durationLabel(rules.dropsPublicDelayMinutes)
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
   const s = rules.sightings
-  const monitored = retailers.filter((r) => r.monitored)
-  const sightingsOnly = retailers.filter((r) => !r.monitored)
+  // A store that blocks automated access is covered by member sightings only.
+  const monitored = retailers.filter((r) => r.monitored && !r.blockedReason)
+  const sightingsOnly = retailers.filter((r) => !r.monitored || r.blockedReason)
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Drops', path: '/drops/' }]} /></div>
@@ -48,26 +77,36 @@ export default async function Drops({ searchParams }: Props) {
           <ChipNav label="Member sightings" links={sightingsOnly.map((r) => ({ href: dropsPath(r.slug), text: r.name }))} />
           <ChipNav label="By state" links={AU_STATES.map((st) => ({ href: dropsStatePath(st), text: st, title: AU_STATE_NAMES[st] }))} />
         </div>
-        <div className="mt-6">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Link href={inStockPath()} className="btn btn-secondary btn-sm">In stock now</Link>
           <Link href={accountSightingsPath()} className="btn btn-primary btn-sm" rel="nofollow">Seen stock in store? Report it</Link>
+          <Link href={storesPath()} className="prose-link text-sm">Stores we watch</Link>
+          <Link href={productsPath()} className="prose-link text-sm">All products</Link>
         </div>
       </PageIntro>
       <LiveDrops />
       <div className="grid lg:grid-cols-[1fr_300px] lg:gap-12">
         <section className="section min-w-0" aria-labelledby="hist-h">
-          <h2 id="hist-h">Recent drops</h2>
-          <p className="muted mt-2 text-sm">Shown {publicDelay} after each event. Prices in AUD, tagged against RRP.</p>
-          <div className="mt-4">
-            <SegLinks
-              label="Source"
-              options={[
-                { href: '/drops/', label: 'All', current: !source },
-                { href: '/drops/?source=monitor', label: 'Retailer monitors', current: source === 'monitor' },
-                { href: '/drops/?source=member', label: 'Member sightings', current: source === 'member' },
-              ]}
-            />
+          <h2 id="hist-h">Stock activity</h2>
+          <p className="muted mt-2 text-sm">Shown {publicDelay} after each event. Prices in AUD, tagged against RRP. Counts cover the latest {loaded.length} events.</p>
+          <nav aria-label="Status" className="mt-4 flex flex-wrap gap-2">
+            {STATUS_KEYS.map((k) => (
+              <Link key={k} href={feedHref('/drops/', { ...q, status: k })} className="chip-filter tap" aria-current={status === k ? 'page' : undefined} scroll={false} data-status-chip={k}>
+                {STATUS_CHIP_LABEL[k]} <span className="count">{counts[k]}</span>
+              </Link>
+            ))}
+          </nav>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <SegLinks label="Game" options={[{ href: feedHref('/drops/', { ...q, game: undefined }), label: 'All games', current: !game }, ...GAMES.map((g) => ({ href: feedHref('/drops/', { ...q, game: g }), label: GAME_NAMES[g], current: game === g }))]} />
+            <SegLinks label="Sort" options={[{ href: feedHref('/drops/', { ...q, sort: 'newest' }), label: 'Newest', current: sort === 'newest' }, { href: feedHref('/drops/', { ...q, sort: 'oldest' }), label: 'Oldest', current: sort === 'oldest' }]} />
           </div>
-          <div className="mt-6"><DropFeed rows={rows} empty={EMPTY[source ?? 'all']} /></div>
+          <div className="mt-6"><DropFeed rows={rows} empty={EMPTY[status]} /></div>
+          {matching.length > rows.length && (
+            <p className="mt-6 flex flex-wrap items-center gap-3">
+              <Link href={feedHref('/drops/', { ...q, page: page + 1 })} className="btn btn-secondary btn-sm" scroll={false}>Load more</Link>
+              <span className="muted text-xs">Showing {rows.length} of {matching.length}</span>
+            </p>
+          )}
           {repo.isDemo && <p className="provenance">Preview data.</p>}
         </section>
         <aside className="grid content-start gap-10 pb-16 lg:py-24">

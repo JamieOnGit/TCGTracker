@@ -13,6 +13,7 @@ import type {
   CardRow,
   DropRow,
   ReleaseRow,
+  SealedProductRow,
   GradeRow,
   HistoryPoint,
   ListingRow,
@@ -191,27 +192,60 @@ function mkListing(id: number, seller: string, cardId: string, grader: string, g
 }
 
 const RETAILERS: RetailerRow[] = [
-  { slug: 'premium-bandai-au', name: 'Premium Bandai AU', baseUrl: 'https://p-bandai.com/au', enabled: false, monitored: true },
-  { slug: 'jb-hi-fi', name: 'JB Hi-Fi', baseUrl: 'https://www.jbhifi.com.au', enabled: false, monitored: true },
-  { slug: 'eb-games', name: 'EB Games', baseUrl: 'https://www.ebgames.com.au', enabled: false, monitored: true },
-  { slug: 'big-w', name: 'BIG W', baseUrl: 'https://www.bigw.com.au', enabled: false, monitored: true },
-  { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false, monitored: true },
-  { slug: 'target-au', name: 'Target', baseUrl: 'https://www.target.com.au', enabled: false, monitored: true },
-  { slug: 'toymate', name: 'Toymate', baseUrl: 'https://www.toymate.com.au', enabled: false, monitored: false },
-  { slug: 'local-game-store', name: 'Independent game store', baseUrl: 'https://tcgtracker.com.au', enabled: false, monitored: false },
+  { slug: 'premium-bandai-au', name: 'Premium Bandai AU', baseUrl: 'https://p-bandai.com/au', enabled: false, monitored: true, platform: 'custom', kind: 'official', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'jb-hi-fi', name: 'JB Hi-Fi', baseUrl: 'https://www.jbhifi.com.au', enabled: false, monitored: true, platform: 'custom', kind: 'big-box', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'eb-games', name: 'EB Games', baseUrl: 'https://www.ebgames.com.au', enabled: false, monitored: true, platform: 'custom', kind: 'big-box', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'big-w', name: 'BIG W', baseUrl: 'https://www.bigw.com.au', enabled: false, monitored: true, platform: 'custom', kind: 'big-box', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'kmart', name: 'Kmart', baseUrl: 'https://www.kmart.com.au', enabled: false, monitored: true, platform: 'custom', kind: 'big-box', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'target-au', name: 'Target', baseUrl: 'https://www.target.com.au', enabled: false, monitored: true, platform: 'custom', kind: 'big-box', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'toymate', name: 'Toymate', baseUrl: 'https://www.toymate.com.au', enabled: false, monitored: false, platform: 'none', kind: 'toy', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  { slug: 'local-game-store', name: 'Independent game store', baseUrl: 'https://tcgtracker.com.au', enabled: false, monitored: false, platform: 'none', kind: 'specialist', state: null, blockedReason: null, lastCheckedAt: null, watchIntervalSeconds: null },
+  // Fictional stores showing a live public-catalogue monitor and a store that blocks automated access.
+  { slug: 'demo-card-shop', name: 'Demo Card Shop', baseUrl: 'https://example.com', enabled: true, monitored: true, platform: 'shopify', kind: 'specialist', state: 'VIC', blockedReason: null, lastCheckedAt: '2026-09-26T21:04:00Z', watchIntervalSeconds: 120 },
+  { slug: 'demo-hobby-store', name: 'Demo Hobby Store', baseUrl: 'https://example.org', enabled: false, monitored: true, platform: 'woocommerce', kind: 'specialist', state: 'QLD', blockedReason: 'Asks automated visitors to pass a challenge', lastCheckedAt: '2026-09-20T03:00:00Z', watchIntervalSeconds: 300 },
 ]
 
 const DROPS: DropRow[] = [
-  { id: 1, source: 'monitor', retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Mega Evolutions Elite Trainer Box', url: 'https://www.jbhifi.com.au/', eventType: 'IN_STOCK', priceAud: 89.95, rrpAud: 89.95, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T21:02:00Z', sighting: null },
+  { id: 1, source: 'monitor', retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Mega Evolutions Elite Trainer Box', url: 'https://www.jbhifi.com.au/', eventType: 'IN_STOCK', priceAud: 89.95, rrpAud: 89.95, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T21:02:00Z', sighting: null, previousPriceAud: null, product: { id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box' }, imageUrl: null },
   {
     id: 3, source: 'member', retailerSlug: 'kmart', retailerName: 'Kmart', title: 'Pokémon TCG booster bundles (demo sighting)', url: null, eventType: 'IN_STOCK', priceAud: 39, rrpAud: 39, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T08:40:00Z',
+    previousPriceAud: null, product: null, imageUrl: null,
     sighting: { id: 1, channel: 'in_store', state: 'VIC', suburb: 'Chadstone', storeName: null, quantity: 'some', purchaseLimit: 2, photoUrl: null, note: 'Restocked in the toy aisle end cap.', confirmations: 3, goneAt: null, reporter: null },
   },
   {
     id: 4, source: 'member', retailerSlug: 'big-w', retailerName: 'BIG W', title: 'One Piece Card Game booster box (demo sighting)', url: null, eventType: 'IN_STOCK', priceAud: 199, rrpAud: 199, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'one-piece', occurredAt: '2026-09-25T23:15:00Z',
+    previousPriceAud: null, product: null, imageUrl: null,
     sighting: { id: 2, channel: 'in_store', state: 'NSW', suburb: 'Parramatta', storeName: 'Westfield Parramatta', quantity: 'few', purchaseLimit: 1, photoUrl: null, note: null, confirmations: 2, goneAt: '2026-09-26T02:00:00Z', reporter: null },
   },
-  { id: 2, source: 'monitor', retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster PRB-02', url: 'https://p-bandai.com/au', eventType: 'PREORDER_OPEN', priceAud: 229, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 4.6, game: 'one-piece', occurredAt: '2026-09-25T01:00:00Z', sighting: null },
+  {
+    id: 5, source: 'monitor', retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'Pokémon TCG Demo Expansion Elite Trainer Box', url: 'https://example.com/products/demo-etb', eventType: 'PRICE_CHANGE', priceAud: 79, rrpAud: 89.95, rrpTag: 'BELOW_RRP', rrpDeltaPct: -12.2, game: 'pokemon', occurredAt: '2026-09-26T10:30:00Z',
+    sighting: null, previousPriceAud: 89.95, product: { id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box' }, imageUrl: null,
+  },
+  {
+    id: 6, source: 'monitor', retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'One Piece Card Game Demo Premium Booster Box', url: 'https://example.com/products/demo-op-box', eventType: 'NEW_LISTING', priceAud: 235, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 7.3, game: 'one-piece', occurredAt: '2026-09-25T06:10:00Z',
+    sighting: null, previousPriceAud: null, product: { id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box' }, imageUrl: null,
+  },
+  { id: 2, source: 'monitor', retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster PRB-02', url: 'https://p-bandai.com/au', eventType: 'PREORDER_OPEN', priceAud: 229, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 4.6, game: 'one-piece', occurredAt: '2026-09-25T01:00:00Z', sighting: null, previousPriceAud: null, product: null, imageUrl: null },
+]
+
+const SEALED: SealedProductRow[] = [
+  {
+    id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box', type: 'etb',
+    rrpAud: 89.95, releaseDate: '2026-09-26', set: null, inStockCount: 2, lowestInStockAud: 79, updatedAt: '2026-09-26T21:02:00Z',
+    offers: [
+      { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'Pokémon TCG Demo Expansion Elite Trainer Box', url: 'https://example.com/products/demo-etb', availability: 'in_stock_online', priceAud: 79, lastChangeAt: '2026-09-26T10:30:00Z', imageUrl: null },
+      { retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Demo Expansion Elite Trainer Box', url: 'https://www.jbhifi.com.au/', availability: 'in_stock_online', priceAud: 89.95, lastChangeAt: '2026-09-26T21:02:00Z', imageUrl: null },
+      { retailerSlug: 'big-w', retailerName: 'BIG W', title: 'Pokemon TCG Demo Expansion ETB', url: 'https://www.bigw.com.au/', availability: 'out_of_stock', priceAud: 89, lastChangeAt: '2026-09-24T03:00:00Z', imageUrl: null },
+    ],
+  },
+  {
+    id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box', type: 'booster-box',
+    rrpAud: 219, releaseDate: null, set: null, inStockCount: 1, lowestInStockAud: 235, updatedAt: '2026-09-25T06:10:00Z',
+    offers: [
+      { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'One Piece Card Game Demo Premium Booster Box', url: 'https://example.com/products/demo-op-box', availability: 'in_stock_online', priceAud: 235, lastChangeAt: '2026-09-25T06:10:00Z', imageUrl: null },
+      { retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster (demo)', url: 'https://p-bandai.com/au', availability: 'preorder', priceAud: 229, lastChangeAt: '2026-09-25T01:00:00Z', imageUrl: null },
+    ],
+  },
 ]
 
 const RELEASES: ReleaseRow[] = [
@@ -401,7 +435,9 @@ export const demoRepository: Repository = {
         (!filter?.state || d.sighting?.state === filter.state) &&
         (!filter?.game || d.game === filter.game) &&
         (!filter?.source || d.source === filter.source),
-    ).slice(0, filter?.limit ?? 50)
+    )
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+      .slice(0, filter?.limit ?? 50)
   },
   async scoutLeaderboard() {
     return [
@@ -422,6 +458,26 @@ export const demoRepository: Repository = {
         url: 'https://www.ebay.com.au/', imageUrl: null, foundAt: '2026-09-26T09:00:00Z', goneAt: null,
       },
     ]
+  },
+  async inStock(filter) {
+    // Mirrors the Supabase inner join: only the offers that are in stock / on pre-order (at that store, when filtered).
+    const live = (o: SealedProductRow['offers'][number]) => o.availability !== 'out_of_stock' && o.availability !== 'unknown' && (!filter?.retailerSlug || o.retailerSlug === filter.retailerSlug)
+    return SEALED.filter((p) => (!filter?.game || p.game === filter.game) && p.offers.some(live))
+      .map((p) => ({ ...p, offers: p.offers.filter(live) }))
+      .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
+      .slice(0, filter?.limit ?? 100)
+  },
+  async listSealedProducts(filter) {
+    return SEALED.filter((p) => (!filter?.game || p.game === filter.game) && (!filter?.lang || p.lang === filter.lang)).slice(0, filter?.limit ?? 500)
+  },
+  async getSealedProduct(game, lang, slug) {
+    return SEALED.find((p) => p.game === game && p.lang === lang && p.slug === slug) ?? null
+  },
+  async productDrops(sealedProductId) {
+    return DROPS.filter((d) => d.product?.id === sealedProductId).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+  },
+  async productWatchCount() {
+    return 0
   },
   async getRelease(game, slug) {
     return RELEASES.find((r) => r.game === game && r.slug === slug) ?? null

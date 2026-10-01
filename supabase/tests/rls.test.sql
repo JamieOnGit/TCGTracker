@@ -671,4 +671,45 @@ select tests.login('00000000-0000-0000-0000-00000000000e');
 select tests.ok(exists (select 1 from public.ebay_deals), 'Premium members see deals live');
 reset role;
 
+
+-- ------------------------------------------------ stock monitor (2026-10-01)
+insert into public.sealed_products (id, game, lang, type, name, slug, rrp_aud) values
+  ('30000000-0000-0000-0000-000000000001', 'pokemon', 'en', 'etb', 'Test Set Elite Trainer Box', 'test-set-elite-trainer-box', 89.95);
+insert into public.retail_products (retailer_id, sku, url, title, game, sealed_product_id)
+select id, 'WATCH-1', 'https://www.jbhifi.com.au/products/watch-1', 'Pokemon TCG Test Set Elite Trainer Box', 'pokemon', '30000000-0000-0000-0000-000000000001'
+from public.retailers where slug = 'jb-hi-fi';
+insert into public.retail_product_states (retail_product_id, availability, price_aud)
+select id, 'in_stock_online', 89.95 from public.retail_products where sku = 'WATCH-1';
+select tests.ok((select current_availability = 'in_stock_online' and current_price_aud = 89.95 and last_change_at is not null
+                 from public.retail_products where sku = 'WATCH-1'), 'a state change updates the product''s current availability');
+insert into public.retail_product_states (retail_product_id, availability, price_aud, observed_at)
+select id, 'out_of_stock', 89.95, now() - interval '1 hour' from public.retail_products where sku = 'WATCH-1';
+select tests.ok((select current_availability = 'in_stock_online' from public.retail_products where sku = 'WATCH-1'),
+  'an older observation never overwrites a newer current state');
+
+-- Watchers are alerted even when their filters would exclude the event.
+update public.drop_alert_filters set games = array['one-piece'] where user_id = '00000000-0000-0000-0000-00000000000c';
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+insert into public.product_watches (user_id, sealed_product_id) values (auth.uid(), '30000000-0000-0000-0000-000000000001');
+select tests.throws($$insert into public.product_watches (user_id, sealed_product_id) values ('00000000-0000-0000-0000-00000000000a', '30000000-0000-0000-0000-000000000001')$$,
+  'row-level security', 'nobody can add a watch for someone else');
+reset role;
+set role anon;
+select set_config('request.jwt.claims', '', false);
+select tests.ok(public.product_watch_count('30000000-0000-0000-0000-000000000001') = 1, 'watch counts are public, watchers are not');
+select tests.ok(not exists (select 1 from public.product_watches), '...the watch list itself is private');
+reset role;
+insert into public.drop_events (retail_product_id, event_type, price_aud, dedupe_key)
+select id, 'IN_STOCK', 89.95, 'jb-hi-fi:WATCH-1:IN_STOCK:1' from public.retail_products where sku = 'WATCH-1';
+select tests.ok((select sealed_product_id = '30000000-0000-0000-0000-000000000001' from public.drop_events where dedupe_key = 'jb-hi-fi:WATCH-1:IN_STOCK:1'),
+  'drop events carry their sealed product');
+select tests.ok(exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                        where e.dedupe_key = 'jb-hi-fi:WATCH-1:IN_STOCK:1' and d.user_id = '00000000-0000-0000-0000-00000000000c'),
+  'a watcher gets the alert although their game filter excludes Pokémon');
+update public.drop_alert_filters set games = array['pokemon', 'one-piece'] where user_id = '00000000-0000-0000-0000-00000000000c';
+select tests.ok((select platform from public.retailers where slug = 'toymate') = 'none'
+                and (select kind from public.retailers where slug = 'jb-hi-fi') = 'big-box',
+  'retailers carry a platform and kind');
+
 \echo 'All database tests passed'
