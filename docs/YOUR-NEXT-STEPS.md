@@ -15,7 +15,9 @@ Last updated 30 September 2026 (evening). Work top to bottom. Each step says **w
 - web push alerts
 - guides
 
-It isn't online yet. That needs the accounts below, which only you can open.
+The site is **built and deployed on Cloudflare** (first green build 1 Oct 2026). It isn't on tcgtracker.com.au yet: finish 4d–4f below.
+
+**Do next, in order:** 3f-2 (if not done) → 4d → 4e → 3b → 4f → 3g → Step 5.
 
 ## Progress
 | Step | What | Status |
@@ -28,9 +30,12 @@ It isn't online yet. That needs the accounts below, which only you can open.
 | 3e | Merge pull request #1 | ✅ Merged |
 | 3f | Database deployed to Supabase | ✅ Done (tables visible in Table Editor) |
 | — | PR #3 (live stock monitor) merged; PR #2 closed (included in #3) | ✅ Done |
-| **3f-2** | **Run Deploy database again for the stock-monitor update** | ⏭ **Do now (1 min)** |
+| 3f-2 | Run Deploy database again for the stock-monitor update | ⏭ Do now if you haven't (1 min). Tell Claude "stock monitor deployed". |
 | 3g | Make yourself admin | After Step 4 |
-| **4** | **Put the website online (Cloudflare Workers)** | ⏭ **Then this** |
+| 4a–4c | Workers Paid, Supabase keys, Worker created from GitHub | ✅ Done. First build green (after the esbuild fix, PR #5). |
+| **4d** | **Add the secret key `SUPABASE_SERVICE_ROLE_KEY`** | ⏭ **Do next (2 min)** |
+| **4e** | **Connect tcgtracker.com.au + www redirect** | ⏭ **Then this (10 min)** |
+| **4f** | **Check the live site, sign in** | ⏭ **Then this** |
 | 5 onwards | Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
 | 7b | Check the 42-store live stock monitor from Sydney (after Fly.io) | ☐ New: see 7b |
 | 13.0 | Email specialist stores the monitor can't read yet (template ready) | ☐ New: see Step 13 |
@@ -136,11 +141,11 @@ where user_id = (select id from auth.users where email = 'jamieha1998@gmail.com'
 ```
 You'll need the Project URL, publishable key and secret key in Step 4 (where to find them: 4b).
 
-## Step 4 · Cloudflare Workers: put the website online (≈25 min) ⏭ next
+## Step 4 · Cloudflare Workers: put the website online (≈25 min) ⏭ 4a–4c done, 4d next
 
 *Checked against Cloudflare's and Supabase's current docs on 1 Oct 2026.* Cloudflare's left-hand menu moves around from time to time. If a menu name below doesn't match what you see, use the **links** given (they jump straight to the right page), or type the page name into the dashboard's search box (**Ctrl+K** on Windows, **⌘K** on Mac).
 
-### 4a · Turn on Workers Paid (US$5/month), strongly recommended
+### 4a · Turn on Workers Paid (US$5/month), strongly recommended ✅ done
 **What changed:** Cloudflare removed the code-size limit on 4 Sep 2026, so the free plan *can* now host the site. Stay on Paid anyway:
 - **CPU time:** the free plan allows only **10 ms of CPU per page view**. Our pages are built on the server, and many take longer than that. On Free, visitors would randomly get "Error 1102: Worker exceeded resource limits". Paid allows 30 seconds.
 - **Daily cap:** Free stops serving the site after **100,000 requests a day**. Paid includes 10 million a month.
@@ -148,7 +153,7 @@ You'll need the Project URL, publishable key and secret key in Step 4 (where to 
 1. Open **https://dash.cloudflare.com/?to=/:account/workers/plans**. If that doesn't open the plans page: **Workers & Pages** in the left menu (sometimes inside **Compute** or **Compute & AI**), then **Plans** or **Upgrade**.
 2. Pick **Workers Paid** → **Purchase/Upgrade** → add a card. This is only the Workers plan; your domain stays on the Free plan.
 
-### 4b · Get the Supabase values (keep them out of the chat)
+### 4b · Get the Supabase values (keep them out of the chat) ✅ done
 Supabase now has two kinds of keys. The old `anon` / `service_role` keys are being switched off by the end of 2026, so **use the new ones**.
 
 | What | Where in Supabase | Looks like |
@@ -159,7 +164,12 @@ Supabase now has two kinds of keys. The old `anon` / `service_role` keys are bei
 
 If the API Keys page only shows "Legacy API keys", click the **API Keys** tab next to it, or the **Create new API keys** button.
 
-### 4c · Create the Worker from GitHub
+### 4c · Create the Worker from GitHub ✅ done (build green)
+From now on, every merge to `main` rebuilds and redeploys the site automatically. Check **tcgtracker → Deployments** if something looks off.
+
+If you left **Enable Preview builds** on, turn it off under **tcgtracker → Settings → Build**. Otherwise every pull request shows a Cloudflare preview check (harmless, but noisy).
+
+The original setup instructions are below for reference.
 1. Open **https://dash.cloudflare.com/?to=/:account/workers-and-pages/create** (or **Workers & Pages → Create application**).
 2. Next to **Import a repository**, click **Get started**. Choose your GitHub account. The first time, click **Connect GitHub**/**Add account**, allow the Cloudflare app on **JamieOnGit/TCGTracker**, then come back.
 3. Select **TCGTracker** from the list, then fill in the setup page. Grey text in a box is only a placeholder: click in and type the value yourself.
@@ -186,7 +196,7 @@ If the API Keys page only shows "Legacy API keys", click the **API Keys** tab ne
 
 **If you already created the Worker** in an earlier attempt, check it instead under **Workers & Pages → tcgtracker → Settings → Build**. The fields there are **Git repository**, **Git branch** (`main`), **Build command**, **Deploy command**, **Root directory** (`web`) and **Build variables and secrets**. Then click **Retry build** on the latest deployment.
 
-### 4d · Add the secret key to the running site
+### 4d · Add the secret key to the running site ⏭ do next
 1. **Workers & Pages → tcgtracker → Settings**, then scroll to **Variables and Secrets** → **+ Add**.
 2. **Type:** `Secret`. **Variable name:** `SUPABASE_SERVICE_ROLE_KEY`. **Value:** the **secret** key (`sb_secret_…`).
 3. Click **Deploy** (bottom of the panel) to save it.
@@ -206,6 +216,8 @@ Always choose type **Secret**. Plain-text variables added in the dashboard are w
       - Click **Deploy**.
 
 ### 4f · Check it
+Before signing in, make sure **3b** is done. In Supabase → **Authentication → URL Configuration**, set **Site URL** to `https://tcgtracker.com.au` and add `https://tcgtracker.com.au/**` under **Redirect URLs**. Without this, the sign-in email link sends you to the wrong place.
+
 1. Open **https://tcgtracker.com.au**. You should see the TCGTracker homepage with the market table. It stays mostly empty until prices are imported (Step 9) and the catalogue is loaded.
 2. **https://www.tcgtracker.com.au** should jump to `https://tcgtracker.com.au`.
 3. Click **Sign in**, enter your email, and open the link **on the same device**. Supabase's built-in email sender allows only a few emails an hour until Step 5.
