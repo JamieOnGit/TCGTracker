@@ -1,5 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { supabaseKeyHeaders } from '@/lib/supabase/headers'
 import { supabaseService } from '@/lib/supabase/server'
 
 /*
@@ -258,7 +259,7 @@ async function authUsersByEmail(q: string): Promise<{ id: string; email: string 
   const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users?per_page=50&filter=${encodeURIComponent(q)}`
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!key) return []
-  const res = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store' })
+  const res = await fetch(url, { headers: supabaseKeyHeaders(key), cache: 'no-store' })
   if (!res.ok) return []
   const body = (await res.json()) as { users?: { id: string; email?: string }[] }
   const needle = q.toLowerCase()

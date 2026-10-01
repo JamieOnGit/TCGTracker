@@ -4,6 +4,7 @@ import { demoRepository } from '@/lib/data/demo'
 import { DEFAULT_RULES } from '@/lib/domain/rules'
 import { listingPageOutcome, type ListingStatus } from '@/lib/domain/listing'
 import { listingPath, parseListingSegment } from '@/lib/seo/urls'
+import { supabaseKeyHeaders } from '@/lib/supabase/headers'
 
 /**
  * Runs before every page:
@@ -28,7 +29,7 @@ async function lookupRedirect(path: string): Promise<{ to: string; code: number 
   let value: { to: string; code: number } | null = null
   if (SB_URL && SB_KEY) {
     const res = await fetch(`${SB_URL}/rest/v1/redirects?select=to_path,code&from_path=eq.${encodeURIComponent(path)}`, {
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+      headers: supabaseKeyHeaders(SB_KEY),
     })
     const rows = res.ok ? ((await res.json()) as { to_path: string; code: number }[]) : []
     value = rows[0] ? { to: rows[0].to_path, code: rows[0].code } : null
@@ -46,7 +47,7 @@ async function listingUrlStatus(id: number): Promise<UrlStatus | null> {
   if (SB_URL && SB_KEY) {
     const res = await fetch(`${SB_URL}/rest/v1/rpc/listing_url_status`, {
       method: 'POST',
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+      headers: { ...supabaseKeyHeaders(SB_KEY), 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_listing: id }),
     })
     const rows = res.ok ? ((await res.json()) as { status: ListingStatus; title: string | null; closed_at: string | null; card_market_path: string }[]) : []
