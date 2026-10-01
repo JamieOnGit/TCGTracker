@@ -42,11 +42,17 @@ test.afterAll(async () => {
   await buyerCtx?.close()
 })
 
+/** Quotas reset on the 1st of next month in Melbourne time, e.g. "Nov". */
+function nextMonthShort(now = new Date()): string {
+  const [y, m] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne', year: 'numeric', month: '2-digit' }).format(now).split('-').map(Number)
+  return new Intl.DateTimeFormat('en-AU', { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(y!, m!, 1)))
+}
+
 test('seller signs in with a magic link and sets up their profile and notification preferences', async () => {
   const page = sellerPage
   await signIn(page, seller.email, '/account/')
   await expect(page.getByRole('heading', { level: 1 })).toContainText("G'day")
-  await expect(page.getByTestId('quota-line')).toContainText('0 of 5 listings used this month · resets 1 Oct')
+  await expect(page.getByTestId('quota-line')).toContainText(`0 of 5 listings used this month · resets 1 ${nextMonthShort()}`)
 
   await page.goto('/account/settings/')
   await page.getByLabel('Username').fill(seller.username)

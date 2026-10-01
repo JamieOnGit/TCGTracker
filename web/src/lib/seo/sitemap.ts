@@ -13,17 +13,21 @@ import {
   dropsStatePath,
   GAMES,
   guidesPath,
+  inStockPath,
   LANGS,
   listingPath,
   marketCapPath,
   newsPath,
   NEWS_CATEGORIES,
+  productPath,
+  productsPath,
   releasePath,
   releasesHubPath,
   releasesPath,
   scoutsPath,
   setPath,
   siteName,
+  storesPath,
 } from './urls'
 
 export interface SitemapEntry {
@@ -31,7 +35,7 @@ export interface SitemapEntry {
   lastmod?: string | null
 }
 
-export const SITEMAP_TYPES = ['static', 'drops', 'releases', 'guides', 'sets', 'cards', 'listings', 'news'] as const
+export const SITEMAP_TYPES = ['static', 'drops', 'products', 'releases', 'guides', 'sets', 'cards', 'listings', 'news'] as const
 export type SitemapType = (typeof SITEMAP_TYPES)[number]
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -91,9 +95,21 @@ export async function entriesFor(type: SitemapType): Promise<SitemapEntry[]> {
       ])
       return [
         { path: dropsPath(), lastmod: all },
+        { path: inStockPath(), lastmod: latest((await repo.inStock({ limit: 1 })).map((p) => p.updatedAt)) },
+        { path: storesPath() },
         { path: scoutsPath() },
         ...[...retailers, ...states].filter((x) => dropsPageIndexable(x.last, x.copy, now)).map((x) => ({ path: x.path, lastmod: x.last })),
       ]
+    }
+    case 'products': {
+      // Product pages with no store listing are noindex (thin), so only listed products are here.
+      const all = await repo.listSealedProducts({ limit: 45000 }) // hubs are noindex when empty
+      const listed = all.filter((p) => p.offers.length > 0)
+      const hubs = [
+        ...(all.length ? [{ path: productsPath(), lastmod: latest(listed.map((p) => p.updatedAt)) }] : []),
+        ...GAMES.filter((g) => all.some((p) => p.game === g)).map((g) => ({ path: productsPath(g), lastmod: latest(listed.filter((p) => p.game === g).map((p) => p.updatedAt)) })),
+      ]
+      return [...hubs, ...listed.map((p) => ({ path: productPath(p), lastmod: p.updatedAt }))]
     }
     case 'releases': {
       const rows = await repo.releases()

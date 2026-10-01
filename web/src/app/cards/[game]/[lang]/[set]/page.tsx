@@ -7,7 +7,7 @@ import { MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
 import { CardImage, PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
-import { cardPath, cardsPath, GAME_NAMES, isGame, isLang, LANG_NAMES, marketCapPath, releasePath, setPath } from '@/lib/seo/urls'
+import { cardPath, cardsPath, GAME_NAMES, isGame, isLang, LANG_NAMES, marketCapPath, productPath, releasePath, setPath } from '@/lib/seo/urls'
 
 export const revalidate = 3600
 type Props = { params: Promise<{ game: string; lang: string; set: string }>; searchParams: Promise<SearchParams> }
@@ -32,7 +32,8 @@ export default async function SetPage({ params, searchParams }: Props) {
   const set = await load(await params)
   if (!set) notFound()
   const repo = getRepo()
-  const [cards, rules, releases] = await Promise.all([repo.listCardsInSet(set.id), repo.getRules(), repo.releases({ game: set.game })])
+  const [cards, rules, releases, sealed] = await Promise.all([repo.listCardsInSet(set.id), repo.getRules(), repo.releases({ game: set.game }), repo.listSealedProducts({ game: set.game, lang: set.lang })])
+  const products = sealed.filter((p) => p.set?.slug === set.slug)
   const release = releases.find((r) => r.set?.slug === set.slug && r.lang === set.lang)
   const query = parseMarketQuery(await searchParams, { game: set.game, lang: set.lang, setId: set.id }, rules.primaryGrade)
   return (
@@ -43,6 +44,12 @@ export default async function SetPage({ params, searchParams }: Props) {
         <p className="muted -mt-4 mb-8 text-sm">
           Release date, products and RRP in Australia: <Link href={releasePath(release.game, release.slug)} className="prose-link">{release.title} release</Link>
         </p>
+      )}
+      {products.length > 0 && (
+        <nav aria-label={`${set.name} sealed products`} className="-mt-4 mb-8 flex flex-wrap items-center gap-2 text-sm">
+          <span className="tag-quiet mr-1">Sealed product stock</span>
+          {products.map((p) => <Link key={p.id} href={productPath(p)} className="chip-filter">{p.name}</Link>)}
+        </nav>
       )}
       <section aria-labelledby="top-h">
         <div className="flex items-baseline justify-between"><h2 id="top-h">Most valuable cards</h2><Link href={marketCapPath(set.game, set.lang, set.slug)} className="btn-ghost text-sm">Set rankings</Link></div>

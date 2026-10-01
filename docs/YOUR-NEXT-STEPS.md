@@ -161,6 +161,18 @@ These let the site send phone and desktop notifications with no app and no SMS c
    ```
 4. ✉️ Tell Claude: **"workers deployed"**. Claude checks the logs and tests BIG W and Kmart from the Sydney server. They block overseas data centres and may allow an Australian one, but may still block it.
 
+### 7b · Check the live stock monitor from Sydney (≈10 min, 30 min after deploying) *new*
+The monitor watches **42 Australian stores** (39 Shopify shops, 2 WooCommerce shops and JB Hi-Fi). It only reads what each store publishes openly, with an honestly named bot (`TCGTrackerBot`, explained at https://tcgtracker.com.au/about/bot/).
+1. Open **https://tcgtracker.com.au/drops/stores/**. Each store shows *Live · checked Xm ago*, *Member sightings only* or *Not reachable*.
+2. Run this once from your computer to test one store from the Sydney server:
+   ```
+   cd workers
+   fly ssh console -C "python -m tcgworkers.drops.probe https://www.toysrus.com.au --collection pokemon-tcg"
+   ```
+   It should list the store's Pokémon products and say which product page each one belongs to.
+3. ✉️ Tell Claude **"monitor check"** and paste what the stores page shows, e.g. "35 live, 7 not reachable". Claude reads the worker logs and tunes it.
+4. **Why this matters:** Shopify gives honestly identified bots a small request allowance per internet address. From Claude's shared test machine that was only a few requests at a time, and the monitor slowed itself down instead of pushing (by design). The Sydney server has its own address, so its allowance is likely to be better, but only this check can tell. The monitor tunes its own pace: it slows down whenever Shopify asks it to and speeds up while everything's fine.
+
 ## Step 8 · Stripe: Premium at A$12.99/month incl. GST (≈30 min)
 1. Sign up at **https://dashboard.stripe.com** (Australia) and verify your business with your ABN.
 2. **GST:** if you're registered, add it under **Settings → Tax**. If you're not, the price is still A$12.99, but receipts must not say "incl. GST". ✉️ Tell Claude which applies.
@@ -226,6 +238,7 @@ Until this is done, cards show a styled placeholder. Neither The Pokémon Compan
 
 ## Step 13 · Official data deals (ongoing, in your own name) *new*
 These give reliable stock and price data **with permission**, which beats any workaround.
+0. **Specialist TCG stores** (the biggest win): most are small businesses that *want* buyers sent to them. For every store the coverage page shows as *Not reachable* or slowed down, send the ready-made email in `docs/templates/store-outreach-email.md`. It asks them to allow `TCGTrackerBot` or share a feed. Each "yes" turns that store fully live, with no code change.
 1. **BIG W:** apply to its affiliate programme on **Impact** (impact.com). Ask whether a product catalogue with stock availability is available.
 2. **Commission Factory** (commissionfactory.com, Australian): apply, then check which of Kmart, Target, JB Hi-Fi and EB Games have product feeds.
 3. **Amazon Associates AU** (affiliate-program.amazon.com.au): once you have qualifying sales, the Creators API gives availability.

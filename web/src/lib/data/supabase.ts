@@ -228,7 +228,7 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toListing)
     },
     async retailers() {
-      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored,platform,kind,state,blocked_reason,last_checked_at').order('name')
+      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored,platform,kind,state,blocked_reason,last_checked_at,watch_interval_seconds').order('name')
       return (data ?? []).map((r: any) => ({
         slug: r.slug,
         name: r.name,
@@ -240,6 +240,7 @@ export function supabaseRepository(): Repository {
         state: r.state ?? null,
         blockedReason: r.blocked_reason ?? null,
         lastCheckedAt: r.last_checked_at ?? null,
+        watchIntervalSeconds: r.watch_interval_seconds ?? null,
       }))
     },
     async drops(filter) {

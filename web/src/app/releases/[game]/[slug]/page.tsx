@@ -19,6 +19,7 @@ import {
   isGame,
   LANG_NAMES,
   marketCapPath,
+  productPath,
   releasePath,
   releasesHubPath,
   releasesIcsPath,
@@ -52,7 +53,13 @@ export default async function ReleaseDetail({ params }: Props) {
   const today = todayAu()
   const upcoming = isUpcoming(r, today)
   const when = formatReleaseDate(r)
-  const [retailers, siblings] = await Promise.all([repo.retailers(), repo.releases({ game: r.game, from: today })])
+  const [retailers, siblings, sealed] = await Promise.all([
+    repo.retailers(),
+    repo.releases({ game: r.game, from: today }),
+    r.set ? repo.listSealedProducts({ game: r.game, lang: r.lang }) : Promise.resolve([]),
+  ])
+  // Sealed product pages for this release's set (live stock and prices per store).
+  const productPages = r.set ? sealed.filter((p) => p.set?.slug === r.set!.slug) : []
   const stockists = r.retailerSlugs.map((s) => retailers.find((x) => x.slug === s)).filter((x) => x !== undefined)
   const next = siblings.filter((s) => s.id !== r.id).slice(0, 5)
   const dayKnown = r.datePrecision === 'day' && r.releaseDate
@@ -117,6 +124,20 @@ export default async function ReleaseDetail({ params }: Props) {
             </table>
           </div>
           <p className="muted mt-2 text-xs">RRP is the recommended retail price in Australian dollars where known. Retailers set their own prices, and some launch at, above or below RRP.</p>
+        </section>
+      )}
+
+      {productPages.length > 0 && (
+        <section className="section-tight" aria-labelledby="pp-h">
+          <h2 id="pp-h">Stock and prices by product</h2>
+          <ul className="mt-4 grid gap-2">
+            {productPages.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-3 border-b py-2 text-sm" style={{ borderColor: 'var(--line)' }}>
+                <Link href={productPath(p)} className="prose-link">{p.name}</Link>
+                <span className="muted">{p.inStockCount > 0 ? `In stock at ${p.inStockCount} ${p.inStockCount === 1 ? 'store' : 'stores'}` : 'Not in stock right now'}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

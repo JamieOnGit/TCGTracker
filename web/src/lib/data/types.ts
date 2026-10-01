@@ -149,6 +149,7 @@ export interface RetailerRow {
   state: AuState | null
   blockedReason: string | null // set when the store blocks automated access (never worked around)
   lastCheckedAt: string | null
+  watchIntervalSeconds: number | null // how often the monitor checks this store
 }
 
 export type Availability = 'unknown' | 'out_of_stock' | 'preorder' | 'in_stock_online' | 'in_stock_cnc' | 'in_stock_both'

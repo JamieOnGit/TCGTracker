@@ -44,9 +44,14 @@ def test_first_sighting_emits_new_listing():
     assert [e.event_type for e in diff(None, obs())] == [EventType.NEW_LISTING]
 
 
-def test_first_sighting_in_stock_emits_new_listing_and_in_stock():
+def test_first_sighting_in_stock_emits_one_in_stock_event():
+    # One alert per new product: the most useful status, not "new" and "in stock" twice.
     types = [e.event_type for e in diff(None, obs(Availability.IN_STOCK_ONLINE))]
-    assert types == [EventType.NEW_LISTING, EventType.IN_STOCK]
+    assert types == [EventType.IN_STOCK]
+
+
+def test_first_sighting_on_preorder_emits_one_preorder_event():
+    assert [e.event_type for e in diff(None, obs(Availability.PREORDER))] == [EventType.PREORDER_OPEN]
 
 
 def test_preorder_opens():

@@ -179,5 +179,6 @@ revoke execute on function public.enqueue_drop_alerts(bigint) from anon, authent
 -- ------------------------------------------------------------ settings
 insert into public.site_settings (key, value, description, is_public) values
   ('stock.show_retailer_images', 'false', 'Show retailers'' product photos on stock pages (off until image rights are settled)', true),
-  ('stock.default_interval_seconds', '120', 'Default check interval for newly added stores', true)
+  ('stock.default_interval_seconds', '120', 'Default check interval for newly added stores', true),
+  ('drops.price_drop_pct', '5', 'Price-drop alerts only for drops of at least this percent', true)
 on conflict (key) do nothing;

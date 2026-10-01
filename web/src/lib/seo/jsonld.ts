@@ -208,3 +208,48 @@ export function itemList(items: { name: string; path: string }[]): Thing {
     itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, url: absoluteUrl(it.path) })),
   }
 }
+
+/**
+ * Product for a sealed product page: AggregateOffer over the stores we watch
+ * (prices as shown in the store table), each offer with its own availability.
+ */
+export function sealedProductLd(input: {
+  name: string
+  path: string
+  brand: string
+  category: string
+  image?: string | null
+  offers: { seller: string; url: string; priceAud: number | null; availability: string }[]
+}): Thing {
+  const priced = input.offers.filter((o): o is typeof o & { priceAud: number } => o.priceAud !== null)
+  const best = (['InStock', 'PreOrder'] as const).find((a) => priced.some((o) => o.availability.endsWith(a)))
+  return {
+    '@context': CTX,
+    '@type': 'Product',
+    name: input.name,
+    url: absoluteUrl(input.path),
+    brand: { '@type': 'Brand', name: input.brand },
+    category: input.category,
+    ...(input.image ? { image: input.image } : {}),
+    ...(priced.length
+      ? {
+          offers: {
+            '@type': 'AggregateOffer',
+            priceCurrency: 'AUD',
+            lowPrice: Math.min(...priced.map((o) => o.priceAud)).toFixed(2),
+            highPrice: Math.max(...priced.map((o) => o.priceAud)).toFixed(2),
+            offerCount: priced.length,
+            availability: `https://schema.org/${best ?? 'OutOfStock'}`,
+            offers: priced.map((o) => ({
+              '@type': 'Offer',
+              priceCurrency: 'AUD',
+              price: o.priceAud.toFixed(2),
+              availability: o.availability,
+              url: o.url,
+              seller: { '@type': 'Organization', name: o.seller },
+            })),
+          },
+        }
+      : {}),
+  }
+}

@@ -15,6 +15,15 @@ restarted by the supervisor.
 
 Hot reload: the supervisor re-reads ``retailers`` every 5 minutes, so an admin
 can enable/disable a retailer or change its intervals without a redeploy.
+
+Adapters: a retailer with its own registered module (``drops.base.REGISTRY``,
+matched by slug, e.g. JB Hi-Fi's Algolia monitor) keeps it. Otherwise a row
+with platform / adapter ``shopify`` or ``woocommerce`` gets the generic
+catalogue adapter built from the row (slug, name, base_url, config), with a
+slower polite client (>= 5 s between requests to the host, more if robots.txt
+asks). Every cycle stamps ``retailers.last_checked_at`` and sets
+``blocked_reason`` when the adapter raises ``AdapterBlocked`` (or robots.txt
+disallows it), clearing it after a clean cycle.
 """
 
 from __future__ import annotations
@@ -25,23 +34,45 @@ import pkgutil
 import random
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from tcgworkers.alerts import queue_admin_alert
 from tcgworkers.db import connect, load_rules
+from tcgworkers.drops.adapters.catalogue import CatalogueAdapter
+from tcgworkers.drops.adapters.shopify import ShopifyAdapter
+from tcgworkers.drops.adapters.woocommerce import WooCommerceAdapter
 from tcgworkers.drops.base import REGISTRY, AdapterBlocked, RetailerAdapter
 from tcgworkers.drops.engine import CycleResult, run_cycle
-from tcgworkers.drops.http import BackingOff, Disallowed, PoliteClient
+from tcgworkers.drops.http import BackingOff, Disallowed, PoliteClient, SharedGate
 from tcgworkers.drops.models import Observation
-from tcgworkers.drops.store import PostgresDropStore, is_first_scan, load_rrp_entries, load_watch_rules
+from tcgworkers.drops.products import Catalogue, load_catalogue
+from tcgworkers.drops.store import (
+    KEEP,
+    PostgresDropStore,
+    is_first_scan,
+    load_rrp_entries,
+    load_watch_rules,
+    mark_checked,
+)
 
 log = logging.getLogger(__name__)
 
 RELOAD_SECONDS = 300.0
+CATALOGUE_TTL = 600.0
 ALERT_WINDOW = timedelta(hours=6)
+GENERIC: dict[str, type[CatalogueAdapter]] = {"shopify": ShopifyAdapter, "woocommerce": WooCommerceAdapter}
+# Generic stores: at most one request per ~5 s per host (robots Crawl-delay can raise it).
+GENERIC_MIN_DELAY = 5.0
+GENERIC_MAX_DELAY = 8.0
+# All Shopify stores share one request budget: Shopify's edge limits per IP
+# across every shop, so 40 stores must not look like 40 separate crawlers.
+# Starts at 10 s between requests (measured on a shared cloud IP: 15-30 s
+# spacing was always accepted) and tunes itself between 3 s and 60 s.
+SHOPIFY_GATE_SECONDS = 10.0
+SHOPIFY_GATE = SharedGate("shopify", SHOPIFY_GATE_SECONDS, floor=3.0, ceiling=60.0)
 
 
 @dataclass(frozen=True)
@@ -52,6 +83,19 @@ class RetailerConfig:
     adapter: str
     watch_interval: float
     discovery_interval: float
+    platform: str = "custom"
+    base_url: str = ""
+    config: Mapping[str, Any] = field(default_factory=dict)
+
+    @property
+    def generic(self) -> str | None:
+        """'shopify' / 'woocommerce' when this row uses a generic adapter."""
+        if self.slug in REGISTRY:
+            return None
+        for name in (self.adapter, self.platform):
+            if name in GENERIC:
+                return name
+        return None
 
 
 CycleFn = Callable[[RetailerConfig, str, RetailerAdapter, PoliteClient], CycleResult]
@@ -68,10 +112,35 @@ def load_adapters() -> None:
 
 def adapter_for(cfg: RetailerConfig) -> RetailerAdapter:
     load_adapters()
+    generic = cfg.generic
+    if generic:
+        return GENERIC[generic](slug=cfg.slug, name=cfg.name, base_url=cfg.base_url, config=cfg.config)
     cls = REGISTRY.get(cfg.slug) or REGISTRY.get(cfg.adapter.replace("_", "-"))
     if cls is None:
         raise LookupError(f"no adapter registered for retailer {cfg.slug!r} (adapter {cfg.adapter!r})")
     return cls()
+
+
+def client_for(cfg: RetailerConfig, user_agent: str) -> PoliteClient:
+    if cfg.generic:
+        return PoliteClient(
+            user_agent=user_agent,
+            min_delay=GENERIC_MIN_DELAY,
+            max_delay=GENERIC_MAX_DELAY,
+            gate=SHOPIFY_GATE if cfg.generic == "shopify" else None,
+        )
+    return PoliteClient(user_agent=user_agent)
+
+
+def blocked_reason(observations: list[Observation] | Exception) -> object:
+    """What retailers.blocked_reason should become after this cycle."""
+    if isinstance(observations, AdapterBlocked):
+        return str(observations) or "blocked"
+    if isinstance(observations, Disallowed):
+        return f"robots: robots.txt disallows {observations}"
+    if isinstance(observations, Exception):
+        return KEEP  # transient (backing off, network, parser): leave it as it was
+    return None
 
 
 def fetch(
@@ -98,11 +167,14 @@ class PostgresCycle:
 
     database_url: str
     admin_email: str | None = None
+    _catalogue: tuple[float, Catalogue] | None = field(default=None, init=False, repr=False)
+    _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
 
     def load_retailers(self) -> list[RetailerConfig]:
         with connect(self.database_url) as conn:
             rows = conn.execute(
-                """select id::text as id, slug, name, adapter, watch_interval_seconds, discovery_interval_seconds
+                """select id::text as id, slug, name, adapter, watch_interval_seconds, discovery_interval_seconds,
+                          platform, base_url, config
                      from public.retailers where enabled order by slug"""
             ).fetchall()
         return [
@@ -113,9 +185,20 @@ class PostgresCycle:
                 r["adapter"],
                 float(r["watch_interval_seconds"]),
                 float(r["discovery_interval_seconds"]),
+                r["platform"],
+                r["base_url"],
+                r["config"] if isinstance(r["config"], dict) else {},
             )
             for r in rows
         ]
+
+    def catalogue(self, conn: Any) -> Catalogue:
+        """The matcher's set catalogue, shared by all workers, reloaded every 10 minutes."""
+        with self._lock:
+            now = time.monotonic()
+            if self._catalogue is None or now - self._catalogue[0] > CATALOGUE_TTL:
+                self._catalogue = (now, load_catalogue(conn))
+            return self._catalogue[1]
 
     def alert(self, key: str, title: str, body: str, details: dict[str, Any]) -> None:
         with connect(self.database_url) as conn:
@@ -131,6 +214,7 @@ class PostgresCycle:
             rrp = load_rrp_entries(conn)
             watch = load_watch_rules(conn, cfg.id)
             baseline = is_first_scan(conn, cfg.id)
+            catalogue = self.catalogue(conn)
             conn.commit()  # don't sit idle-in-transaction while fetching
             urls = [r.value for r in watch if r.kind in ("url", "sku")]
             observations = fetch(adapter, client, mode, urls)
@@ -139,7 +223,7 @@ class PostgresCycle:
                 result = run_cycle(
                     cfg.slug,
                     observations,
-                    PostgresDropStore(conn, cfg.id, baseline=baseline),
+                    PostgresDropStore(conn, cfg.id, baseline=baseline, catalogue=catalogue, rrp_entries=rrp),
                     rules=rules,
                     rrp_entries=rrp,
                     watchlist=watch,
@@ -169,6 +253,12 @@ class PostgresCycle:
                     health.needs_alert(rules.drops_zero_product_alert_cycles),
                     str(exc),
                 )
+            try:
+                mark_checked(conn, cfg.id, at=now, blocked_reason=blocked_reason(observations))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                log.exception("drops %s: could not stamp last_checked_at", cfg.slug)
             if result.alert_admin:
                 h = result.health
                 why = (
@@ -240,8 +330,8 @@ class RetailerWorker:
 
     def run(self) -> None:
         now = self.clock()
-        # Stagger start-up so retailers don't all fire at once.
-        next_discovery = now + self.rng.uniform(0, min(self.cfg.watch_interval, 15.0))
+        # Stagger start-up across a whole interval so retailers don't all fire at once.
+        next_discovery = now + self.rng.uniform(0, self.cfg.watch_interval)
         next_watch = next_discovery + self._jittered(self.cfg.watch_interval)
         while not self.stop_event.is_set():
             now = self.clock()
@@ -401,7 +491,7 @@ def build_runner(database_url: str, *, user_agent: str, admin_email: str | None)
     return DropRunner(
         load_retailers=cycle.load_retailers,
         cycle=cycle,
-        make_client=lambda cfg: PoliteClient(user_agent=user_agent),
+        make_client=lambda cfg: client_for(cfg, user_agent),
         alert=cycle.alert,
     )
 
@@ -415,11 +505,11 @@ def run_all_once(
     for cfg in cycle.load_retailers():
         try:
             adapter = adapter_for(cfg)
-        except LookupError as exc:
+        except (LookupError, ValueError) as exc:
             log.error("%s", exc)
             out[cfg.slug] = f"error: {exc}"
             continue
-        worker = RetailerWorker(cfg, adapter, PoliteClient(user_agent=user_agent), cycle, threading.Event())
+        worker = RetailerWorker(cfg, adapter, client_for(cfg, user_agent), cycle, threading.Event())
         result = worker.run_once(mode)
         out[cfg.slug] = (
             "crashed"

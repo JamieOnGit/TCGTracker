@@ -254,6 +254,14 @@ body {
 .badge-live { color: var(--up); border: 1px solid color-mix(in oklab, var(--up) 40%, transparent); }
 .badge-warn { color: var(--warn); background: var(--warn-soft); }
 .tag-quiet { font-size: var(--text-2xs); color: var(--ink-muted); text-transform: uppercase; letter-spacing: .12em; }
+/* Stock activity: status badges (label always states the status), store monogram, chip counts */
+.badge-new { color: var(--accent); border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent); }
+.badge-pre { color: var(--warn); border: 1px solid color-mix(in oklab, var(--warn) 40%, transparent); }
+.badge-drop { color: var(--up); background: var(--up-soft); }
+.mono { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid var(--line-strong); border-radius: var(--radius-xs); font-size: 9px; font-weight: 600; letter-spacing: .02em; color: var(--ink-muted); flex: none; }
+.chip-filter .count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.chip-filter[aria-current="page"] .count { color: var(--ink); }
+@media (max-width: 767px) { .chip-filter.tap { height: 44px; } }
 
 /* Change chips */
 .chg { font-size: var(--text-sm); white-space: nowrap; font-feature-settings: var(--num-features); }

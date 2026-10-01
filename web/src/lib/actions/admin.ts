@@ -4,7 +4,9 @@ import { z } from 'zod'
 import { validCampaignId } from '@/lib/domain/ebay'
 import { currentUserWithRole, supabaseForRequest, supabaseService, type AppRole } from '@/lib/supabase/server'
 import { findField, parseSettingInput } from '@/lib/admin/settings'
+import { SETTING_VALIDATORS } from '@/lib/admin/settingValidators'
 import { rrpTag } from '@/lib/admin/format'
+import { adapterFor, buildStoreConfig, newStoreSchema, readConfigFields, readNewStore, storeSettingsSchema, storeSlug } from '@/lib/admin/stores'
 import { friendlyError, type ActionResult } from './result'
 
 // Every write here runs as the signed-in staff member, so RLS decides what
@@ -53,30 +55,6 @@ export async function removeListing(id: number, reason: string): Promise<ActionR
 }
 
 /** Settings editable in the console, with per-key validation. */
-const SETTING_VALIDATORS: Record<string, z.ZodType> = {
-  'billing.premium_monthly_cents': z.number().int().min(100).max(100000),
-  'billing.premium_annual_cents': z.number().int().min(100).max(1000000).nullable(),
-  'billing.founder_monthly_cents': z.number().int().min(100).max(100000).nullable(),
-  'billing.grace_period_days': z.number().int().min(0).max(30),
-  'quota.free_per_period': z.number().int().min(0).max(1000),
-  'quota.premium_per_period': z.number().int().min(0).max(10000),
-  'quota.period': z.enum(['calendar_month', 'rolling_30_days']),
-  'quota.count_rejected': z.boolean(),
-  'listings.expiry_days': z.number().int().min(7).max(365),
-  'listings.auto_approve_trusted': z.boolean(),
-  'market.outlier_min_ratio': z.number().min(0).max(1),
-  'market.floor_refresh_hours': z.number().min(1).max(48),
-  'drops.public_delay_minutes': z.number().int().min(0).max(10080),
-  'drops.free_delay_minutes': z.number().int().min(0).max(10080),
-  'drops.free_delayed_alerts': z.boolean(),
-  'drops.suppress_above_rrp_pct': z.number().min(0).max(1000),
-  'features.external_buy_fallback': z.boolean(),
-  'ebay.enabled': z.boolean(),
-  'ebay.affiliate_enabled': z.boolean(),
-  'ebay.campaign_id': z.string().refine(validCampaignId, 'An EPN campaign id is 10 digits').nullable(),
-  'ebay.custom_id': z.string().regex(/^[A-Za-z0-9_-]{1,40}$/, 'Letters, numbers, - and _ only'),
-  'site.announcement': z.string().max(200).nullable(),
-}
 
 
 export async function updateSetting(key: string, value: unknown): Promise<ActionResult> {
@@ -461,4 +439,59 @@ export async function removeListingForm(id: number, form: FormData): Promise<Act
   if (!reason) return { ok: false, error: 'Give a reason.', field: 'reason' }
   const r = await removeListing(id, reason)
   return r.ok ? { ok: true, message: 'Removed.' } : r
+}
+
+// ---------------------------------------------------------------------------
+// Stores (live stock monitor). Generic Shopify / WooCommerce stores are read
+// from the catalogue they publish openly; a store that blocks automated access
+// gets a blocked_reason and is covered by member sightings instead.
+
+/** "Add a store": admin only, validated with zod; the audit trigger records the insert. */
+export async function addStore(form: FormData): Promise<ActionResult> {
+  const s = await staff([])
+  if (!s) return { ok: false, error: 'Admins only.' }
+  const p = newStoreSchema.safeParse(readNewStore(form))
+  if (!p.success) {
+    const issue = p.error.issues[0]
+    return { ok: false, error: issue?.message ?? 'Check the store fields.', field: issue?.path[0] === 'baseUrl' ? 'base_url' : String(issue?.path[0] ?? '') }
+  }
+  const d = p.data
+  const slug = storeSlug(d.name)
+  if (!slug) return { ok: false, error: 'That name clashes with a page or state code; add a word (e.g. the suburb).', field: 'name' }
+  const adapter = adapterFor(d.platform)
+  if (d.enabled && adapter === 'none') return { ok: false, error: 'Only Shopify and WooCommerce stores can be monitored straight away. Custom stores need an adapter first.', field: 'enabled' }
+  const { data: iv } = await s.sb.from('site_settings').select('value').eq('key', 'stock.default_interval_seconds').maybeSingle()
+  const interval = typeof iv?.value === 'number' && iv.value >= 30 ? iv.value : 120
+  const { error } = await s.sb.from('retailers').insert({
+    slug, name: d.name, base_url: d.baseUrl, adapter, platform: d.platform, config: buildStoreConfig(d), kind: d.kind || null, state: d.state || null,
+    enabled: d.enabled, watch_interval_seconds: interval,
+  })
+  revalidatePath('/admin/drops/')
+  revalidatePath('/drops/stores/')
+  if (error) return { ok: false, error: error.code === '23505' ? 'A store with that name already exists.' : friendlyError(error.message) }
+  return { ok: true, message: `Added ${d.name} (/drops/${slug}/).` }
+}
+
+/** Platform, collections/categories, keywords, games, kind, state and blocked reason for an existing store. */
+export async function saveStoreSettings(slug: string, form: FormData): Promise<ActionResult> {
+  const s = await staff([])
+  if (!s) return { ok: false, error: 'Admins only.' }
+  const p = storeSettingsSchema.safeParse({ ...readConfigFields(form), blockedReason: String(form.get('blocked_reason') ?? '') })
+  if (!p.success) return { ok: false, error: p.error.issues[0]?.message ?? 'Check the store fields.' }
+  const { data: cur } = await s.sb.from('retailers').select('adapter,config,enabled').eq('slug', slug).maybeSingle()
+  if (!cur) return { ok: false, error: 'Store not found.' }
+  const d = p.data
+  const adapter = adapterFor(d.platform, cur.adapter)
+  const { error } = await s.sb
+    .from('retailers')
+    .update({
+      platform: d.platform, adapter, config: buildStoreConfig(d, (cur.config ?? {}) as Record<string, unknown>), kind: d.kind || null, state: d.state || null,
+      blocked_reason: d.blockedReason || null,
+      // A store without an adapter can't stay switched on (retailers_enable_needs_adapter).
+      ...(adapter === 'none' ? { enabled: false } : {}),
+    })
+    .eq('slug', slug)
+  revalidatePath('/admin/drops/')
+  revalidatePath('/drops/stores/')
+  return error ? { ok: false, error: friendlyError(error.message) } : { ok: true, message: adapter === 'none' && cur.enabled ? 'Saved. Monitoring is off: this store has no adapter.' : 'Saved.' }
 }

@@ -1,0 +1,579 @@
+[
+ {
+  "id": 24618,
+  "name": "POKÉMON TCG Scarlet &#038; Violet 4 Paradox Rift Booster",
+  "slug": "pokemon-tcg-scarlet-violet-4-paradox-rift-booster",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-4-paradox-rift-booster/",
+  "sku": "",
+  "on_sale": false,
+  "prices": {
+   "price": "18500",
+   "regular_price": "18500",
+   "sale_price": "18500",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 24624,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/11/Pokemon-TCG-Scarlet-Violet-Paradox-Rift-Booster-Display_EN-752x1024-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/11/Pokemon-TCG-Scarlet-Violet-Paradox-Rift-Booster-Display_EN-752x1024-1-480x480.jpg",
+    "name": "Pokemon-TCG-Scarlet-Violet-Paradox-Rift-Booster-Display_EN-752&#215;1024",
+    "alt": "Pokemon Tcg Scarlet Violet Paradox Rift Booster Display En 752x1024"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Scarlet &#038; Violet 4 Paradox Rift Booster&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-4-paradox-rift-booster/"
+  }
+ },
+ {
+  "id": 23930,
+  "name": "POKÉMON TCG Scarlet &#038; Violet 151 Mini Tin",
+  "slug": "pokemon-tcg-scarlet-violet-151-mini-tin",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-151-mini-tin/",
+  "sku": "",
+  "on_sale": false,
+  "prices": {
+   "price": "1850",
+   "regular_price": "1850",
+   "sale_price": "1850",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 23932,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-151-Mini-Tin-Display-Front_EN-788x1024-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-151-Mini-Tin-Display-Front_EN-788x1024-1-480x480.jpg",
+    "name": "Pokemon-TCG-Scarlet-Violet-151-Mini-Tin-Display-Front_EN-788&#215;1024",
+    "alt": "Pokemon Tcg Scarlet Violet 151 Mini Tin Display Front En 788x1024"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   },
+   {
+    "id": 125,
+    "name": "Pre-Orders",
+    "slug": "pre-orders",
+    "link": "https://mightycollectibles.com.au/product-category/pre-orders/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Scarlet &#038; Violet 151 Mini Tin&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-151-mini-tin/"
+  }
+ },
+ {
+  "id": 23925,
+  "name": "POKÉMON TCG Scarlet &#038; Violet 151 Ultra-Premium Collection",
+  "slug": "pokemon-tcg-scarlet-violet-151-ultra-premium-collection-not-available-for-pre-order",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-151-ultra-premium-collection-not-available-for-pre-order/",
+  "sku": "",
+  "on_sale": true,
+  "prices": {
+   "price": "19995",
+   "regular_price": "25000",
+   "sale_price": "19995",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 23928,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-151-Ultra-Premium-Collection_EN-1024x722-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-151-Ultra-Premium-Collection_EN-1024x722-1-480x480.jpg",
+    "name": "Pokemon-TCG-Scarlet-Violet-151-Ultra-Premium-Collection_EN-1024&#215;722",
+    "alt": "Pokemon Tcg Scarlet Violet 151 Ultra Premium Collection En 1024x722"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   },
+   {
+    "id": 125,
+    "name": "Pre-Orders",
+    "slug": "pre-orders",
+    "link": "https://mightycollectibles.com.au/product-category/pre-orders/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Scarlet &#038; Violet 151 Ultra-Premium Collection&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-151-ultra-premium-collection-not-available-for-pre-order/"
+  }
+ },
+ {
+  "id": 23921,
+  "name": "POKÉMON TCG Scarlet &#038; Violet 151 Binder Collection",
+  "slug": "pokemon-tcg-scarlet-violet-151-binder-collection",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-151-binder-collection/",
+  "sku": "",
+  "on_sale": false,
+  "prices": {
+   "price": "3995",
+   "regular_price": "3995",
+   "sale_price": "3995",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 23924,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-151-Binder-Collection_EN-745x1024-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-151-Binder-Collection_EN-745x1024-1-480x480.jpg",
+    "name": "Pokemon-TCG-Scarlet-Violet-151-Binder-Collection_EN-745&#215;1024",
+    "alt": "Pokemon Tcg Scarlet Violet 151 Binder Collection En 745x1024"
+   }
+  ],
+  "categories": [
+   {
+    "id": 76,
+    "name": "Accessories",
+    "slug": "accessories",
+    "link": "https://mightycollectibles.com.au/product-category/accessories/"
+   },
+   {
+    "id": 133,
+    "name": "Card Folder",
+    "slug": "trading-card-folder",
+    "link": "https://mightycollectibles.com.au/product-category/accessories/trading-card-folder/"
+   },
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   },
+   {
+    "id": 125,
+    "name": "Pre-Orders",
+    "slug": "pre-orders",
+    "link": "https://mightycollectibles.com.au/product-category/pre-orders/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Scarlet &#038; Violet 151 Binder Collection&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-151-binder-collection/"
+  }
+ },
+ {
+  "id": 23636,
+  "name": "Pokemon TCG Triple Beat Booster Box Japanese (sv1a)",
+  "slug": "pokemon-tcg-triple-beat-booster-box-japanese-sv1a",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-triple-beat-booster-box-japanese-sv1a/",
+  "sku": "",
+  "on_sale": true,
+  "prices": {
+   "price": "14995",
+   "regular_price": "15995",
+   "sale_price": "14995",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 23637,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/04/pokemon-tcg-triple-beat-booster-box-sv1a-01.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/04/pokemon-tcg-triple-beat-booster-box-sv1a-01-480x480.jpg",
+    "name": "Pokemon TCG Triple Beat Booster Box Japanese (sv1a)",
+    "alt": "Pokemon TCG Triple Beat Booster Box Japanese (sv1a)"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;Pokemon TCG Triple Beat Booster Box Japanese (sv1a)&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-triple-beat-booster-box-japanese-sv1a/"
+  }
+ },
+ {
+  "id": 23422,
+  "name": "POKÉMON TCG Scarlet &amp; Violet 2 Paldea Evolved &#8211; Booster Box",
+  "slug": "pokemon-tcg-scarlet-violet-2-paldea-evolved-booster-box",
+  "parent": 0,
+  "type": "variable",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-2-paldea-evolved-booster-box/",
+  "sku": "",
+  "on_sale": false,
+  "prices": {
+   "price": "18995",
+   "regular_price": "17268",
+   "sale_price": "17268",
+   "price_range": {
+    "min_amount": "18995",
+    "max_amount": "105000"
+   },
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 22741,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/01/Pokemon-TCG-Scarlet-Violet-Booster-Display-Left_EN-775x1024-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/01/Pokemon-TCG-Scarlet-Violet-Booster-Display-Left_EN-775x1024-1-480x480.jpg",
+    "name": "Pokemon-TCG-Scarlet-Violet-Booster-Display-Left_EN-775&#215;1024",
+    "alt": "POKÉMON TCG Scarlet & Violet 1 Booster"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   },
+   {
+    "id": 125,
+    "name": "Pre-Orders",
+    "slug": "pre-orders",
+    "link": "https://mightycollectibles.com.au/product-category/pre-orders/"
+   }
+  ],
+  "tags": [
+   {
+    "id": 147,
+    "name": "pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-tag/pokemon/"
+   },
+   {
+    "id": 324,
+    "name": "Scarlet",
+    "slug": "scarlet",
+    "link": "https://mightycollectibles.com.au/product-tag/scarlet/"
+   },
+   {
+    "id": 327,
+    "name": "violet",
+    "slug": "violet",
+    "link": "https://mightycollectibles.com.au/product-tag/violet/"
+   }
+  ],
+  "has_options": true,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Select options",
+   "description": "Select options for &ldquo;POKÉMON TCG Scarlet &amp; Violet 2 Paldea Evolved &#8211; Booster Box&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-2-paldea-evolved-booster-box/"
+  }
+ },
+ {
+  "id": 22409,
+  "name": "POKÉMON TCG Crown Zenith Shiny Zacian/Zamazenta Figure Box Set",
+  "slug": "pokemon-tcg-crown-zenith-shiny-zacian-zamazenta-figure-box-set",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-crown-zenith-shiny-zacian-zamazenta-figure-box-set/",
+  "sku": "",
+  "on_sale": true,
+  "prices": {
+   "price": "16995",
+   "regular_price": "22000",
+   "sale_price": "16995",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 22406,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2022/12/POKEMON-TCG-Crown-Zenith-Shiny-Zacian-Zamazenta-Figure-Box-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2022/12/POKEMON-TCG-Crown-Zenith-Shiny-Zacian-Zamazenta-Figure-Box-1-480x480.jpg",
+    "name": "POKÉMON TCG Crown Zenith Shiny Zacian Zamazenta Figure Box",
+    "alt": "PokÉmon Tcg Crown Zenith Shiny Zacian Zamazenta Figure Box"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Crown Zenith Shiny Zacian/Zamazenta Figure Box Set&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-crown-zenith-shiny-zacian-zamazenta-figure-box-set/"
+  }
+ },
+ {
+  "id": 23902,
+  "name": "POKÉMON TCG Scarlet &#038; Violet 3 Obsidian Flames Booster Box (Unsealed)",
+  "slug": "pokemon-tcg-scarlet-violet-3-obsidian-flames-booster-box",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-3-obsidian-flames-booster-box/",
+  "sku": "",
+  "on_sale": true,
+  "prices": {
+   "price": "16995",
+   "regular_price": "19495",
+   "sale_price": "16995",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 23907,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-Obsidian-Flames-Booster-Display_EN-761x1024-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2023/06/Pokemon-TCG-Scarlet-Violet-Obsidian-Flames-Booster-Display_EN-761x1024-1-480x480.jpg",
+    "name": "Pokemon-TCG-Scarlet-Violet-Obsidian-Flames-Booster-Display_EN-761&#215;1024",
+    "alt": "Pokemon Tcg Scarlet Violet Obsidian Flames Booster Display En 761x1024"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   },
+   {
+    "id": 125,
+    "name": "Pre-Orders",
+    "slug": "pre-orders",
+    "link": "https://mightycollectibles.com.au/product-category/pre-orders/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Scarlet &#038; Violet 3 Obsidian Flames Booster Box (Unsealed)&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-scarlet-violet-3-obsidian-flames-booster-box/"
+  }
+ },
+ {
+  "id": 21945,
+  "name": "POKÉMON TCG Crown Zenith Pikachu VMAX Box",
+  "slug": "pokemon-tcg-crown-zenith-pikachu-vmax-box",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://mightycollectibles.com.au/product/pokemon-tcg-crown-zenith-pikachu-vmax-box/",
+  "sku": "",
+  "on_sale": true,
+  "prices": {
+   "price": "5499",
+   "regular_price": "6000",
+   "sale_price": "5499",
+   "price_range": null,
+   "currency_code": "AUD",
+   "currency_symbol": "$",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ".",
+   "currency_thousand_separator": ",",
+   "currency_prefix": "$",
+   "currency_suffix": ""
+  },
+  "images": [
+   {
+    "id": 21940,
+    "src": "https://mightycollectibles.com.au/wp-content/uploads/2022/11/Pokemon-TCG-Sword-Shield-Crown-Zenith-Pikachu-VMAX-Box_EN-1024x801-1.jpg",
+    "thumbnail": "https://mightycollectibles.com.au/wp-content/uploads/2022/11/Pokemon-TCG-Sword-Shield-Crown-Zenith-Pikachu-VMAX-Box_EN-1024x801-1-480x480.jpg",
+    "name": "Pokemon-TCG-Sword-Shield-Crown-Zenith-Pikachu-VMAX-Box_EN-1024&#215;801",
+    "alt": "Pokemon Tcg Sword Shield Crown Zenith Pikachu Vmax Box En 1024x801"
+   }
+  ],
+  "categories": [
+   {
+    "id": 82,
+    "name": "Pokemon",
+    "slug": "pokemon",
+    "link": "https://mightycollectibles.com.au/product-category/tcg/pokemon/"
+   }
+  ],
+  "tags": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": false,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "Out of stock",
+   "class": "out-of-stock"
+  },
+  "sold_individually": false,
+  "add_to_cart": {
+   "text": "Read more",
+   "description": "Read more about &ldquo;POKÉMON TCG Crown Zenith Pikachu VMAX Box&rdquo;",
+   "url": "https://mightycollectibles.com.au/product/pokemon-tcg-crown-zenith-pikachu-vmax-box/"
+  }
+ }
+]

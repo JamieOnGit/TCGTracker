@@ -128,7 +128,7 @@ def test_drop_event_reaches_premium_and_free_inboxes(conn, members, product):
         now=observed,
     )
     conn.commit()
-    assert {e.event_type.value for e in result.new_events} == {"NEW_LISTING", "IN_STOCK"}
+    assert {e.event_type.value for e in result.new_events} == {"IN_STOCK"}
 
     # Re-running the same observation is transition-only: no new events.
     again = run_cycle("jb-hi-fi", [obs], PostgresDropStore(conn, retailer_id), rules=Rules(), now=observed)
@@ -320,7 +320,7 @@ def test_first_scan_of_a_retailer_is_a_silent_baseline(conn, members):
     ).fetchone()["n"]
     try:
         first = cycle(cfg, "discovery", Shop(), PoliteClient(user_agent="test"))
-        assert first.error is None and len(first.new_events) == 3  # 2x NEW_LISTING + IN_STOCK
+        assert first.error is None and len(first.new_events) == 2  # one event per new product
         events = conn.execute(
             """select suppressed, suppressed_reason from public.drop_events e
                  join public.retail_products p on p.id = e.retail_product_id where p.retailer_id = %s""",

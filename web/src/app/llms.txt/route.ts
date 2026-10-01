@@ -1,5 +1,5 @@
 import { GUIDES } from '@/content/guides'
-import { absoluteUrl, dropsStatePath, GAME_NAMES, GAMES, guidesPath, releasesIcsPath, releasesPath, scoutsPath, siteName } from '@/lib/seo/urls'
+import { absoluteUrl, dropsStatePath, GAME_NAMES, GAMES, guidesPath, inStockPath, productsPath, releasesIcsPath, releasesPath, scoutsPath, siteName, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 86400
 
@@ -18,6 +18,9 @@ Market cap = graded population × floor price, per card and grade (PSA 10 by def
 - [Card catalogue](${u('/cards/')}): game → language → set → card. Each card page has market cap by grade, population and price history as HTML tables, listings and sold history.
 - [Marketplace](${u('/marketplace/')}): listings from Australian collectors, reviewed before going live
 - [Retail drops](${u('/drops/')}): public, delayed history of restocks and pre-orders at Australian retailers (JB Hi-Fi, BIG W, Kmart, Target, EB Games, Premium Bandai AU) from website monitors and confirmed member in-store sightings. Per retailer: /drops/{retailer}/ (e.g. ${u('/drops/kmart/')}); per state: /drops/{state}/ (e.g. ${u(dropsStatePath('VIC'))}); top reporters: ${u(scoutsPath())}
+- [In stock now](${u(inStockPath())}): Pokémon and One Piece sealed products in stock or on pre-order right now at Australian stores, grouped by product, with the lowest price against RRP
+- [Sealed products](${u(productsPath())}): one page per sealed product at /products/{game}/{lang}/{slug}/ (e.g. booster boxes, Elite Trainer Boxes), with a store-by-store availability table (status, price, difference from RRP, last change), RRP in AUD and restock history. Per game: ${GAMES.map((g) => u(productsPath(g))).join(', ')}
+- [Stores we watch](${u(storesPath())}): every store in the feed and how it is covered: checked live from the store's openly published catalogue, or by member sightings where a store blocks automated access or has no online catalogue
 - [eBay deals](${u('/deals/')}): graded cards listed on eBay (official eBay API) below our market value for that card and grade
 - [Release calendar](${u('/releases/')}): Australian release dates for English and Japanese sets and products, with date precision (day, month, quarter or TBC), confidence (official, retailer listing, unconfirmed), RRP in AUD and stockists. ${GAMES.map((g) => `${GAME_NAMES[g]}: ${u(releasesPath(g))}`).join('; ')}. Each release has a page at /releases/{game}/{slug}/. iCalendar feed: ${u(releasesIcsPath())}
 - [Guides](${u(guidesPath())}): evergreen guides for Australian collectors

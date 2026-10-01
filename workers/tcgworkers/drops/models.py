@@ -53,6 +53,12 @@ class Observation:
     queue_live: bool = False
     is_marketplace_seller: bool = False
     raw: dict[str, Any] = field(default_factory=dict, compare=False)
+    image_url: str | None = None  # https only; shown only if stock.show_retailer_images
+    # Hints from the store's own categorisation (product type, tags, the
+    # collection it was listed in), used when the title alone is ambiguous,
+    # e.g. "Stellar Crown Mini Tin" in a store's Pokémon collection.
+    game_hint: str | None = None
+    lang_hint: str | None = None
 
 
 @dataclass(frozen=True)

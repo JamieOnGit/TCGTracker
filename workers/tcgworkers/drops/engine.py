@@ -125,7 +125,7 @@ def run_cycle(
     new_events: list[DropEvent] = []
     for obs in observations:
         seen += 1
-        c = classify(obs.title, watch)
+        c = classify(obs.title, watch, game_hint=obs.game_hint)
         if not c.is_tcg:
             continue
         tcg += 1
@@ -145,7 +145,7 @@ def run_cycle(
             delta_pct=delta,
             suppress_above_pct=rules.drops_suppress_above_rrp_pct,
         )
-        for event in diff(previous, obs):
+        for event in diff(previous, obs, min_price_drop_pct=rules.drops_price_drop_pct):
             event = replace(
                 event,
                 rrp_aud=rrp,

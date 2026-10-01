@@ -112,7 +112,10 @@ def test_confirmed_sighting_is_claimed_and_rendered(conn: Conn, members: dict[st
         (premium,),
     ).fetchone()
     assert note
-    assert note["title"] == "In store: Pokémon booster bundles at Kmart Chadstone, VIC"
+    kmart = conn.execute("select name from public.retailers where slug = 'kmart'").fetchone()
+    assert kmart
+    place = f"{kmart['name']} Chadstone, VIC"  # the registry migration renamed it "Kmart Australia"
+    assert note["title"] == f"In store: Pokémon booster bundles at {place}"
     assert note["body"].startswith("A$45.00") and "Limit 2 per customer" in note["body"]
     assert note["url"] == "/drops/vic/" and note["data"]["sighting_id"] == sighting
 
@@ -121,7 +124,7 @@ def test_confirmed_sighting_is_claimed_and_rendered(conn: Conn, members: dict[st
     ).fetchone()
     assert email
     data = email["data"]
-    assert data["source"] == "member" and data["place"] == "Kmart Chadstone, VIC"
+    assert data["source"] == "member" and data["place"] == place
     assert (
         data["photo_url"]
         == f"{SUPABASE}/storage/v1/object/public/sighting-photos/{members['reporter']}/shelf.jpg"

@@ -84,10 +84,19 @@ export interface RetailerRow {
   last_error: string | null
   consecutive_errors: number
   zero_product_cycles: number
+  platform: 'custom' | 'shopify' | 'woocommerce' | 'none'
+  config: Record<string, unknown>
+  kind: string | null
+  state: string | null
+  blocked_reason: string | null
+  last_checked_at: string | null
 }
 
 export async function retailers(sb: SupabaseClient): Promise<RetailerRow[]> {
-  const { data } = await sb.from('retailers').select('id,slug,name,base_url,adapter,enabled,watch_interval_seconds,discovery_interval_seconds,last_success_at,last_error_at,last_error,consecutive_errors,zero_product_cycles').order('name')
+  const { data } = await sb
+    .from('retailers')
+    .select('id,slug,name,base_url,adapter,enabled,watch_interval_seconds,discovery_interval_seconds,last_success_at,last_error_at,last_error,consecutive_errors,zero_product_cycles,platform,config,kind,state,blocked_reason,last_checked_at')
+    .order('name')
   return (data ?? []) as unknown as RetailerRow[]
 }
 

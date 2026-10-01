@@ -117,6 +117,7 @@ class Rules:
     drops_suppress_above_rrp_pct: Decimal = Decimal("50")
     drops_rrp_tolerance_pct: Decimal = Decimal("2")
     drops_zero_product_alert_cycles: int = 5
+    drops_price_drop_pct: Decimal = Decimal("5")  # PRICE_CHANGE only for drops at least this big
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod

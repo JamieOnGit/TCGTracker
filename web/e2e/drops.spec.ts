@@ -9,9 +9,9 @@ test('drops hub shows the member sighting row, state links and the report CTA', 
   await expect(sighting).toContainText('Kmart Chadstone, VIC')
   await expect(sighting).toContainText('Limit 2 per customer')
   await expect(sighting).toContainText('Confirmed by 3 members')
-  await expect(sighting.locator('a')).toHaveCount(0) // in store: no outbound link
+  await expect(sighting.locator('a[target="_blank"]')).toHaveCount(0) // in store: no outbound link
   await expect(page.locator('li[data-source="member"][data-gone]')).toContainText('Reported sold out')
-  await expect(page.locator('li[data-source="monitor"] a').first()).toHaveAttribute('rel', 'nofollow noopener')
+  await expect(page.locator('li[data-source="monitor"] a[target="_blank"]').first()).toHaveAttribute('rel', 'nofollow noopener')
   await expect(page.getByRole('navigation', { name: 'By state' }).getByRole('link')).toHaveCount(8)
   await expect(page.getByRole('link', { name: 'Seen stock in store? Report it' })).toHaveAttribute('href', '/account/sightings/')
   await expect(page.getByRole('navigation', { name: 'Member sightings' })).toContainText('Toymate')
