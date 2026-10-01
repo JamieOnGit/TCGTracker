@@ -22,7 +22,7 @@ The website is complete, but these parts are switched off until their services a
 | Discord Premium alerts | Discord webhook | 10 |
 | Outage alerts to your phone | Sentry and healthchecks.io | 11 |
 
-**Do next, in order:** 3g (make yourself admin, 2 min) → 6 (push keys, 5 min) → 7 (Fly.io, 30 min) → 9 (PriceCharting) → 8 (Stripe) → the rest.
+**Do next, in order:** 6 (push keys, 5 min) → 7 (Fly.io, 30 min) → 9 (PriceCharting) → 8 (Stripe) → the rest.
 
 ## Progress
 | Step | What | Status |
@@ -31,10 +31,10 @@ The website is complete, but these parts are switched off until their services a
 | 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Done. Check 2.8 (SSL **Full (strict)** + **Always Use HTTPS**) is on. |
 | 3a–3f | Supabase project, sign-in URLs, GitHub secrets, database deployed | ✅ Done |
 | 3f-2 | Deploy database again for the stock-monitor update | ✅ Do it now if you skipped it (1 min) |
-| **3g** | **Make yourself admin** | ⏭ **Do now** |
+| 3g | Make yourself admin | ✅ Done |
 | 4 | Website on Cloudflare Workers + domain + www redirect | ✅ Done |
 | 5 | Resend email + Supabase SMTP + rate limit | ✅ Done (sign-in works) |
-| 6 | Push-notification keys | ☐ Next |
+| **6** | **Push-notification keys** | ⏭ **Do now** |
 | 7 | Fly.io workers in Sydney (monitor, alerts, emails) | ☐ |
 | 7e | Check the 42-store monitor from Sydney | ☐ After 7 |
 | 8 | Stripe (Premium) | ☐ |
@@ -99,7 +99,7 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 7. In Cloudflare, click **Check nameservers now**, then wait for the email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours. Until then, Cloudflare's domain list shows **"Invalid nameservers"**. That's normal while the change spreads; it switched to **Active** for you the same day.
 8. In Cloudflare, go to **SSL/TLS** → mode **Full (strict)**. Then **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
 
-## Step 3 · Supabase: database, sign-in and photos ✅ done except 3g
+## Step 3 · Supabase: database, sign-in and photos ✅ done
 
 ### 3a · Create the project ✅ done
 What you chose, for reference:
@@ -161,7 +161,7 @@ Run **Deploy database** once more if you haven't since PR #3: **https://github.c
 
 Rule from now on: **whenever a merged PR changes `supabase/migrations/`, run Deploy database again.** Claude reminds you each time.
 
-### 3g · Make yourself admin (≈2 min) ⏭ do now
+### 3g · Make yourself admin ✅ done
 **App: Supabase** (https://supabase.com/dashboard → project **tcgtracker**). You must have signed in on the live site at least once (done ✅).
 1. In the left sidebar, click **SQL Editor** (the `>_` icon).
 2. Click **+ New query** (or the **+** next to the tabs). A blank editor opens.
@@ -281,7 +281,7 @@ What you set up, for reference:
 
 The Magic link email template doesn't need editing: since PR #7, the standard link works in the Gmail app and on other devices.
 
-## Step 6 · Push-notification keys (≈5 min)
+## Step 6 · Push-notification keys (≈5 min) ⏭ do now
 These let the site send phone and desktop notifications for drops, with no app and no SMS cost. You create one key pair, once.
 
 **App: your computer's terminal.** You need Node.js. Check by typing `node -v` in Terminal (Mac) or PowerShell (Windows). If it says "not found", install the **LTS** version from https://nodejs.org first.
@@ -575,7 +575,7 @@ These give reliable stock and price data **with permission**, and earn commissio
 | healthchecks.io says the check is down | Run `fly status` and `fly logs` in the `workers` folder and send Claude what you see. |
 
 ## What to send Claude, in order
-1. "I'm admin" (3g)
+1. ✅ "I'm admin" (3g)
 2. "push keys added" (6)
 3. "workers deployed", then "monitor check" (7d, 7e)
 4. "PriceCharting subscribed" and, later, their reply about display rights (9)
