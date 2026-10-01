@@ -25,7 +25,11 @@ export async function sendMagicLink(_prev: ActionResult | null, form: FormData):
     email: parsed.data.email,
     options: { emailRedirectTo: `${origin}/auth/confirm/?next=${encodeURIComponent(parsed.data.next ?? '/account/')}` },
   })
-  if (error) return { ok: false, error: error.status === 429 ? 'Too many attempts. Try again in a minute.' : 'Could not send the link. Try again.' }
+  if (error) {
+    // 429 covers both the per-address wait (60 s) and the project-wide email cap,
+    // which with Supabase's built-in sender is only 2 emails an hour.
+    return { ok: false, error: error.status === 429 ? 'We’ve sent a lot of sign-in emails just now. Please wait a few minutes and try again.' : 'Could not send the link. Try again.' }
+  }
   return { ok: true, message: `Check ${parsed.data.email} for a sign-in link.` }
 }
 

@@ -17,7 +17,7 @@ Last updated 30 September 2026 (evening). Work top to bottom. Each step says **w
 
 The site is **built and deployed on Cloudflare** (first green build 1 Oct 2026). It isn't on tcgtracker.com.au yet: finish 4d–4f below.
 
-**Do next, in order:** 3f-2 (if not done) → 4d → 4e → 3b → 4f → 3g → Step 5.
+**Do next, in order:** Step 5 (Resend email, so sign-in emails aren't capped) → 4f (sign in) → 3g (make yourself admin) → Step 6.
 
 ## Progress
 | Step | What | Status |
@@ -25,7 +25,7 @@ The site is **built and deployed on Cloudflare** (first green build 1 Oct 2026).
 | 1 | GitHub repo `JamieOnGit/TCGTracker` | ✅ Done |
 | 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Active. Finish the two SSL settings (2.8) if you haven't. |
 | 3a | Supabase project `tcgtracker` (Sydney) | ✅ Done |
-| 3b | Supabase sign-in URLs | ☐ Confirm Site URL and Redirect URL are set (Authentication → URL Configuration) |
+| 3b | Supabase sign-in URLs | ✅ Done |
 | 3c–3d | Access token, Project ID and DB password saved as GitHub secrets | ✅ Done |
 | 3e | Merge pull request #1 | ✅ Merged |
 | 3f | Database deployed to Supabase | ✅ Done (tables visible in Table Editor) |
@@ -33,10 +33,11 @@ The site is **built and deployed on Cloudflare** (first green build 1 Oct 2026).
 | 3f-2 | Run Deploy database again for the stock-monitor update | ⏭ Do now if you haven't (1 min). Tell Claude "stock monitor deployed". |
 | 3g | Make yourself admin | After Step 4 |
 | 4a–4c | Workers Paid, Supabase keys, Worker created from GitHub | ✅ Done. First build green (after the esbuild fix, PR #5). |
-| **4d** | **Add the secret key `SUPABASE_SERVICE_ROLE_KEY`** | ⏭ **Do next (2 min)** |
-| **4e** | **Connect tcgtracker.com.au + www redirect** | ⏭ **Then this (10 min)** |
-| **4f** | **Check the live site, sign in** | ⏭ **Then this** |
-| 5 onwards | Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
+| 4d | Add the secret key `SUPABASE_SERVICE_ROLE_KEY` | ✅ Done |
+| 4e | Connect tcgtracker.com.au + www redirect | ✅ Done |
+| 4f | Check the live site, sign in | ⏭ After Step 5 (site is live; sign-in fixed in PR #7) |
+| **5** | **Resend email (lifts Supabase's 2-emails-an-hour sign-in cap)** | ⏭ **Do now** |
+| 6 onwards | Push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
 | 7b | Check the 42-store live stock monitor from Sydney (after Fly.io) | ☐ New: see 7b |
 | 13.0 | Email specialist stores the monitor can't read yet (template ready) | ☐ New: see Step 13 |
 
@@ -226,7 +227,7 @@ Before signing in, make sure **3b** is done. In Supabase → **Authentication �
 
 **Stuck on a screen?** Send Claude a screenshot (cover any key values first) and say which sub-step you're on.
 
-## Step 5 · Resend: alert emails (≈15 min)
+## Step 5 · Resend: sign-in and alert emails (≈15 min) ⏭ do this now: sign-in is capped at 2 emails an hour until it's done
 1. Go to **https://resend.com** → **Domains → Add domain** → `tcgtracker.com.au`.
 2. Click **Auto-configure with Cloudflare**, or add the MX/TXT records in Cloudflare DNS with the proxy **off** (grey cloud).
 3. In Cloudflare DNS, add a TXT record with Name `_dmarc` and Content `v=DMARC1; p=quarantine; rua=mailto:dmarc@tcgtracker.com.au`.
@@ -235,9 +236,10 @@ Before signing in, make sure **3b** is done. In Supabase → **Authentication �
    - Host `smtp.resend.com`, port `465`
    - User `resend`, password = the API key
    - Sender `TCGTracker <hello@tcgtracker.com.au>`
-6. Now that SMTP is on, open **Authentication → Emails → Templates → Magic link or OTP** and replace the link in the body with:
-   `{{ .SiteURL }}/login/confirm/?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}`
-   With this link, a sign-in email opened on a different device (e.g. your phone's email app) still works. Save.
+6. Raise the email limit: **Authentication → Rate Limits** → **Rate limit for sending emails** → `100` per hour → **Save**. (Supabase's built-in sender allows only **2 emails an hour for the whole site**, which is why sign-in said "too many attempts" even with a different email address. Custom SMTP removes that cap.)
+7. Test: on https://tcgtracker.com.au request a sign-in link. The email now comes from `hello@tcgtracker.com.au`, and the link works from any app or device.
+
+You don't need to edit the Magic link email template any more: since PR #7 the standard link works in the Gmail app and on other devices.
 
 ## Step 6 · Push-notification keys (≈2 min) *new*
 These let the site send phone and desktop notifications with no app and no SMS cost.
