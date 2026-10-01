@@ -162,14 +162,15 @@ If the API Keys page only shows "Legacy API keys", click the **API Keys** tab ne
 ### 4c · Create the Worker from GitHub
 1. Open **https://dash.cloudflare.com/?to=/:account/workers-and-pages/create** (or **Workers & Pages → Create application**).
 2. Next to **Import a repository**, click **Get started**. Choose your GitHub account. The first time, click **Connect GitHub**/**Add account**, allow the Cloudflare app on **JamieOnGit/TCGTracker**, then come back.
-3. Select **TCGTracker** from the list, then fill in the setup page:
+3. Select **TCGTracker** from the list, then fill in the setup page. Grey text in a box is only a placeholder: click in and type the value yourself.
 
    | Field | Value |
    |---|---|
    | **Project name** (Worker name) | `tcgtracker`. It must be exactly this: Cloudflare fails the build if it doesn't match the name in `web/wrangler.jsonc`. |
    | **Build command** | `npx opennextjs-cloudflare build` |
    | **Deploy command** | `npx opennextjs-cloudflare deploy` |
-   | **Non-production branch deploy command** (if shown) | `npx opennextjs-cloudflare upload` |
+   | **Preview command** (may be called "Non-production branch deploy command") | `npx opennextjs-cloudflare upload` |
+   | **Enable Preview builds** | turn **off** for now (previews would use the live database) |
    | **Advanced settings → Path** (called **Root directory** on the settings page later) | `web` |
    | **API token** (if shown) | leave as **Create new token**; Cloudflare makes it for you |
 
