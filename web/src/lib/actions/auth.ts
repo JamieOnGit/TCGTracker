@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { createClient } from '@supabase/supabase-js'
 import { supabaseForRequest } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/seo/urls'
 import type { ActionResult } from './result'
@@ -14,10 +15,15 @@ export async function sendMagicLink(_prev: ActionResult | null, form: FormData):
   const parsed = emailSchema.safeParse({ email: form.get('email'), next: form.get('next') || undefined })
   if (!parsed.success) return { ok: false, error: 'Enter a valid email address.', field: 'email' }
   const origin = (await headers()).get('origin') ?? siteUrl()
-  const sb = await supabaseForRequest()
+  // Implicit flow, not PKCE: a PKCE link only works in the browser that asked
+  // for it, so tapping it in the Gmail app (its own in-app browser) or on
+  // another device failed. /auth/confirm/ finishes the sign-in in any browser.
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { flowType: 'implicit', persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  })
   const { error } = await sb.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { emailRedirectTo: `${origin}/auth/callback/?next=${encodeURIComponent(parsed.data.next ?? '/account/')}` },
+    options: { emailRedirectTo: `${origin}/auth/confirm/?next=${encodeURIComponent(parsed.data.next ?? '/account/')}` },
   })
   if (error) return { ok: false, error: error.status === 429 ? 'Too many attempts. Try again in a minute.' : 'Could not send the link. Try again.' }
   return { ok: true, message: `Check ${parsed.data.email} for a sign-in link.` }

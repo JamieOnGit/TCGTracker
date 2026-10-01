@@ -48,7 +48,7 @@ export async function authUserId(email: string): Promise<string> {
   return u.id
 }
 
-async function waitForMagicLink(email: string, after: number): Promise<string> {
+export async function waitForMagicLink(email: string, after: number): Promise<string> {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {
     const res = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}&limit=5`)
@@ -69,8 +69,8 @@ async function waitForMagicLink(email: string, after: number): Promise<string> {
 /**
  * Real passwordless sign-in: request a magic link through /login/, fetch the
  * email from Mailpit and follow the link. The local Auth server only allows
- * redirects to its site_url, so we read the one-time `code` from its redirect
- * and hand it to our /auth/callback/ in the same browser (PKCE verifier cookie).
+ * redirects to its site_url, so we take the session fragment from its redirect
+ * and hand it to our /auth/confirm/ page, as a real email link would.
  */
 export async function signIn(page: Page, email: string, next = '/account/'): Promise<void> {
   const started = Date.now()
@@ -85,9 +85,9 @@ export async function signIn(page: Page, email: string, next = '/account/'): Pro
   if (location.startsWith(base)) {
     await page.goto(location)
   } else {
-    const code = new URL(location).searchParams.get('code')
-    if (!code) throw new Error(`Magic link did not return a code: ${location}`)
-    await page.goto(`/auth/callback/?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`)
+    const hash = new URL(location).hash
+    if (!hash.includes('access_token=')) throw new Error(`Magic link did not return a session: ${location}`)
+    await page.goto(`/auth/confirm/?next=${encodeURIComponent(next)}${hash}`)
   }
   await page.waitForURL((u) => u.pathname.startsWith(next.split('?')[0]!), { timeout: 30_000 })
 }
