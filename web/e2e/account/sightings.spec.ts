@@ -143,7 +143,7 @@ test('the Premium member confirms it and gets the alert', async () => {
   await expect(page.getByTestId('needs-confirming').locator(`[data-sighting="${sightingId}"]`)).toHaveCount(0)
 
   if (process.env.E2E_SKIP_WORKERS === '1') return
-  execFileSync('uv', ['run', 'python', '-m', 'tcgworkers.main', '--once', 'drops_dispatch'], {
+  execFileSync('uv', ['run', '--frozen', 'python', '-m', 'tcgworkers.main', '--once', 'drops_dispatch'], {
     cwd: fileURLToPath(new URL('../../../workers/', import.meta.url)),
     env: { ...process.env, DATABASE_URL },
     stdio: 'inherit',

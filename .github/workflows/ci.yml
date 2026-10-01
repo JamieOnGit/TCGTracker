@@ -109,6 +109,9 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - uses: astral-sh/setup-uv@v6
+      - name: Install worker dependencies (the account e2e runs the alert dispatcher)
+        working-directory: workers
+        run: uv sync --frozen
       - name: Write local env
         working-directory: web
         run: |
