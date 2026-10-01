@@ -134,64 +134,84 @@ Sign in on the live site once, then in Supabase open **SQL Editor** → **New qu
 update public.profile_private set role = 'admin'
 where user_id = (select id from auth.users where email = 'jamieha1998@gmail.com');
 ```
-You'll need the keys under **Project Settings → API** (Project URL, anon key, service_role key) in Step 4.
+You'll need the Project URL, publishable key and secret key in Step 4 (where to find them: 4b).
 
 ## Step 4 · Cloudflare Workers: put the website online (≈25 min) ⏭ next
 
-### 4a · Upgrade to Workers Paid (US$5/month), required
-The site's code bundle is about 3.8 MB compressed, and Cloudflare's free Workers plan allows 3 MB. Workers Paid allows 10 MB and covers every Worker on your account.
-1. Cloudflare dashboard → **Workers & Pages** → **Plans** (or **Compute (Workers) → Plans**).
-2. Choose **Workers Paid** ($5/month) and add a card. Your domains stay on their Free plans; this is only the Workers plan.
+*Checked against Cloudflare's and Supabase's current docs on 1 Oct 2026.* Cloudflare's left-hand menu moves around from time to time. If a menu name below doesn't match what you see, use the **links** given (they jump straight to the right page), or type the page name into the dashboard's search box (**Ctrl+K** on Windows, **⌘K** on Mac).
 
-### 4b · Get the Supabase keys (keep them out of the chat)
-Supabase → **Project Settings → API Keys**. You need three values:
+### 4a · Turn on Workers Paid (US$5/month), strongly recommended
+**What changed:** Cloudflare removed the code-size limit on 4 Sep 2026, so the free plan *can* now host the site. Stay on Paid anyway:
+- **CPU time:** the free plan allows only **10 ms of CPU per page view**. Our pages are built on the server, and many take longer than that. On Free, visitors would randomly get "Error 1102: Worker exceeded resource limits". Paid allows 30 seconds.
+- **Daily cap:** Free stops serving the site after **100,000 requests a day**. Paid includes 10 million a month.
 
-| Value | Where |
-|---|---|
-| Project URL | **Project Settings → Data API** (looks like `https://abcdefghijklmnopqrst.supabase.co`) |
-| Public key | the **anon** key (on the **Legacy API keys** tab) or the **publishable** key (`sb_publishable_…`). Either works. |
-| Secret key | the **service_role** key (Legacy tab) or a **secret** key (`sb_secret_…`). Never share this one. |
+1. Open **https://dash.cloudflare.com/?to=/:account/workers/plans**. If that doesn't open the plans page: **Workers & Pages** in the left menu (sometimes inside **Compute** or **Compute & AI**), then **Plans** or **Upgrade**.
+2. Pick **Workers Paid** → **Purchase/Upgrade** → add a card. This is only the Workers plan; your domain stays on the Free plan.
 
-### 4c · Connect the repo to Cloudflare
-1. Cloudflare → **Workers & Pages → Create application → Import a repository** (or "Continue with GitHub"). Authorise Cloudflare for your GitHub account and choose **JamieOnGit/TCGTracker**.
-2. Fill in the form:
+### 4b · Get the Supabase values (keep them out of the chat)
+Supabase now has two kinds of keys. The old `anon` / `service_role` keys are being switched off by the end of 2026, so **use the new ones**.
+
+| What | Where in Supabase | Looks like |
+|---|---|---|
+| **Project URL** | Click **Connect** at the top of the project page. It's also under **Project Settings → Data API**. | `https://abcdefghijklmnopqrst.supabase.co` |
+| **Publishable key** (public, safe in the site) | **Project Settings → API Keys** → section **Publishable key** | `sb_publishable_…` |
+| **Secret key** (private, never share) | **Project Settings → API Keys** → section **Secret keys** → copy the `default` key (click the eye/copy icon), or **+ New secret key** if there isn't one | `sb_secret_…` |
+
+If the API Keys page only shows "Legacy API keys", click the **API Keys** tab next to it, or the **Create new API keys** button.
+
+### 4c · Create the Worker from GitHub
+1. Open **https://dash.cloudflare.com/?to=/:account/workers-and-pages/create** (or **Workers & Pages → Create application**).
+2. Next to **Import a repository**, click **Get started**. Choose your GitHub account. The first time, click **Connect GitHub**/**Add account**, allow the Cloudflare app on **JamieOnGit/TCGTracker**, then come back.
+3. Select **TCGTracker** from the list, then fill in the setup page:
 
    | Field | Value |
    |---|---|
-   | Project name | `tcgtracker`. It must match exactly (it's the name in `web/wrangler.jsonc`). |
-   | Production branch | `main` |
-   | Root directory (under Advanced / Build settings) | `web` |
-   | Build command | `npx opennextjs-cloudflare build` |
-   | Deploy command | `npx opennextjs-cloudflare deploy` |
+   | **Project name** (Worker name) | `tcgtracker`. It must be exactly this: Cloudflare fails the build if it doesn't match the name in `web/wrangler.jsonc`. |
+   | **Build command** | `npx opennextjs-cloudflare build` |
+   | **Deploy command** | `npx opennextjs-cloudflare deploy` |
+   | **Non-production branch deploy command** (if shown) | `npx opennextjs-cloudflare upload` |
+   | **Advanced settings → Path** (called **Root directory** on the settings page later) | `web` |
+   | **API token** (if shown) | leave as **Create new token**; Cloudflare makes it for you |
 
-3. **Build variables** (on the same screen under **Advanced settings → Build variables**, or later under **Settings → Build → Variables and secrets**). These are baked into the site when it builds:
+4. Still under **Advanced settings → Build variables**, click **Add variable** three times. These are read while the site is built:
 
-   | Name | Value |
+   | Variable name | Value |
    |---|---|
    | `NEXT_PUBLIC_SITE_URL` | `https://tcgtracker.com.au` |
    | `NEXT_PUBLIC_SUPABASE_URL` | the Project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the public (anon/publishable) key |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the **publishable** key (`sb_publishable_…`). The name still says "ANON"; that's expected, it's what the code reads. |
 
-4. Click **Deploy**. The first build takes 3–6 minutes. If it fails, copy the last 30 lines of the build log to Claude.
+5. Click **Deploy** (or **Save and Deploy**). The first build takes 3–6 minutes. Watch it under the Worker → **Deployments** (or **Builds**) tab. If it goes red, open the build, scroll to the bottom, and paste the last 30 lines to Claude. Those lines never contain your secret key.
 
-### 4d · Add the runtime secret
-After the first deploy: **Workers & Pages → tcgtracker → Settings → Variables and secrets → Add**:
-- Type **Secret**, name `SUPABASE_SERVICE_ROLE_KEY`, value = the secret (service_role / `sb_secret_…`) key. Save.
+**If you already created the Worker** in an earlier attempt, check it instead under **Workers & Pages → tcgtracker → Settings → Build**. The fields there are **Git repository**, **Git branch** (`main`), **Build command**, **Deploy command**, **Root directory** (`web`) and **Build variables and secrets**. Then click **Retry build** on the latest deployment.
 
-Add it as a **Secret**, not plain text: plain-text variables set in the dashboard are replaced on every deploy, while secrets are kept. Stripe, push and Sentry values come later (Steps 6, 8 and 11) and go in the same place as Secrets. `NEXT_PUBLIC_VAPID_PUBLIC_KEY` goes in the Build variables.
+### 4d · Add the secret key to the running site
+1. **Workers & Pages → tcgtracker → Settings**, then scroll to **Variables and Secrets** → **+ Add**.
+2. **Type:** `Secret`. **Variable name:** `SUPABASE_SERVICE_ROLE_KEY`. **Value:** the **secret** key (`sb_secret_…`).
+3. Click **Deploy** (bottom of the panel) to save it.
+
+Always choose type **Secret**. Plain-text variables added in the dashboard are wiped on the next deploy (the site's config file owns those); secrets are kept. Later steps add more secrets here (Stripe, push and Sentry in Steps 6, 8 and 11). Anything starting with `NEXT_PUBLIC_` goes in **Settings → Build → Build variables and secrets** instead, followed by a new build.
 
 ### 4e · Connect the domain
-1. **Workers & Pages → tcgtracker → Settings → Domains & Routes → Add → Custom domain** → `tcgtracker.com.au` → **Add domain**. Cloudflare creates the DNS record and the certificate itself (allow a few minutes).
-2. **www → main address:**
-   - **DNS → Records → Add record:** Type `AAAA`, Name `www`, IPv6 `100::`, Proxy **on** (orange cloud). This is a placeholder address so Cloudflare can catch `www` traffic.
-   - **Rules → Redirect Rules → Create rule:** "Redirect from WWW to root" template, or a custom rule: when hostname equals `www.tcgtracker.com.au`, dynamic redirect to `concat("https://tcgtracker.com.au", http.request.uri.path)`, status **301**, preserve query string.
+1. **Workers & Pages → tcgtracker → Settings → Domains & Routes → + Add → Custom domain**. Type `tcgtracker.com.au` and click **Add domain** (or **Add Custom Domain**). Cloudflare creates the DNS record and the security certificate itself. It shows "Initializing", then "Active" within about 5–15 minutes.
+   - If it says a DNS record already exists: open **DNS → Records** for tcgtracker.com.au, delete any `A`, `AAAA` or `CNAME` record named `tcgtracker.com.au` / `@` (but **not** MX or TXT records), then try again.
+2. **Send www to the main address:**
+   1. **DNS → Records → + Add record**: Type `AAAA`, Name `www`, IPv6 address `100::`, Proxy status **Proxied** (orange cloud) → **Save**. This placeholder lets Cloudflare catch `www` visits.
+   2. Open the domain's **Rules → Overview** → **+ Create rule** → **Redirect Rule**.
+   3. If a template called **Redirect from WWW to root** (or similar) is offered, choose it and **Deploy**. Otherwise fill in:
+      - **Rule name:** `www to root`
+      - **If incoming requests match…** → **Wildcard pattern**. **Request URL:** `https://www.tcgtracker.com.au/*`
+      - **Then… Target URL:** `https://tcgtracker.com.au/${1}` · **Status code:** `301` · tick **Preserve query string**
+      - Click **Deploy**.
 
 ### 4f · Check it
-1. Open **https://tcgtracker.com.au**. You should see the TCGTracker homepage with the market table. It'll be empty until prices are imported (Step 9) and the catalogue is loaded.
+1. Open **https://tcgtracker.com.au**. You should see the TCGTracker homepage with the market table. It stays mostly empty until prices are imported (Step 9) and the catalogue is loaded.
 2. **https://www.tcgtracker.com.au** should jump to `https://tcgtracker.com.au`.
 3. Click **Sign in**, enter your email, and open the link **on the same device**. Supabase's built-in email sender allows only a few emails an hour until Step 5.
-4. Then do **3g** (make yourself admin), and open **https://tcgtracker.com.au/admin/**.
+4. Then do **3g** (make yourself admin) and open **https://tcgtracker.com.au/admin/**.
 5. ✉️ Tell Claude: **"site is live"**. Claude runs the SEO and speed checks against the real domain.
+
+**Stuck on a screen?** Send Claude a screenshot (cover any key values first) and say which sub-step you're on.
 
 ## Step 5 · Resend: alert emails (≈15 min)
 1. Go to **https://resend.com** → **Domains → Add domain** → `tcgtracker.com.au`.
@@ -348,7 +368,7 @@ These give reliable stock and price data **with permission**, which beats any wo
 | Service | Cost |
 |---|---|
 | Domain (VentraIP) | ~A$20–30/yr |
-| Cloudflare Workers Paid (site hosting) | US$5/mo (needed from day one: the site is over the free plan's 3 MB limit) |
+| Cloudflare Workers Paid (site hosting) | US$5/mo (strongly recommended from day one: the free plan's 10 ms CPU limit per page view is too tight for server-rendered pages) |
 | Supabase | Free → US$25/mo once there are real users (daily backups) |
 | Fly.io (Sydney) | ~US$2–5/mo |
 | Resend | Free (3,000 emails/mo) → US$20/mo |
