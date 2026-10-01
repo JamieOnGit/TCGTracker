@@ -30,6 +30,8 @@ It isn't online yet. That needs the accounts below, which only you can open.
 | 3g | Make yourself admin | After Step 4 |
 | **4** | **Put the website online (Cloudflare Workers)** | ⏭ **Do next** |
 | 5 onwards | Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
+| 7b | Check the 42-store live stock monitor from Sydney (after Fly.io) | ☐ New: see 7b |
+| 13.0 | Email specialist stores the monitor can't read yet (template ready) | ☐ New: see Step 13 |
 
 ---
 

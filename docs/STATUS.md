@@ -59,6 +59,22 @@ Owner decisions applied (2026-09-28): brand **TCGTracker**, domain **tcgtracker.
 | Guides: 8 Australian evergreen guides | ✅ | `/guides/` |
 | Giveaways | Not built: chance-based giveaways are trade-promotion lotteries (ACT/SA permits) | |
 
+## Live stock monitor (added 1 Oct 2026, CardWatch-style)
+| Item | Status | Where |
+|---|---|---|
+| Store registry: 67 AU stores surveyed; **42 monitored** (39 Shopify + 2 WooCommerce open catalogue feeds + JB Hi-Fi) | ✅ | `docs/research/09-retailer-registry.*`, migration `20261001000200` |
+| Generic Shopify and WooCommerce monitors, configured per store in admin (collections, categories, keywords) | ✅ fixture + live tested | `workers/tcgworkers/drops/adapters/{shopify,woocommerce,catalogue}.py` |
+| Honest-bot rules: robots.txt and Crawl-delay, `TCGTrackerBot` user agent, back-off on 429/403, blocked stores recorded, never worked around | ✅ | `/about/bot/` |
+| Shared, self-tuning request budget across all Shopify shops (Shopify's edge limits per IP) | ✅ tested | `http.SharedGate` |
+| Product matching to sealed products (set + type + language, price tie-breaker, new sets after a series name), with orphan clean-up | ✅ 65+ real titles | `drops/products.py` |
+| One alert per new product (in stock > pre-order > listed); price-drop alerts at ≥5% (editable) | ✅ | `drops/state.py` |
+| "Notify me" product watches (beat filters, keep tier timing), public watch counts | ✅ SQL tested | `product_watches` |
+| Activity feed chips with counts (back in stock / new / pre-order / price drop / sightings), sort, game filter, load more | ✅ e2e | `/drops/` |
+| In stock now, product pages (Product + AggregateOffer JSON-LD), product indexes, store coverage, retailer in-stock lists | ✅ e2e | `/drops/in-stock/`, `/products/…`, `/drops/stores/` |
+| Admin: add a store, edit platform/config/blocked reason, probe CLI | ✅ | `/admin/drops/`, `python -m tcgworkers.drops.probe` |
+| Live run (1 Oct 2026, from a shared cloud IP) | 🟡 WooCommerce store: 211 products ✅. Toys"R"Us: products, matching and pages ✅. Other Shopify shops: Shopify allowed only a few requests from that shared IP, and the monitor backed off as designed. **To verify from the Sydney server (Step 7b).** | |
+| Big chains that block automated access (Kmart, BIG W, EB Games, ZiNG, Mr Toys, Toymate, Amazon) | ❌ covered by member sightings; retest from Sydney; outreach template | |
+
 ## SEO (Australia)
 Canonical, lowercase, trailing-slash URLs with 301s in middleware; redirects table without chains; filter pages `noindex,follow`; self-canonical pagination; `en-AU` + AUD everywhere; titles say "in AUD"; JSON-LD (Organization, WebSite, Breadcrumbs, Product/Offer, Dataset, FAQPage on Premium); split sitemaps; robots.txt; llms.txt. ✅ Crawl check: 400 pages, 124 sitemap URLs, no errors. Plan in `docs/SEO-STRATEGY-AU.md`.
 

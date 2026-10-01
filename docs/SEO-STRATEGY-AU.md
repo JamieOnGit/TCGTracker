@@ -26,6 +26,11 @@ Everything is lowercase and hyphenated with a trailing slash; the other form 301
 | `/drops/{state}/` | Per state, e.g. `/drops/vic/` (state codes never collide with retailer slugs) | same rule | drops |
 | `/drops/scouts/` | Scout leaderboard | yes | drops |
 | `/deals/` | eBay deals under market value | yes | static |
+| `/drops/in-stock/` | Products in stock or on pre-order right now (store/game facets noindex) | yes | drops |
+| `/drops/stores/` | Store coverage: which stores we watch and how | yes | drops |
+| `/products/`, `/products/{game}/` | Sealed product indexes (noindex while empty) | yes | products |
+| `/products/{game}/{lang}/{slug}/` | One page per sealed product: availability and price at every store, RRP, history, Notify me. Product + AggregateOffer JSON-LD. Noindex while no store lists it. | yes | products |
+| `/about/bot/` | What TCGTrackerBot reads and how stores opt out | yes | static |
 | `/releases/` | Release calendar, all games | yes | releases |
 | `/releases/{game}/` | Release calendar per game (EN & JP), incl. "Earlier releases" | yes | releases |
 | `/releases/{game}/{slug}/` | One release. **Past releases stay indexable** (people search "X release date" for months) | yes | releases (lastmod = `updated_at`) |
@@ -89,6 +94,13 @@ Three pillars, each a hub with clusters that link up, across and down.
 3. **Buying and selling between collectors**: hubs `/marketplace/` and `/deals/`. Clusters: card marketplace pages, listings, sellers. Supporting guides: selling safely, spotting fakes, grading.
 
 `/guides/` is the cross-pillar hub: every guide links down into at least two data pages and across to one to three other guides.
+
+### Product pages: the "where to buy X in Australia" cluster
+Every sealed product that any watched store lists gets its own canonical page (`/products/pokemon/en/chaos-rising-booster-box/`). These pages target high-intent searches such as "chaos rising booster box australia", "prismatic evolutions etb in stock" and "one piece op-09 booster box price australia":
+- **Fresh by design:** availability and AUD prices update every few minutes, and `lastmod` in the products sitemap follows the last stock change.
+- **Rich results:** Product + AggregateOffer (low and high price, offer count, availability) can earn price and stock snippets.
+- **Unique:** one page per product × language. JP and EN are separate pages with no hreflang, matching the card pages. Duplicate listings from many stores collapse into the one page.
+- **Linked:** set pages → their products; release pages → their products; drops feed rows and in-stock cards → product pages; product pages → set, release and retailer pages.
 
 ## 6. Internal-linking rules
 1. **Build every href with `urls.ts`** (canonical, trailing slash). Never link to a URL that redirects; the CI crawl fails on it.
