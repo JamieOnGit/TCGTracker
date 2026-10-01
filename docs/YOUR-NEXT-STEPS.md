@@ -2,6 +2,8 @@
 
 Last updated 30 September 2026 (evening). Work top to bottom. Each step says **where to click**, **what to copy where**, and **what to tell Claude**.
 
+> Claude updates this guide as you go. Updates arrive as small "Docs:" pull requests in the repo: merge them once their checks are green, and the latest version is always on `main`.
+
 > **Never paste passwords or secret keys into the chat.** Put them straight into Cloudflare, Fly.io or Supabase as described below. Claude only needs to hear "done".
 
 **Where things stand:** the site is built and tested on Claude's side. It covers:
@@ -21,12 +23,13 @@ It isn't online yet. That needs the accounts below, which only you can open.
 | 1 | GitHub repo `JamieOnGit/TCGTracker` | ✅ Done |
 | 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Active. Finish the two SSL settings (2.8) if you haven't. |
 | 3a | Supabase project `tcgtracker` (Sydney) | ✅ Done |
-| 3b | Supabase sign-in URLs | ☐ Confirm Site URL and Redirect URL are set |
+| 3b | Supabase sign-in URLs | ☐ Confirm Site URL and Redirect URL are set (Authentication → URL Configuration) |
 | 3c–3d | Access token, Project ID and DB password saved as GitHub secrets | ✅ Done |
-| **3e** | **Merge pull request #1** | ⏭ **Do next.** All checks are green. |
-| **3f** | **Run "Deploy database"** | ⏭ Then tell Claude "database deployed" |
+| 3e | Merge pull request #1 | ✅ Merged |
+| 3f | Database deployed to Supabase | ✅ Done (tables visible in Table Editor) |
 | 3g | Make yourself admin | After Step 4 |
-| 4 onwards | Cloudflare site, Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
+| **4** | **Put the website online (Cloudflare Workers)** | ⏭ **Do next** |
+| 5 onwards | Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
 
 ---
 
@@ -41,19 +44,38 @@ The code lives in **https://github.com/JamieOnGit/TCGTracker**. Claude pushed it
 3. VentraIP emails you to confirm the registrant details. Click the link, or the .au registry can suspend the domain.
 4. At **https://dash.cloudflare.com**, go to **Add a site → Connect a domain**. (Not "Transfer", since the domain stays registered at VentraIP, and not "Buy".)
    - Enter `tcgtracker.com.au` and keep **Quick scan for DNS records**.
-   - AI crawlers: choose **Do not block**. Leave Cloudflare's managed robots.txt **off**, because the site serves its own robots.txt and llms.txt.
+   - **Configure AI training & search policies** (what you chose):
+     - *I monetize pages that serve ads*: **unticked**. eBay affiliate links aren't display ads.
+     - *Search*: **Allow**, so Google and Bing can crawl.
+     - *Agent*: **Allow**, so ChatGPT, Perplexity, Claude and others can read and cite your prices.
+     - *Training*: **Allow**. It matches the site's open robots.txt; switch to Block later if you prefer.
+     - *Enable Bot Preference Sync*: **OFF**. Otherwise it would insert Cloudflare's rules at the top of the site's own robots.txt, which blocks `/account/`, `/admin/` and other private pages.
+   - *Import DNS records*: **Automatic**.
    - Plan: **Free**.
-   - Review DNS records: delete any VentraIP parking `A` records for `tcgtracker.com.au` or `www`. An empty list is fine, because Step 4 (Workers) and Step 5 (Resend) add the records the site needs.
-   - Copy the **two nameservers** Cloudflare shows.
+   - **Review DNS records:** delete the two VentraIP parking `A` records, for `tcgtracker.com.au` and `www`, both pointing to `103.42.108.46` (done). Cloudflare warns that the domain will have no web address. That's expected: Step 4 adds the right records, and Step 5 adds Resend's. Ignore the "add an MX record" banner too; receiving email comes later.
+   - Click **Continue to activation**, then copy the **two nameservers** Cloudflare shows. Yours are `grannbo.ns.cloudflare.com` and `jaime.ns.cloudflare.com`. These are **not** the DNS records from the previous screen.
 5. In VIPcontrol, turn **DNSSEC off** for the domain if it's on. Otherwise the domain can stop resolving while nameservers switch. You can turn it back on later from Cloudflare.
-6. Log in to **VIPcontrol** (https://vip.ventraip.com.au) → **Domain Names** → click `tcgtracker.com.au` → **Nameservers**. Choose **custom nameservers**, replace VentraIP's nameservers with the two from Cloudflare, and save. Remove any extra nameserver rows, so only Cloudflare's two are left.
-7. In Cloudflare, click **Check nameservers now**, then wait for the email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours.
+6. Log in to **VIPcontrol** (https://vip.ventraip.com.au) → **Domain Names** → click `tcgtracker.com.au` → the **Custom Nameservers** tab (not "DNS Hosting"; editing NS records there does nothing). Choose **custom nameservers**, replace VentraIP's nameservers with the two from Cloudflare, and save. Remove any extra nameserver rows, so only Cloudflare's two are left.
+7. In Cloudflare, click **Check nameservers now**, then wait for the email "tcgtracker.com.au is now active". It usually takes under an hour, and .au domains can take up to 24 hours. Until then, Cloudflare's domain list shows **"Invalid nameservers"**. That's normal while the change spreads; it switched to **Active** for you the same day.
 8. In Cloudflare, go to **SSL/TLS** → mode **Full (strict)**. Then **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
 
 ## Step 3 · Supabase: database, sign-in and photos (≈20 min)
 
 ### 3a · Create the project ✅ done
-Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password saved in your password manager, and **Enable Data API** and **Automatically expose new tables** both ticked.
+What you chose, for reference:
+
+| Field | Setting |
+|---|---|
+| Organization | `tcgtracker` (Free) |
+| GitHub (optional) | **Skipped.** Database changes are applied by the "Deploy database" workflow instead. |
+| Project name | `tcgtracker` |
+| Database password | **Generate a password**, saved in your password manager, never pasted into chat |
+| Region | **Oceania (Sydney)** |
+| Enable Data API | **Ticked** (the website uses it) |
+| Automatically expose new tables | **Ticked**, despite Supabase's advice. The database setup relies on it, and every table has row-level security (a test fails if one doesn't). |
+| Enable automatic RLS | Unticked. The database setup enables RLS itself. |
+
+Email templates (the Magic link) can't be edited until custom SMTP is on. That's in Step 5.
 
 ### 3b · Sign-in address settings (2 min)
 1. In the Supabase dashboard, open the **tcgtracker** project.
@@ -66,6 +88,7 @@ Name `tcgtracker`, region **Oceania (Sydney)**, a generated database password sa
 These let GitHub load the database tables into Supabase for you. Don't paste them into the chat.
 1. **Project ID:** Supabase → **Project Settings** (gear icon, bottom of the sidebar) → **General** → copy **Project ID**. It's a 20-letter code like `abcdefghijklmnopqrst`.
 2. **Access token:** click your avatar (top right) → **Account preferences** → **Access Tokens** (or go to https://supabase.com/dashboard/account/tokens) → **Generate new token**. Name it `github-deploy`, then copy the token. It's shown once only.
+   - *Expires in*: 90 days if it's offered (7 days is the default). You'll reuse this token whenever Claude adds database changes.
    - What you chose: resource access **Project** (tcgtracker only), preset **Full access**, with **Infrastructure and delivery** and **Account and organization** set to **None**.
    - If the deploy's "Link the project" step ever fails with *forbidden*, make a new token with **Projects (account-wide) → Read** added and update the secret.
    - When the token expires, the deploy fails with an authorisation error. Generate a new one and update `SUPABASE_ACCESS_TOKEN` in GitHub.
@@ -73,7 +96,7 @@ These let GitHub load the database tables into Supabase for you. Don't paste the
 
 ### 3d · Add them to GitHub as secrets ✅ done
 1. Open **https://github.com/JamieOnGit/TCGTracker/settings/secrets/actions**. That's the repo → **Settings** → **Secrets and variables** → **Actions**.
-2. Click **New repository secret** three times, one per value. The names must match exactly:
+2. Click **New repository secret** three times, one per value. The names must match exactly, and paste each value with no spaces or quotes around it:
 
    | Name | Secret |
    |---|---|
@@ -81,12 +104,12 @@ These let GitHub load the database tables into Supabase for you. Don't paste the
    | `SUPABASE_ACCESS_TOKEN` | the access token |
    | `SUPABASE_DB_PASSWORD` | the database password |
 
-### 3e · Merge the code into main (1 min) ⏭ next
+### 3e · Merge the code into main ✅ done
 The "Deploy database" button only appears once the code is on `main`.
 1. Open **https://github.com/JamieOnGit/TCGTracker/pull/1**.
 2. Click **Ready for review**, then **Merge pull request** → **Confirm merge**. All checks are green.
 
-### 3f · Load the database (3 min)
+### 3f · Load the database ✅ done
 1. Open **https://github.com/JamieOnGit/TCGTracker/actions** → click **Deploy database** in the left list.
 2. Click **Run workflow** (right side). Keep branch `main`, type `deploy` in the box, then click the green **Run workflow**.
 3. Wait for the green tick (about a minute). Click into the run to see each step. "Apply migrations" lists every table set it created.
@@ -101,22 +124,62 @@ where user_id = (select id from auth.users where email = 'jamieha1998@gmail.com'
 ```
 You'll need the keys under **Project Settings → API** (Project URL, anon key, service_role key) in Step 4.
 
-## Step 4 · Cloudflare Workers: the website itself (≈15 min)
-1. In Cloudflare, go to **Workers & Pages → Create → Import a repository** → connect GitHub → pick **TCGTracker**.
-2. Set Root directory to `web`, Build command to `npm ci && npx opennextjs-cloudflare build`, and Deploy command to `npx opennextjs-cloudflare deploy`.
-3. Under **Settings → Variables and secrets**, add these. Mark every key as a **Secret**. Also add every `NEXT_PUBLIC_…` value as a **Build variable**, because those are baked in when the site builds.
+## Step 4 · Cloudflare Workers: put the website online (≈25 min) ⏭ next
+
+### 4a · Upgrade to Workers Paid (US$5/month), required
+The site's code bundle is about 3.8 MB compressed, and Cloudflare's free Workers plan allows 3 MB. Workers Paid allows 10 MB and covers every Worker on your account.
+1. Cloudflare dashboard → **Workers & Pages** → **Plans** (or **Compute (Workers) → Plans**).
+2. Choose **Workers Paid** ($5/month) and add a card. Your domains stay on their Free plans; this is only the Workers plan.
+
+### 4b · Get the Supabase keys (keep them out of the chat)
+Supabase → **Project Settings → API Keys**. You need three values:
+
+| Value | Where |
+|---|---|
+| Project URL | **Project Settings → Data API** (looks like `https://abcdefghijklmnopqrst.supabase.co`) |
+| Public key | the **anon** key (on the **Legacy API keys** tab) or the **publishable** key (`sb_publishable_…`). Either works. |
+| Secret key | the **service_role** key (Legacy tab) or a **secret** key (`sb_secret_…`). Never share this one. |
+
+### 4c · Connect the repo to Cloudflare
+1. Cloudflare → **Workers & Pages → Create application → Import a repository** (or "Continue with GitHub"). Authorise Cloudflare for your GitHub account and choose **JamieOnGit/TCGTracker**.
+2. Fill in the form:
+
+   | Field | Value |
+   |---|---|
+   | Project name | `tcgtracker`. It must match exactly (it's the name in `web/wrangler.jsonc`). |
+   | Production branch | `main` |
+   | Root directory (under Advanced / Build settings) | `web` |
+   | Build command | `npx opennextjs-cloudflare build` |
+   | Deploy command | `npx opennextjs-cloudflare deploy` |
+
+3. **Build variables** (on the same screen under **Advanced settings → Build variables**, or later under **Settings → Build → Variables and secrets**). These are baked into the site when it builds:
 
    | Name | Value |
    |---|---|
    | `NEXT_PUBLIC_SITE_URL` | `https://tcgtracker.com.au` |
-   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role key (Secret) |
-   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | from Step 6 |
-   | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PREMIUM_MONTHLY` | from Step 8 (Secret) |
-   | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | from Step 11 |
-4. Under **Settings → Domains & Routes → Add → Custom domain**, enter `tcgtracker.com.au`.
-5. Later, add a **Redirect Rule**: `www.tcgtracker.com.au/*` → `https://tcgtracker.com.au/$1` (301).
+   | `NEXT_PUBLIC_SUPABASE_URL` | the Project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the public (anon/publishable) key |
+
+4. Click **Deploy**. The first build takes 3–6 minutes. If it fails, copy the last 30 lines of the build log to Claude.
+
+### 4d · Add the runtime secret
+After the first deploy: **Workers & Pages → tcgtracker → Settings → Variables and secrets → Add**:
+- Type **Secret**, name `SUPABASE_SERVICE_ROLE_KEY`, value = the secret (service_role / `sb_secret_…`) key. Save.
+
+Add it as a **Secret**, not plain text: plain-text variables set in the dashboard are replaced on every deploy, while secrets are kept. Stripe, push and Sentry values come later (Steps 6, 8 and 11) and go in the same place as Secrets. `NEXT_PUBLIC_VAPID_PUBLIC_KEY` goes in the Build variables.
+
+### 4e · Connect the domain
+1. **Workers & Pages → tcgtracker → Settings → Domains & Routes → Add → Custom domain** → `tcgtracker.com.au` → **Add domain**. Cloudflare creates the DNS record and the certificate itself (allow a few minutes).
+2. **www → main address:**
+   - **DNS → Records → Add record:** Type `AAAA`, Name `www`, IPv6 `100::`, Proxy **on** (orange cloud). This is a placeholder address so Cloudflare can catch `www` traffic.
+   - **Rules → Redirect Rules → Create rule:** "Redirect from WWW to root" template, or a custom rule: when hostname equals `www.tcgtracker.com.au`, dynamic redirect to `concat("https://tcgtracker.com.au", http.request.uri.path)`, status **301**, preserve query string.
+
+### 4f · Check it
+1. Open **https://tcgtracker.com.au**. You should see the TCGTracker homepage with the market table. It'll be empty until prices are imported (Step 9) and the catalogue is loaded.
+2. **https://www.tcgtracker.com.au** should jump to `https://tcgtracker.com.au`.
+3. Click **Sign in**, enter your email, and open the link **on the same device**. Supabase's built-in email sender allows only a few emails an hour until Step 5.
+4. Then do **3g** (make yourself admin), and open **https://tcgtracker.com.au/admin/**.
+5. ✉️ Tell Claude: **"site is live"**. Claude runs the SEO and speed checks against the real domain.
 
 ## Step 5 · Resend: alert emails (≈15 min)
 1. Go to **https://resend.com** → **Domains → Add domain** → `tcgtracker.com.au`.
@@ -204,7 +267,7 @@ This powers **/deals/**: graded cards listed on eBay Australia well under market
 ## Step 9c · Card images: decide, then Scrydex (≈10 min) *new*
 Until this is done, cards show a styled placeholder. Neither The Pokémon Company nor Bandai licenses card images to other sites. Most TCG sites show scans anyway, with a "not affiliated" notice (see `docs/research/03-catalogue-sources.md` §4).
 1. Decide, ideally with your lawyer in Step 14, whether to show card scans.
-2. If yes: subscribe to **Scrydex** (https://scrydex.com, from US$29/mo). It covers Pokémon EN + JP and One Piece EN, and its terms allow showing and self-hosting its images.
+2. If yes: subscribe to **Scrydex** (https://scrydex.com, from US$29/mo for 5,000 requests a month; about US$99/mo for the next tier if you outgrow it). It covers Pokémon EN + JP and One Piece EN, and its terms allow showing and self-hosting its images.
 3. Run `fly secrets set SCRYDEX_API_KEY=... SCRYDEX_TEAM_ID=...` and tell Claude **"Scrydex ready"**. Claude then builds the image import: copied once to our own storage as WebP, with an admin on/off switch per game and a takedown process.
 4. One Piece Japanese has no licensable source. It keeps the placeholder plus members' own photos.
 5. Sealed product images: use your affiliate feeds once approved (Step 13). They include images you're allowed to use.
@@ -273,7 +336,7 @@ These give reliable stock and price data **with permission**, which beats any wo
 | Service | Cost |
 |---|---|
 | Domain (VentraIP) | ~A$20–30/yr |
-| Cloudflare hosting | Free → US$5/mo as traffic grows |
+| Cloudflare Workers Paid (site hosting) | US$5/mo (needed from day one: the site is over the free plan's 3 MB limit) |
 | Supabase | Free → US$25/mo once there are real users (daily backups) |
 | Fly.io (Sydney) | ~US$2–5/mo |
 | Resend | Free (3,000 emails/mo) → US$20/mo |
