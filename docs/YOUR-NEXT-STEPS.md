@@ -27,8 +27,10 @@ It isn't online yet. That needs the accounts below, which only you can open.
 | 3c–3d | Access token, Project ID and DB password saved as GitHub secrets | ✅ Done |
 | 3e | Merge pull request #1 | ✅ Merged |
 | 3f | Database deployed to Supabase | ✅ Done (tables visible in Table Editor) |
+| — | PR #3 (live stock monitor) merged; PR #2 closed (included in #3) | ✅ Done |
+| **3f-2** | **Run Deploy database again for the stock-monitor update** | ⏭ **Do now (1 min)** |
 | 3g | Make yourself admin | After Step 4 |
-| **4** | **Put the website online (Cloudflare Workers)** | ⏭ **Do next** |
+| **4** | **Put the website online (Cloudflare Workers)** | ⏭ **Then this** |
 | 5 onwards | Resend, push keys, Fly.io, Stripe, PriceCharting, eBay, images… | ☐ Not started |
 | 7b | Check the 42-store live stock monitor from Sydney (after Fly.io) | ☐ New: see 7b |
 | 13.0 | Email specialist stores the monitor can't read yet (template ready) | ☐ New: see Step 13 |
@@ -117,6 +119,14 @@ The "Deploy database" button only appears once the code is on `main`.
 3. Wait for the green tick (about a minute). Click into the run to see each step. "Apply migrations" lists every table set it created.
 4. Check in Supabase: **Table Editor** should now show tables like `cards`, `listings`, `sightings` and `release_events`. **Storage** should show the buckets `listing-images`, `message-attachments` and `sighting-photos`.
 5. ✉️ Tell Claude: **"database deployed"**. If the run is red, tell Claude and it will read the log.
+
+### 3f-2 · Load the stock-monitor update (do this now, ≈1 min)
+PR #3 (live stock monitor) is merged ✅. It adds new tables and the list of 67 Australian stores, so run the same workflow once more:
+1. **https://github.com/JamieOnGit/TCGTracker/actions** → **Deploy database** → **Run workflow** → branch `main`, type `deploy` → **Run workflow**.
+2. Wait for the green tick. In Supabase **Table Editor**, `retailers` should now list the stores and a new `product_watches` table appears.
+3. ✉️ Tell Claude: **"stock monitor deployed"**.
+
+Rule from now on: **whenever a PR that changes `supabase/migrations/` is merged, run Deploy database again.** Claude will remind you each time.
 
 ### 3g · Make yourself admin (after Step 4, once the site is live)
 Sign in on the live site once, then in Supabase open **SQL Editor** → **New query**, paste this and click **Run**:
