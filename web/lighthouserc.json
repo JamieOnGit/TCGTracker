@@ -11,7 +11,7 @@
         "http://localhost:3300/marketplace/listing/100001-charizard-ex-199-en-psa-10/",
         "http://localhost:3300/drops/"
       ],
-      "numberOfRuns": 1,
+      "numberOfRuns": 3,
       "settings": { "preset": "desktop" }
     },
     "assert": {
