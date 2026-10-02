@@ -144,8 +144,13 @@ export function supabaseRepository(): Repository {
       }
       const { data, count } = await q.order(sortCol, { ascending: query.order === 'asc', nullsFirst: false }).range(from, from + query.pageSize - 1)
       const rows = data ?? []
-      const cards = await this.getCardsByIds(rows.map((r: any) => r.card_id))
+      const ids = rows.map((r: any) => r.card_id)
+      const [cards, { data: psa10 }] = await Promise.all([
+        this.getCardsByIds(ids),
+        ids.length ? sb.from('floor_prices').select('card_id,floor_aud').eq('grade_key', 'psa-10').in('card_id', ids) : Promise.resolve({ data: [] as any[] }),
+      ])
       const byId = new Map(cards.map((c) => [c.id, c]))
+      const psa10By = new Map((psa10 ?? []).map((p: any) => [p.card_id, Number(p.floor_aud)]))
       const out: MarketRow[] = rows
         .filter((r: any) => byId.has(r.card_id))
         .map((r: any, i: number) => ({
@@ -156,6 +161,7 @@ export function supabaseRepository(): Repository {
           floorAud: Number(r.floor_aud),
           basis: r.basis,
           marketCapAud: r.market_cap_aud === null ? null : Number(r.market_cap_aud),
+          psa10Aud: r.grade_key === 'psa-10' ? Number(r.floor_aud) : (psa10By.get(r.card_id) ?? null),
           spark7d: (r.spark_7d ?? []).map(Number),
           // Value change (the floor) — the honest measure while population is missing.
           change1d: pct(Number(r.floor_aud), r.floor_1d_ago && Number(r.floor_1d_ago)),

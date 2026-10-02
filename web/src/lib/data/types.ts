@@ -60,6 +60,7 @@ export interface MarketRow {
   floorAud: number
   basis: FloorBasis
   marketCapAud: number | null
+  psa10Aud: number | null // the same card's PSA 10 value, for the column beside the market price
   spark7d: number[]
   change1d: number | null
   change7d: number | null

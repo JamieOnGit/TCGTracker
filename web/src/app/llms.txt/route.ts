@@ -10,7 +10,7 @@ export function GET() {
 
 > Australian market data, marketplace and retail drop alerts for graded Pokémon TCG and One Piece Card Game cards. Japanese (JP) and English (EN) printings are tracked as separate cards. All prices are in Australian dollars (AUD).
 
-Market cap = graded population × floor price, per card and grade (PSA 10 by default). Floor = lowest current ask for that exact card, language and grade (our marketplace first, then an approved external source), with outlier rules and a last-sale fallback. Full definitions: ${u('/methodology/')}
+Rankings use each card's market price: the ungraded Near Mint card's recent-sales price (JustTCG), in AUD, with PSA 10 values alongside. Market cap = graded population × floor price, per card and PSA grade. Floor = lowest current ask for that exact card, language and grade (our marketplace first, then an approved external source), with outlier rules and a last-sale fallback. Full definitions: ${u('/methodology/')}
 
 ## Key pages
 - [Market cap rankings](${u('/')}): all cards ranked by PSA 10 market cap

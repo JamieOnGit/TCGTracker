@@ -329,7 +329,9 @@ def refresh_justtcg(
             try:
                 history = window if backfill else None
                 cards = list(client.cards(game.api_id, s["id"], history=history))
-                raw_cards = list(client.cards(game.api_id, s["id"], history=history, graded=False)) if raw else []
+                raw_cards = (
+                    list(client.cards(game.api_id, s["id"], history=history, graded=False)) if raw else []
+                )
             except BudgetExhausted:
                 stopped = "request budget used"
                 break

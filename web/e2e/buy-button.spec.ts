@@ -8,7 +8,7 @@ test('home is server-rendered with ranked rows in the initial HTML', async ({ re
 })
 
 test('Buy button routes to the marketplace listings for the same card and grade, cheapest first', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?grade=psa-10')
   const row = page.locator('tr[data-card-id="card-pokemon-en-199"][data-grade="psa-10"]')
   await row.locator('[data-buy="listings"]').click()
   await expect(page).toHaveURL(/\/marketplace\/pokemon\/en\/151\/199-charizard-ex\/\?sort=price-asc&grade=psa-10$/)
@@ -19,7 +19,7 @@ test('Buy button routes to the marketplace listings for the same card and grade,
 })
 
 test('a card with no listings offers eBay, Alert me and Sell', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?grade=psa-10')
   const row = page.locator('tr[data-card-id="card-pokemon-jp-201"][data-grade="psa-10"]')
   const cell = row.locator('[data-buy="none"]')
   await expect(cell.getByRole('link', { name: 'Sell' })).toHaveAttribute('href', /card=card-pokemon-jp-201/)

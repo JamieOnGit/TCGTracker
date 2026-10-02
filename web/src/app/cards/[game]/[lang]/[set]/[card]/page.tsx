@@ -11,7 +11,7 @@ import { ListingTile } from '@/components/ListingTile'
 import { CardImage, Eyebrow, SegLinks, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
-import { gradeOptions, graderOf, isGradeKey, sortGradeKeys } from '@/lib/domain/grades'
+import { gradeOptions, graderOf, isPriceKey, sortGradeKeys } from '@/lib/domain/grades'
 import { EBAY_DISCLOSURE, ebaySearchUrl } from '@/lib/domain/ebay'
 import { cardProduct } from '@/lib/seo/jsonld'
 import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
@@ -31,10 +31,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   if (!card) return {}
   const grades = await getRepo().cardGrades(card.id)
   const psa10 = grades.find((g) => g.gradeKey === 'psa-10')
+  const raw = grades.find((g) => g.gradeKey === 'raw')
   return buildMetadata({
     path: cardPath(card),
     title: titles.card({ name: card.name, number: card.number, printedTotal: card.printedTotal, setName: card.setName, lang: card.lang }),
-    description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'}) PSA 10 value ${fmtAud(psa10?.floorAud)} in Australian dollars${psa10?.population ? `, PSA 10 population ${fmtInt(psa10.population)}` : ''}. Price history, grades, and copies for sale in Australia.`,
+    description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'})${raw?.floorAud ? ` market price ${fmtAud(raw.floorAud)},` : ''} PSA 10 value ${fmtAud(psa10?.floorAud)} in Australian dollars${psa10?.population ? `, PSA 10 population ${fmtInt(psa10.population)}` : ''}. Price history, grades, and copies for sale in Australia.`,
     searchParams: await searchParams,
   })
 }
@@ -46,7 +47,7 @@ export default async function CardPage({ params, searchParams }: Props) {
   const repo = getRepo()
   const rules = await repo.getRules()
   // Any PSA/BGS/CGC/SGC grade can be asked for; ?grade= pages are noindex facets.
-  const gradeKey = isGradeKey(sp.grade) ? sp.grade : rules.primaryGrade
+  const gradeKey = isPriceKey(sp.grade) ? sp.grade : rules.primaryGrade
   const [gradeRows, stats, active, closed, news, related, counterpart, history] = await Promise.all([
     repo.cardGrades(card.id),
     repo.listingStats([card.id]),
@@ -165,7 +166,7 @@ export default async function CardPage({ params, searchParams }: Props) {
             </table>
           </div>
         </details>
-        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="JustTCG (graded sale prices, converted from USD), TCGTracker marketplace" />
+        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="JustTCG market prices from recent sales (raw and graded, converted from USD), TCGTracker marketplace" />
       </section>
 
       <section aria-labelledby="grades-h">
@@ -250,7 +251,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           sku: `${card.setCode}-${card.number}-${card.lang}`,
           brand: card.game === 'pokemon' ? 'Pokémon TCG' : 'One Piece Card Game',
           offers: prices.length ? { lowAud: Math.min(...prices), highAud: Math.max(...prices), count: prices.length } : null,
-          values: grades.filter((x) => x.floorAud !== null && isGradeKey(x.gradeKey)).map((x) => ({ name: `${gradeLabel(x.gradeKey)} value`, aud: x.floorAud! })),
+          values: grades.filter((x) => x.floorAud !== null && isPriceKey(x.gradeKey)).map((x) => ({ name: x.gradeKey === 'raw' ? 'Market price (ungraded, Near Mint)' : `${gradeLabel(x.gradeKey)} value`, aud: x.floorAud! })),
         })}
       />
     </div>

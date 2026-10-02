@@ -9,11 +9,13 @@ export const metadata = staticMeta('/methodology/', 'Methodology – How TCGTrac
 export default function Methodology() {
   return (
     <StaticPage path="/methodology/" h1="Methodology" eyebrow="How the numbers work" lead="Every figure on TCGTracker comes from a documented rule. Here they are.">
+      <h2>Market price</h2>
+      <p>A card’s headline figure, and the order of the rankings, is its <strong>market price</strong>: what the ungraded card in Near Mint condition has recently sold for, from our pricing partner JustTCG, converted to AUD. JustTCG builds it from real recent sales (online marketplaces and partner stores), not from asking prices. Each card’s PSA 10 value is shown beside it.</p>
       <h2>Market cap</h2>
       <p><code>market cap (card, grade) = graded population (card, grade) × value (card, grade)</code></p>
-      <p>Market cap is measured in PSA grades, PSA 10 by default. Japanese and English printings are separate cards with their own populations, values and market caps. Until licensed PSA population data is connected, rankings are ordered by PSA 10 value and the market-cap column shows “—”.</p>
+      <p>Market cap needs the number of graded copies, so it is measured in PSA grades. Japanese and English printings are separate cards with their own populations, values and market caps. Until licensed PSA population data is connected, the market-cap column shows “—” and the site’s tracked total is the sum of the cards’ market prices.</p>
       <h2>Grading companies</h2>
-      <p>Each card page shows values for PSA, BGS (Beckett), CGC and SGC grades separately, because the same card sells for different amounts in each company’s slab. PSA grades drive market cap and rankings; the other companies are for comparison. Special labels (such as BGS Black Label or CGC Pristine) and qualified grades (such as “OC”) are priced differently and left out.</p>
+      <p>Each card page shows values for PSA, BGS (Beckett), CGC and SGC grades separately, because the same card sells for different amounts in each company’s slab. PSA grades drive market cap; the other companies are for comparison. Special labels (such as BGS Black Label or CGC Pristine) and qualified grades (such as “OC”) are priced differently and left out.</p>
       <h2>Value (the floor)</h2>
       <p>The value of a card in a grade is the lowest current asking price for that exact card, language and grade:</p>
       <ol>

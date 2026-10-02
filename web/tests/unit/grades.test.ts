@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gradeLabel, gradeOptions, graderOf, isGradeKey, sortGradeKeys } from '@/lib/domain/grades'
+import { gradeLabel, gradeOptions, graderOf, isGradeKey, isPriceKey, sortGradeKeys } from '@/lib/domain/grades'
 
 describe('grade keys across companies', () => {
   it('recognises PSA, BGS, CGC and SGC grades only', () => {
@@ -11,7 +11,9 @@ describe('grade keys across companies', () => {
     expect(sortGradeKeys(['sgc-10', 'bgs-9.5', 'psa-9', 'bgs-10', 'psa-10', 'cgc-10', 'psa-10'])).toEqual(['psa-10', 'psa-9', 'bgs-10', 'bgs-9.5', 'cgc-10', 'sgc-10'])
   })
   it('offers the PSA grades plus other companies with data', () => {
-    expect(gradeOptions(['bgs-10', 'raw', 'any-9', 'cgc-10'])).toEqual(['psa-10', 'psa-9', 'psa-8', 'bgs-10', 'cgc-10'])
+    expect(gradeOptions(['bgs-10', 'raw', 'any-9', 'cgc-10'])).toEqual(['raw', 'psa-10', 'psa-9', 'psa-8', 'bgs-10', 'cgc-10'])
+    expect(sortGradeKeys(['psa-10', 'raw'])).toEqual(['raw', 'psa-10'])
+    expect(isPriceKey('raw') && isPriceKey('psa-10') && !isPriceKey('all')).toBe(true)
   })
   it('labels grades for people', () => {
     expect(gradeLabel('psa-10')).toBe('PSA 10')

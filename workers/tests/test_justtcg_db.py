@@ -116,7 +116,9 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
     assert stats["queued_for_review"] == 3  # EN + JP Charizard (sets named differently), JP Luffy
     assert stats["auto_created_cards"] == 1  # Umbreon VMAX
     # Totals cover every set in the run, not just the last one.
-    assert stats["price_rows"] == 3 and stats["asks_written"] == 3 and stats["solds_written"] == 3
+    assert (
+        stats["price_rows"] == 4 and stats["asks_written"] == 4 and stats["solds_written"] == 4
+    )  # 3 graded + 1 raw
 
     # EN Luffy, every grader, converted at today's rate (x1.5).
     assert _price(conn, EN_LUFFY, "psa-10")["price_aud"] == D("4800.00")
@@ -170,10 +172,14 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
 def test_history_backfills_daily_prices_at_their_own_fx_rate(conn, fixtures):
     client, _ = _mock(fixtures)
     stats = refresh_justtcg(conn, Env.from_environ({}), client=client, now=NOW)
-    assert stats["history"]["written"] == 2 and stats["history"]["snapshots"] == 2
+    assert (
+        stats["history"]["written"] == 4 and stats["history"]["snapshots"] == 4
+    )  # PSA 10 and raw, 2 days each
     # 26 Sep at 1.40, 27 Sep at the closest earlier rate (also 1.40).
     assert _price(conn, EN_LUFFY, "psa-10", day=date(2026, 9, 26))["price_aud"] == D("4340.00")
     assert _price(conn, EN_LUFFY, "psa-10", day=date(2026, 9, 27))["price_aud"] == D("4410.00")
+    # Raw (the main market price) gets its history too: 880 USD x 1.40.
+    assert _price(conn, EN_LUFFY, "raw", day=date(2026, 9, 26))["price_aud"] == D("1232.00")
     snaps = conn.execute(
         """select date, floor_aud, population, market_cap_aud from public.market_cap_snapshots
             where card_id = %s and grade_key = 'psa-10' and date < '2026-09-28' order by date""",
@@ -286,7 +292,7 @@ def test_an_empty_first_run_does_not_hold_sets_back(conn, fixtures):
     assert stats["sets_due"] == 3 and stats["cards_seen"] > 0
     assert all(c.url.params.get("include") == "price_history.1y" for c in calls if c.url.path == "/v2/cards")
     assert _price(conn, EN_LUFFY, "psa-10") is not None
-    assert stats["history"]["written"] == 2
+    assert stats["history"]["written"] == 4
 
 
 def test_graded_variants_parse_with_loose_casing_and_other_usd_regions():

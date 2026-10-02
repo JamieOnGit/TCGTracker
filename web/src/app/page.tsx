@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return buildMetadata({
     path: '/',
     title: titles.home(),
-    description: 'Graded Pokémon and One Piece card prices in Australian dollars: PSA 10 values, market cap and 7/30-day moves for JP and EN cards, plus drop alerts.',
+    description: 'Pokémon and One Piece card prices in Australian dollars from recent sales, with PSA 10 values, market cap and 7/30-day moves for JP and EN cards, plus drop alerts.',
     searchParams: await searchParams,
   })
 }
@@ -35,7 +35,8 @@ export default async function Home({ searchParams }: Props) {
     repo.listSets(),
   ])
   const rows = all.rows
-  const totalValue = rows.reduce((s, r) => s + (r.marketCapAud ?? 0), 0)
+  // The market's total: each card's market cap where population is known, else its market price.
+  const totalValue = rows.reduce((s, r) => s + (r.marketCapAud ?? r.floorAud), 0)
   const rising = rows.filter((r) => (r.change7d ?? 0) > 0).length
   const withChange = rows.filter((r) => r.change7d !== null)
   const avg7d = withChange.length ? withChange.reduce((s, r) => s + r.change7d!, 0) / withChange.length : null
@@ -62,14 +63,14 @@ export default async function Home({ searchParams }: Props) {
         </section>
 
         <StatStrip>
-          <Stat label="Tracked market cap" value={totalValue ? fmtAudShort(totalValue) : '—'} sub={totalValue ? fmtAud(totalValue) : 'Population data pending licence'} />
+          <Stat label="Tracked market cap" value={totalValue ? fmtAudShort(totalValue) : '—'} sub={totalValue ? `${fmtAud(totalValue)} · sum of market prices` : 'Prices loading'} />
           <Stat label="Average 7d move" value={avg7d === null ? '—' : <span style={{ color: avg7d >= 0 ? 'var(--up)' : 'var(--down)' }}>{avg7d >= 0 ? '+' : '−'}{Math.abs(avg7d).toFixed(1)}%</span>} sub={`${rising} of ${withChange.length} cards rising`} />
-          <Stat label="Cards tracked" value={all.total.toLocaleString('en-AU')} sub="PSA 10 · Pokémon & One Piece · EN & JP" />
+          <Stat label="Cards tracked" value={all.total.toLocaleString('en-AU')} sub="Raw & PSA 10 · Pokémon & One Piece · EN & JP" />
           <Stat label="Premium" value={formatAud(rules.premiumMonthlyCents).replace('$', 'A$')} sub={<>per month incl. GST · <Link href="/premium/" className="prose-link">instant drop alerts</Link></>} />
         </StatStrip>
 
         <section className="pt-14">
-          <MarketCapTable query={query} basePath="/" caption="Graded cards ranked by market cap, in AUD" />
+          <MarketCapTable query={query} basePath="/" caption="Cards ranked by market price (from recent sales), with PSA 10 values, in AUD" />
         </section>
       </div>
 
