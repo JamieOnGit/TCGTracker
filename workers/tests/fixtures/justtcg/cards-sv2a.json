@@ -1,0 +1,56 @@
+{
+ "data": [
+  {
+   "id": "c0000000-0000-5000-a000-000000000201",
+   "slug": "jp",
+   "name": "Charizard ex - 201/165",
+   "game": {
+    "id": "pokemon-japan"
+   },
+   "set": {
+    "id": "sv2a-pokemon-card-151-pokemon-japan",
+    "name": "SV2a: Pokemon Card 151"
+   },
+   "number": "201/165",
+   "rarity": "SAR",
+   "external_ids": {},
+   "variants": [
+    {
+     "id": "v-PSA-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 410.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "meta": {
+  "count": 1,
+  "total": 1,
+  "limit": 100,
+  "has_more": false,
+  "cursor": {
+   "next": null
+  }
+ }
+}

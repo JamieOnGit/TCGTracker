@@ -138,13 +138,18 @@ for (const [en, jp] of COUNTERPARTS) {
 }
 
 const GRADES = ['psa-10', 'psa-9', 'psa-8']
+// Other companies: a value but no population (market cap uses PSA grades).
+const OTHER_GRADES = ['bgs-10', 'bgs-9.5', 'cgc-10', 'sgc-10']
+const OTHER_FACTOR: Record<string, number> = { 'bgs-10': 1.6, 'bgs-9.5': 0.7, 'cgc-10': 0.75, 'sgc-10': 0.7 }
 const AS_OF = '2026-09-27'
 
 function gradeData(card: CardRow, gradeKey: string) {
   const r = rand(card.id + gradeKey)
   const g = GRADES.indexOf(gradeKey)
+  const base = 300 + rand(card.id) * 9000
+  if (g < 0) return { population: null, floorAud: Math.round(base * (OTHER_FACTOR[gradeKey] ?? 0.5)), marketCapAud: null }
   const population = Math.round((200 + r * 4000) * [1, 1.8, 0.9][g]!)
-  const floorAud = Math.round((300 + rand(card.id) * 9000) * [1, 0.35, 0.2][g]!)
+  const floorAud = Math.round(base * [1, 0.35, 0.2][g]!)
   return { population, floorAud, marketCapAud: population * floorAud }
 }
 
@@ -361,18 +366,20 @@ export const demoRepository: Repository = {
   async cardGrades(cardId) {
     const card = CARDS.find((c) => c.id === cardId)
     if (!card) return []
-    return GRADES.map((gradeKey): GradeRow => {
+    return [...GRADES, ...OTHER_GRADES].map((gradeKey): GradeRow => {
       const d = gradeData(card, gradeKey)
       return { gradeKey, population: d.population, floorAud: d.floorAud, basis: 'external_ask', source: 'demo', sampleSize: 3, marketCapAud: d.marketCapAud, lastSoldAud: Math.round(d.floorAud * 0.97), medianSold30dAud: Math.round(d.floorAud * 0.95), observedAt: `${AS_OF}T06:00:00Z` }
     })
   },
   async popHistory(cardId, gradeKey) {
     const card = CARDS.find((c) => c.id === cardId)
-    return card ? history(cardId + 'pop', gradeData(card, gradeKey).population) : []
+    const pop = card ? gradeData(card, gradeKey).population : null
+    return card && pop !== null ? history(cardId + 'pop', pop) : []
   },
   async marketCapHistory(cardId, gradeKey) {
     const card = CARDS.find((c) => c.id === cardId)
-    return card ? history(cardId + 'mc', gradeData(card, gradeKey).marketCapAud) : []
+    const mc = card ? gradeData(card, gradeKey).marketCapAud : null
+    return card && mc !== null ? history(cardId + 'mc', mc) : []
   },
   async valueHistory(cardId, gradeKey) {
     const card = CARDS.find((c) => c.id === cardId)

@@ -28,13 +28,23 @@ class FxRate:
 
 def parse_f11(text: str, currencies: tuple[str, ...] = WANTED) -> list[FxRate]:
     """Parse the F11.1 CSV into the latest rate per wanted currency."""
+    latest: dict[str, FxRate] = {}
+    for rate in parse_f11_history(text, currencies):
+        if rate.currency not in latest or rate.date > latest[rate.currency].date:
+            latest[rate.currency] = rate
+    return sorted(latest.values(), key=lambda r: r.currency)
+
+
+def parse_f11_history(text: str, currencies: tuple[str, ...] = WANTED) -> list[FxRate]:
+    """Every dated rate in the F11.1 CSV (the current file covers the last few
+    years), so historical prices convert at the rate of their own day."""
     rows = list(csv.reader(io.StringIO(text.lstrip("﻿"))))
     units = next((r for r in rows if r and r[0] == "Units"), None)
     if units is None:
         raise ValueError("F11 CSV has no Units row - format changed?")
     columns = {cur: i for i, cur in enumerate(units) if cur in currencies}
 
-    latest: dict[str, FxRate] = {}
+    out: list[FxRate] = []
     for row in rows:
         if not row:
             continue
@@ -51,10 +61,8 @@ def parse_f11(text: str, currencies: tuple[str, ...] = WANTED) -> list[FxRate]:
                 continue
             if per_aud <= 0:
                 continue
-            rate = FxRate(cur, day, (Decimal(1) / per_aud).quantize(Decimal("0.00000001")))
-            if cur not in latest or day > latest[cur].date:
-                latest[cur] = rate
-    return sorted(latest.values(), key=lambda r: r.currency)
+            out.append(FxRate(cur, day, (Decimal(1) / per_aud).quantize(Decimal("0.00000001"))))
+    return out
 
 
 def to_aud(amount: Decimal, currency: str, rates: dict[str, FxRate]) -> tuple[Decimal, FxRate | None]:

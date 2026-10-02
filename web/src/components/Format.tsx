@@ -1,3 +1,4 @@
+import { gradeLabel } from '@/lib/domain/grades'
 const aud0 = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 })
 const aud2 = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const int = new Intl.NumberFormat('en-AU')
@@ -14,7 +15,8 @@ export function fmtAudShort(v: number | null | undefined): string {
   if (div === 1) return fmtAud(v)
   return `A$${(v / div).toFixed(v / div >= 100 ? 0 : 1)}${suf}`
 }
-export const gradeLabel = (key: string) => (key === 'raw' ? 'Raw' : key === 'all' ? 'All grades' : key.toUpperCase().replace('-', ' '))
+
+export { gradeLabel }
 export const basisLabel = (b: string | null) =>
   b === 'marketplace_ask' ? 'TCGTracker ask' : b === 'external_ask' ? 'Market ask' : b === 'last_sale' ? 'Last sale' : '—'
 export const fmtDate = (iso: string | null | undefined) =>

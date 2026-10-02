@@ -1,4 +1,10 @@
-"""The ``prices`` job: PriceCharting -> catalogue + price_points.
+"""The ``prices`` job: card prices -> catalogue + price_points.
+
+JustTCG is the source when ``JUSTTCG_API_KEY`` is set (its paid plans allow
+public display; see ``refresh_justtcg``). PriceCharting remains as a
+fallback for a deployment that only has ``PRICECHARTING_TOKEN``.
+
+PriceCharting:
 
 Runs every market.floor_refresh_hours (4h), but downloads each category's
 CSV at most once a day (PriceCharting regenerates them every 24 hours), with
@@ -25,6 +31,17 @@ from tcgworkers.config import Env
 from tcgworkers.db import load_rules, pipeline_run
 from tcgworkers.sources.population.base import SourceNotApproved
 from tcgworkers.sources.pricing.ingest import PcIngestor, latest_usd_fx, stats_dict
+from tcgworkers.sources.pricing.justtcg import (
+    DEFAULT_COMPANIES,
+    BudgetExhausted,
+    JtGame,
+    JustTcgClient,
+    JustTcgError,
+    games_from_setting,
+    parse_card,
+)
+from tcgworkers.sources.pricing.justtcg import licence as justtcg_licence
+from tcgworkers.sources.pricing.justtcg_ingest import FxHistory, JtIngestor
 from tcgworkers.sources.pricing.pricecharting import (
     CATEGORIES,
     DEFAULT_CSV_URL_TEMPLATE,
@@ -89,7 +106,9 @@ def api_fallback(client: PriceChartingClient, conn: Conn, games: list[str], budg
     return list(products.values())
 
 
-def refresh_prices(conn: Conn, env: Env, *, client: PriceChartingClient | None = None) -> dict[str, Any]:
+def refresh_pricecharting(
+    conn: Conn, env: Env, *, client: PriceChartingClient | None = None
+) -> dict[str, Any]:
     if not env.pricecharting_token and client is None:
         raise SourceNotApproved("PRICECHARTING_TOKEN is not set (PriceCharting Legendary plan)")
     rules = load_rules(conn)
@@ -140,4 +159,179 @@ def refresh_prices(conn: Conn, env: Env, *, client: PriceChartingClient | None =
         stats["fx_date"] = fx.date.isoformat()
         stats["usd_to_aud"] = str(fx.rate_to_aud)
         log.info("pricecharting: %s", {k: v for k, v in stats.items() if k != "licence"})
+    return stats
+
+
+# ------------------------------------------------------------------ JustTCG
+HISTORY_WINDOWS = ("7d", "30d", "90d", "180d", "1y")
+
+
+def refresh_prices(conn: Conn, env: Env, *, client: Any = None) -> dict[str, Any]:
+    """The scheduled job: JustTCG when configured, else PriceCharting."""
+    if isinstance(client, JustTcgClient) or (client is None and env.justtcg_api_key):
+        return refresh_justtcg(conn, env, client=client)
+    if isinstance(client, PriceChartingClient) or env.pricecharting_token:
+        return refresh_pricecharting(conn, env, client=client)
+    raise SourceNotApproved("JUSTTCG_API_KEY is not set (JustTCG paid plan)")
+
+
+def _companies(value: Any) -> tuple[str, ...]:
+    if isinstance(value, list):
+        out = tuple(
+            str(c).upper() for c in value if str(c).upper() in ("PSA", "BGS", "CGC", "SGC", "BCCG", "BVG")
+        )
+        if out:
+            return out
+    return DEFAULT_COMPANIES
+
+
+def _due_sets(
+    conn: Conn,
+    games: tuple[JtGame, ...],
+    listed: dict[str, list[dict[str, Any]]],
+    refresh_hours: int,
+    now: datetime,
+) -> list[tuple[JtGame, dict[str, Any], bool]]:
+    """(game, set, needs history backfill) for every set due a refresh, stalest first."""
+    known: dict[tuple[str, str], tuple[datetime | None, datetime | None, bool]] = {}
+    for r in conn.execute(
+        """select justtcg_game, justtcg_set_id, max(refreshed_at) as refreshed_at,
+                  max(history_backfilled_at) as backfilled_at, bool_and(excluded) as excluded
+             from public.justtcg_sets group by justtcg_game, justtcg_set_id"""
+    ):
+        known[(r["justtcg_game"], r["justtcg_set_id"])] = (
+            r["refreshed_at"],
+            r["backfilled_at"],
+            r["excluded"],
+        )
+    epoch = datetime.min.replace(tzinfo=UTC)
+    due: list[tuple[datetime, JtGame, dict[str, Any], bool]] = []
+    for game in games:
+        for s in listed.get(game.api_id, []):
+            refreshed, backfilled, excluded = known.get((game.api_id, s["id"]), (None, None, False))
+            if excluded:
+                continue
+            if refreshed is None or now - refreshed >= timedelta(hours=refresh_hours):
+                due.append((refreshed or epoch, game, s, backfilled is None))
+    due.sort(key=lambda x: x[0])
+    return [(g, s, b) for _, g, s, b in due]
+
+
+def _mark_refreshed(conn: Conn, game: JtGame, s: dict[str, Any], *, backfilled: bool, now: datetime) -> None:
+    """Record the fetch, including sets that produced no priced records yet
+    (a placeholder row with no set, so they aren't fetched again until due)."""
+    updated = conn.execute(
+        """update public.justtcg_sets set refreshed_at = %(now)s,
+                  history_backfilled_at = case when %(bf)s then coalesce(history_backfilled_at, %(now)s)
+                                               else history_backfilled_at end
+            where justtcg_game = %(g)s and justtcg_set_id = %(s)s""",
+        {"now": now, "bf": backfilled, "g": game.api_id, "s": s["id"]},
+    ).rowcount
+    if not updated:
+        conn.execute(
+            """insert into public.justtcg_sets (justtcg_set_id, justtcg_game, game, lang, set_name, refreshed_at,
+                 history_backfilled_at)
+               values (%s, %s, %s, %s, %s, %s, %s) on conflict (justtcg_set_id, lang) do nothing""",
+            (
+                s["id"],
+                game.api_id,
+                game.game,
+                game.lang or "en",
+                str(s.get("name") or s["id"]),
+                now,
+                now if backfilled else None,
+            ),
+        )
+
+
+def refresh_justtcg(
+    conn: Conn, env: Env, *, client: JustTcgClient | None = None, now: datetime | None = None
+) -> dict[str, Any]:
+    """Fetch the stalest JustTCG sets within the run's request budget.
+
+    Each run (every 4 hours) lists every game's sets, then fetches the sets
+    whose prices are older than ``justtcg.refresh_hours`` (20), oldest first,
+    until ``justtcg.max_requests_per_run`` is used. A set's first fetch also
+    brings ``justtcg.history_window`` of price history to backfill charts.
+    Work is committed set by set, so a stopped run loses nothing."""
+    if client is None and not env.justtcg_api_key:
+        raise SourceNotApproved("JUSTTCG_API_KEY is not set (JustTCG paid plan)")
+    rules = load_rules(conn)
+    extra = rules.extra
+    now = now or datetime.now(UTC)
+    games = games_from_setting(extra.get("justtcg.games"))
+    companies = _companies(extra.get("justtcg.companies"))
+    raw = extra.get("justtcg.raw_prices") is True
+    window = extra.get("justtcg.history_window", "1y")
+    window = window if window in HISTORY_WINDOWS else "1y"
+    refresh_hours = _setting_int(extra, "justtcg.refresh_hours", 20)
+    client = client or JustTcgClient(
+        env.justtcg_api_key or "",
+        user_agent=env.user_agent,
+        max_requests=_setting_int(extra, "justtcg.max_requests_per_run", 1500),
+    )
+    with pipeline_run(conn, "prices") as stats:
+        stats["source"] = "justtcg"
+        stats["licence"] = asdict(justtcg_licence())
+        fx = latest_usd_fx(
+            conn, max_age_days=_setting_int(extra, "justtcg.fx_max_age_days", 7), today=now.date()
+        )
+        fx_history = FxHistory.load(conn)
+        conn.commit()
+
+        listed: dict[str, list[dict[str, Any]]] = {}
+        errors: dict[str, str] = {}
+        for game in games:
+            try:
+                listed[game.api_id] = client.sets(game.api_id)
+            except BudgetExhausted:
+                break
+            except JustTcgError as exc:
+                if exc.status in (401, 403) or exc.code in ("DAILY_LIMIT_EXCEEDED", "REQUEST_LIMIT_EXCEEDED"):
+                    raise
+                # e.g. a game id JustTCG doesn't recognise: skip it, keep the others.
+                log.error("justtcg: listing sets for %s failed: %s", game.api_id, exc)
+                errors[game.api_id] = str(exc)[:300]
+        due = _due_sets(conn, games, listed, refresh_hours, now)
+        stats["sets_listed"] = sum(len(v) for v in listed.values())
+        stats["sets_due"] = len(due)
+
+        ingestor = JtIngestor(conn, rules=rules, now=now)
+        ingestor.load()
+        done = 0
+        stopped = None
+        for game, s, backfill in due:
+            try:
+                cards = list(
+                    client.cards(game.api_id, s["id"], history=window if backfill else None, raw=raw)
+                )
+            except BudgetExhausted:
+                stopped = "request budget used"
+                break
+            except JustTcgError as exc:
+                if exc.status in (401, 403) or exc.code in ("DAILY_LIMIT_EXCEEDED", "REQUEST_LIMIT_EXCEEDED"):
+                    stopped = str(exc)[:300]
+                    log.error("justtcg: stopping: %s", exc)
+                    break
+                log.warning("justtcg: set %s/%s failed: %s", game.api_id, s["id"], exc)
+                errors[f"{game.api_id}/{s['id']}"] = str(exc)[:300]
+                conn.rollback()
+                continue
+            records = [(rec, game) for card in cards for rec in parse_card(card, game, companies)]
+            ingestor.ingest(records, fx, fx_history=fx_history if backfill else None)
+            _mark_refreshed(conn, game, s, backfilled=backfill, now=now)
+            conn.commit()
+            done += 1
+        stats["sets_refreshed"] = done
+        stats["sets_remaining"] = len(due) - done
+        stats["requests"] = client.requests
+        if stopped:
+            stats["stopped"] = stopped
+        if errors:
+            stats["errors"] = errors
+        stats.update(stats_dict(ingestor.stats))
+        stats["history"] = asdict(ingestor.history)
+        stats["fx_date"] = fx.date.isoformat()
+        stats["usd_to_aud"] = str(fx.rate_to_aud)
+        log.info("justtcg: %s", {k: v for k, v in stats.items() if k != "licence"})
     return stats

@@ -1,0 +1,272 @@
+{
+ "data": [
+  {
+   "id": "c0000000-0000-5000-a000-000000000199",
+   "slug": "pokemon-sv-151-charizard-ex-199-165",
+   "name": "Charizard ex - 199/165",
+   "game": {
+    "id": "pokemon",
+    "name": "Pokemon"
+   },
+   "set": {
+    "id": "sv-scarlet-violet-151-pokemon",
+    "name": "SV: Scarlet & Violet 151"
+   },
+   "number": "199/165",
+   "rarity": "Special Illustration Rare",
+   "external_ids": {
+    "tcgplayer": "517045"
+   },
+   "variants": [
+    {
+     "id": "v-PSA-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 1250.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": [
+        {
+         "t": 1790294400,
+         "p": 1200.0
+        },
+        {
+         "t": 1790380800,
+         "p": 1225.0
+        },
+        {
+         "t": 1790467200,
+         "p": 1240.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "v-PSA-9-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 9,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 9"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 310.5,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "v-BGS-9.5-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "BGS",
+      "grade": 9.5,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "BGS 9.5"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 640.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "v-CGC-10-Pristine-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "CGC",
+      "grade": 10,
+      "grade_label": "Pristine",
+      "qualifier": null,
+      "canonical": "CGC 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 900.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "v-PSA-10-None-OC-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": "OC",
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 700.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "v-CGC-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "CGC",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "CGC 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 820.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "v-SGC-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "SGC",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "SGC 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 760.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "c0000000-0000-5000-a000-0000000000bb",
+   "slug": "box",
+   "name": "Scarlet & Violet 151 Booster Bundle",
+   "game": {
+    "id": "pokemon"
+   },
+   "set": {
+    "id": "sv-scarlet-violet-151-pokemon",
+    "name": "SV: Scarlet & Violet 151"
+   },
+   "number": null,
+   "rarity": null,
+   "external_ids": {},
+   "variants": [
+    {
+     "id": "v-PSA-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 99.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "meta": {
+  "count": 2,
+  "total": 3,
+  "limit": 2,
+  "has_more": true,
+  "cursor": {
+   "next": "page2",
+   "prev": null
+  }
+ }
+}

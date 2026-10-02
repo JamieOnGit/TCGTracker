@@ -13,7 +13,7 @@ The website is complete, but these parts are switched off until their services a
 
 | Part of the site | Needs | Step |
 |---|---|---|
-| Market prices, card pages, market cap | PriceCharting | 9 |
+| Market prices, price history, card pages, market cap | JustTCG | 9 |
 | 24/7 store monitor, drop alerts, email alerts, listing expiry | Fly.io (background workers) | 7 |
 | Phone and desktop push alerts | Push keys | 6 |
 | Premium A$12.99/month | Stripe | 8 |
@@ -22,7 +22,7 @@ The website is complete, but these parts are switched off until their services a
 | Discord Premium alerts | Discord webhook | 10 |
 | Outage alerts to your phone | Sentry and healthchecks.io | 11 |
 
-**Do next, in order:** 6 (push keys, 5 min) → 7 (Fly.io, 30 min) → 9 (PriceCharting) → 8 (Stripe) → the rest.
+**Do next, in order:** 6 (push keys, 5 min) → 7 (Fly.io, 30 min) → 9 (JustTCG) → 8 (Stripe) → the rest.
 
 ## Progress
 | Step | What | Status |
@@ -40,7 +40,7 @@ The website is complete, but these parts are switched off until their services a
 | 7e | Check the 44-store monitor from Sydney (incl. Kmart and Target) | ⏭ Next, after 5b |
 | **7f** | **Live stock section (`/stock/`) and the 5-minute free delay** | ⏭ After that PR is merged: **Actions → Deploy database** (adds the stock summary and switches the free delay from 24 hours to 5 minutes), then open https://tcgtracker.com.au/stock/ |
 | 8 | Stripe (Premium) | ☐ |
-| 9 | PriceCharting (prices) | ☐ |
+| **9** | **JustTCG (card prices and history)** | ⏭ After the JustTCG pull request is merged (10 min) |
 | 9b | eBay developer keys (deal finder) | ☐ |
 | 9c | Card images (Scrydex) | ☐ Your decision |
 | 10 | Discord Premium channel | ☐ Optional at launch |
@@ -61,7 +61,7 @@ Keep this table handy. "Cloudflare build variable" and "Cloudflare secret" are t
 | `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Fly.io secret | Step 6 |
 | `DATABASE_URL`, `SUPABASE_URL`, `RESEND_API_KEY`, `ADMIN_ALERT_EMAIL` | Fly.io secret | Step 7 |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PREMIUM_MONTHLY` | Cloudflare secret | Step 8 |
-| `PRICECHARTING_TOKEN` | Fly.io secret | Step 9 |
+| `JUSTTCG_API_KEY` | Fly.io secret | Step 9 |
 | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` | Fly.io secret | Step 9b |
 | `SCRYDEX_API_KEY`, `SCRYDEX_TEAM_ID` | Fly.io secret | Step 9c |
 | `DISCORD_DROPS_WEBHOOK_URL` | Fly.io secret | Step 10 |
@@ -338,7 +338,7 @@ The **workers** are the always-on background program. They:
 - check 44 Australian stores for new listings, pre-orders, restocks and price drops, around the clock (including **Kmart** and **Target** online)
 - send drop alerts by email, push and Discord (Premium instantly, Free 24 hours later)
 - send marketplace email notifications
-- import prices every 4 hours, once PriceCharting is set up
+- import prices every 4 hours, once JustTCG is set up
 - expire old listings and member sightings
 
 They run on one small server in **Sydney**, at about **US$5 a month**.
@@ -493,15 +493,25 @@ Both pages refresh every minute and are live for everyone. Drop alerts reach Pre
 
 Stripe fees: **1.7% + A$0.30** per domestic card payment (from 1 Oct 2026), plus **0.7%** for Stripe Billing subscriptions.
 
-## Step 9 · PriceCharting: graded prices (≈10 min, plus waiting for their reply)
+## Step 9 · JustTCG: card prices and price history (≈10 min)
 This fills the market cap, card pages and price charts. The price import also **creates the card catalogue** automatically, so until this is done the market pages stay empty.
 
-**App: https://www.pricecharting.com.**
-1. Create an account, then subscribe to the **Legendary** plan (US$49/month). It's the only plan with the API and CSV downloads: https://www.pricecharting.com/pricecharting-pro
-2. **Before using their prices publicly, ask permission.** Their terms say the data is for *internal use* unless you have a commercial licence and written permission. Email **brady@vgpc.com** from your account email. Claude has a draft ready: ask for it ("draft the PriceCharting email"). It asks for permission to show derived AUD prices publicly, with a link back to PriceCharting on each card.
-3. Meanwhile, go to **Subscription** (account menu) → **API/Download** and copy your **40-character API token**.
-4. In the terminal, in the `workers` folder: `fly secrets set PRICECHARTING_TOKEN='your-token'`.
-5. ✉️ Tell Claude: **"PriceCharting subscribed"**. Claude runs the first import and checks the cards and prices. Keep the site **unannounced** until PriceCharting says yes. Claude can hide prices behind sign-in until then if you prefer.
+**Why JustTCG:** every paid plan includes a commercial licence written into their Terms (§7.1). You can show prices, price history and % changes, and calculate market cap from them, with **no permission email**. It prices each grading company separately (PSA, BGS, CGC, SGC). PSA drives market cap; the others show on card pages for comparison. The one rule: never hand their raw data to others as a download, feed or API. The site doesn't.
+
+**App: https://justtcg.com.**
+1. Click **Sign Up** (top right) and create an account with hello@tcgtracker.com.au.
+2. Subscribe to **Professional** (US$49/month: 5,000 requests a day, enough to refresh every card daily): https://justtcg.com/pricing. Free and Starter won't do: Free is personal-use only, and Starter's 1,000 requests a day is too few for both games.
+3. In your JustTCG **Dashboard**, copy your **API key**. It starts with `tcg_`.
+4. Terminal (`workers` folder): `fly secrets set JUSTTCG_API_KEY='tcg_your_key'`. Fly restarts the worker by itself.
+5. Within 4 hours the first import runs. It lists every Pokémon (English and Japanese) and One Piece set, then fetches the sets with the oldest prices first, about 1,500 requests per run. Each set's first fetch also brings **a year of price history**, so charts aren't empty on day one. Everything is filled in within about a day.
+6. Check progress on the admin dashboard (https://tcgtracker.com.au/admin/) under **Pipeline status**. The `prices` job shows `source: justtcg`, `sets_refreshed` and `sets_remaining`.
+7. ✉️ Tell Claude: **"JustTCG live"**. Claude checks the first import: matched cards, the admin review queue, and prices on a few card pages.
+
+**Good to know:**
+- Prices are JustTCG's North American market values in USD, converted to AUD at the Reserve Bank's rate for each day.
+- Population (how many PSA 10s exist) isn't part of JustTCG. Until a population source is licensed, rankings are ordered by PSA 10 value and the market-cap column shows "—".
+- Some cards need a human check: if a set or card name differs from ours, the import queues it in **Admin → Card mapping** (https://tcgtracker.com.au/admin/mapping/) instead of guessing.
+- You don't need PriceCharting. If you already subscribed, you can cancel it.
 
 ## Step 9b · eBay developer keys: the deal finder (≈20 min)
 This powers **/deals/**: graded cards on eBay Australia listed well under market value, and auctions ending soon. It uses eBay's official API.
@@ -610,7 +620,7 @@ These give reliable stock and price data **with permission**, and earn commissio
    - member-submitted sightings and photos (the licence to display them, and a no-photos-of-people rule)
    - scout rewards (free Premium isn't a prize draw, but check the wording)
    - Spam Act compliance for alerts. Consent and unsubscribe links are already built in.
-   - PriceCharting's display permission (Step 9) and card images (Step 9c)
+   - JustTCG's licence terms (Step 9: display allowed on a paid plan) and card images (Step 9c)
 2. **Giveaways:** chance-based giveaways are trade-promotion lotteries. ACT and SA need permits above certain prize values, so check with your lawyer first. Scout rewards are earned, so they're fine.
 3. Keep the "not affiliated with Nintendo, The Pokémon Company, Bandai or any retailer" footer.
 
@@ -640,7 +650,7 @@ These give reliable stock and price data **with permission**, and earn commissio
 2. ✅ "push keys added" (6)
 2b. "cross-device sign-in works" (5b)
 3. ✅ "workers deployed" (7d), then "monitor check" (7e)
-4. "PriceCharting subscribed" and, later, their reply about display rights (9)
+4. "JustTCG live" (9)
 5. "Stripe done" and whether you're GST-registered (8)
 6. "eBay keys added" (9b)
 7. Whether to show card scans, and "Scrydex ready" if yes (9c)
@@ -655,7 +665,7 @@ These give reliable stock and price data **with permission**, and earn commissio
 | Supabase | Free → **US$25/mo** Pro once there are real users. Free projects pause after a week with no activity, and Pro adds daily backups. Upgrade before announcing. |
 | Fly.io (Sydney worker) | ~US$5/mo |
 | Resend | Free (3,000 emails/mo) → US$20/mo |
-| PriceCharting Legendary | US$49/mo |
+| JustTCG Professional (card prices) | US$49/mo |
 | Scrydex (if you choose images) | US$29/mo |
 | Stripe | 1.7% + A$0.30 per domestic card payment, plus 0.7% Billing |
 | Web push, Discord, Sentry, healthchecks.io | Free |

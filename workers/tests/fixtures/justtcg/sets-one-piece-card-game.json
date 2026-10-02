@@ -1,0 +1,15 @@
+{
+ "data": [
+  {
+   "id": "awakening-of-the-new-era-one-piece-card-game",
+   "name": "Awakening of the New Era",
+   "game_id": "one-piece-card-game"
+  }
+ ],
+ "meta": {
+  "total": 1,
+  "limit": 100,
+  "offset": 0,
+  "hasMore": false
+ }
+}

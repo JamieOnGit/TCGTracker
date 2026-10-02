@@ -121,18 +121,300 @@ class _Console:
     set_code: str | None
 
 
-class PcIngestor:
+class CatalogueIngestor:
+    """What every price source shares: catalogue links (card_external_ids),
+    the admin mapping queue, auto-created sets/cards, and price_points writes.
+    A source subclass resolves its own sets and turns its records into
+    ``_match_card`` calls and price rows."""
+
+    source = ""  # card_external_ids.source / price_points.source
+    settings_prefix = ""  # site_settings namespace, e.g. "pricecharting"
+    set_code_prefix = ""  # code for auto-created sets, e.g. "pc-"
+
     def __init__(self, conn: Conn, *, rules: Rules, now: datetime | None = None) -> None:
         self.conn = conn
         self.rules = rules
         self.now = now or datetime.now(UTC)
         self.observed_at = datetime.combine(self.now.date(), time(0), UTC)
-        types = rules.extra.get("pricecharting.store_types", ["sold", "ask"])
+        types = rules.extra.get(f"{self.settings_prefix}.store_types", ["sold", "ask"])
         self.store_types = {
             t for t in (types if isinstance(types, list) else ["sold", "ask"]) if t in ("sold", "ask")
         }
         self.stats = IngestStats()
         self._loaded = False
+
+    # ---------------------------------------------------------------- load
+    def load(self) -> None:
+        self._load_catalogue()
+        self._loaded = True
+
+    def _load_catalogue(self) -> None:
+        c = self.conn
+        self.mapped: dict[str, str] = {
+            r["external_id"]: r["card_id"]
+            for r in c.execute(
+                "select external_id, card_id::text as card_id from public.card_external_ids where source = %s",
+                (self.source,),
+            )
+        }
+        self.queue: dict[str, str] = {
+            r["external_id"]: r["status"]
+            for r in c.execute(
+                "select external_id, status::text as status from public.mapping_queue where source = %s",
+                (self.source,),
+            )
+        }
+        self.sets: dict[tuple[str, str, str], tuple[str, str]] = {}  # (game, lang, norm name) -> (id, code)
+        for r in c.execute("select id::text as id, game, lang, code, name from public.sets"):
+            self.sets.setdefault((r["game"], r["lang"], _norm_set_name(r["name"])), (r["id"], r["code"]))
+        self.by_set: dict[str, list[CatalogueCard]] = defaultdict(list)
+        self.by_number: dict[tuple[str, str, str], list[CatalogueCard]] = defaultdict(list)
+        for r in c.execute(
+            """select c.id::text as id, c.game, c.lang, c.set_id::text as set_id, s.code, c.number, c.variant, c.name
+                 from public.cards c join public.sets s on s.id = c.set_id"""
+        ):
+            self._index(
+                CatalogueCard(r["id"], r["game"], r["lang"], r["code"], r["number"], r["variant"], r["name"]),
+                r["set_id"],
+            )
+
+    def _index(self, card: CatalogueCard, set_id: str) -> None:
+        self.by_set[set_id].append(card)
+        self.by_number[(card.game, card.lang, normalise_number(card.number))].append(card)
+
+    def _set_for(self, game: str, lang: str, set_name: str) -> tuple[str, str]:
+        key = (game, lang, _norm_set_name(set_name))
+        if key in self.sets:
+            return self.sets[key]
+        code = self.set_code_prefix + re.sub(r"[^a-z0-9]+", "-", set_name.lower()).strip("-")[:60]
+        row = None
+        for suffix in ("", f"-{self.set_code_prefix.strip('-')}", f"-{self.source}"):
+            row = self.conn.execute(
+                """insert into public.sets (game, lang, code, name, slug, auto_created)
+                   values (%s, %s, %s, %s, public.slugify(%s) || %s, true)
+                   on conflict do nothing returning id::text as id, code""",
+                (game, lang, code, set_name, set_name, suffix),
+            ).fetchone()
+            if row:
+                break
+            existing = self.conn.execute(
+                "select id::text as id, code from public.sets where game = %s and lang = %s and code = %s",
+                (game, lang, code),
+            ).fetchone()
+            if existing:
+                row = existing
+                break
+        if row is None:
+            raise RuntimeError(f"could not create a set for {game}/{lang} {set_name!r}")
+        self.stats.auto_created_sets += 1
+        self.sets[key] = (row["id"], row["code"])
+        log.info("%s: auto-created set %s/%s %r (%s)", self.source, game, lang, set_name, row["code"])
+        return row["id"], row["code"]
+
+    # --------------------------------------------------------------- cards
+    def _match_card(
+        self,
+        ext_id: str,
+        *,
+        game: str,
+        lang: str,
+        set_id: str,
+        set_code: str,
+        number: str,
+        variant: str,
+        name: str,
+        payload: dict[str, Any],
+    ) -> str | None:
+        """Link, queue or create the catalogue card for one external record."""
+        if ext_id in self.mapped:
+            self.stats.already_mapped += 1
+            return self.mapped[ext_id]
+        status = self.queue.get(ext_id)
+        if status == "rejected":
+            self.stats.rejected += 1
+            return None
+        record = ExternalRecord(self.source, ext_id, game, lang, set_code, number, variant, name)
+        candidates = {c.id: c for c in self.by_set.get(set_id, [])}
+        for c in self.by_number.get((game, lang, normalise_number(number)), []):
+            candidates[c.id] = c
+        decision = Matcher(candidates.values(), auto_accept=self.rules.market_matcher_auto_accept).match(
+            record
+        )
+
+        if decision.status is Status.AUTO and decision.card_id:
+            self._link(ext_id, decision.card_id, lang, variant, decision.confidence, "auto")
+            if status == "pending":
+                self.conn.execute(
+                    """update public.mapping_queue set status = 'approved', resolved_card_id = %s, reviewed_at = now()
+                        where source = %s and external_id = %s""",
+                    (decision.card_id, self.source, ext_id),
+                )
+            self.stats.auto_linked += 1
+            return decision.card_id
+
+        suggested, reasons = decision.card_id, list(decision.reasons)
+        if decision.status is Status.UNMATCHED:
+            # Sources name sets their own way ("Scarlet & Violet 151" vs our
+            # "151"), so a set miss alone must not create a duplicate card:
+            # same number + near-identical name goes to an admin instead.
+            twin = _lookalike(candidates.values(), number, name)
+            if twin:
+                suggested = twin.id
+                reasons.append(
+                    f"same number and name as {twin.set_code} {twin.number}: check the set mapping"
+                )
+
+        if decision.status is Status.REVIEW or suggested:
+            self._queue(ext_id, payload, game, lang, suggested, decision.confidence, reasons, "pending", None)
+            self.stats.queued_for_review += 1
+            return None
+
+        card_id = self._create_card(set_id, game, lang, number, name, variant, ext_id)
+        self._link(ext_id, card_id, lang, variant, None, "auto_created")
+        self._queue(
+            ext_id,
+            payload,
+            game,
+            lang,
+            None,
+            decision.confidence,
+            ["no catalogue match: card auto-created"],
+            "created_card",
+            card_id,
+        )
+        self._index(CatalogueCard(card_id, game, lang, set_code, number, variant, name), set_id)
+        self.stats.auto_created_cards += 1
+        return card_id
+
+    def _link(
+        self, ext_id: str, card_id: str, lang: str, variant: str, confidence: Decimal | None, method: str
+    ) -> None:
+        self.conn.execute(
+            """insert into public.card_external_ids (card_id, source, external_id, lang, variant, match_confidence, match_method)
+               values (%s, %s, %s, %s, %s, %s, %s) on conflict (source, external_id) do nothing""",
+            (card_id, self.source, ext_id, lang, variant, confidence, method),
+        )
+        self.mapped[ext_id] = card_id
+
+    def _queue(
+        self,
+        ext_id: str,
+        payload: dict[str, Any],
+        game: str,
+        lang: str,
+        suggested: str | None,
+        confidence: Decimal,
+        reasons: list[str],
+        status: str,
+        resolved: str | None,
+    ) -> None:
+        self.conn.execute(
+            """insert into public.mapping_queue
+                 (source, external_id, payload, game, lang, suggested_card_id, confidence, reasons, status, resolved_card_id)
+               values (%s, %s, %s::jsonb, %s, %s, %s, %s, %s::jsonb, %s::public.mapping_status, %s)
+               on conflict (source, external_id) do update set
+                 payload = excluded.payload, suggested_card_id = excluded.suggested_card_id,
+                 confidence = excluded.confidence, reasons = excluded.reasons
+               where mapping_queue.status = 'pending'""",
+            (
+                self.source,
+                ext_id,
+                json.dumps(payload),
+                game,
+                lang,
+                suggested,
+                min(confidence, Decimal("0.999")),
+                json.dumps(reasons),
+                status,
+                resolved,
+            ),
+        )
+        self.queue[ext_id] = status
+
+    def _create_card(
+        self, set_id: str, game: str, lang: str, number: str, name: str, variant: str, ext_id: str
+    ) -> str:
+        base = f"{number} {name}" + ("" if variant == "standard" else f" {variant}")
+        for slug_extra in ("", f" {ext_id[:12]}"):
+            row = self.conn.execute(
+                """insert into public.cards (set_id, game, lang, number, name, slug, variant, auto_created)
+                   values (%s, %s, %s, %s, %s, public.slugify(%s), %s, true)
+                   on conflict do nothing returning id::text as id""",
+                (set_id, game, lang, number, name[:200], base + slug_extra, variant),
+            ).fetchone()
+            if row:
+                return str(row["id"])
+            existing = self.conn.execute(
+                "select id::text as id from public.cards where set_id = %s and number = %s and variant = %s",
+                (set_id, number, variant),
+            ).fetchone()
+            if existing:
+                return str(existing["id"])
+        raise RuntimeError(f"could not create a card for {self.source} {ext_id}")
+
+    # -------------------------------------------------------------- prices
+    def _write_prices(
+        self, rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str | None]], fx: Fx
+    ) -> None:
+        """Current prices: rows are (card_id, grader, grade, price_usd, price_aud, source_ref, url)."""
+        c = self.conn
+        c.execute(
+            """create temp table if not exists tmp_ext_prices (
+                 card_id uuid, grader text, grade numeric(3, 1), price numeric(12, 2), price_aud numeric(12, 2),
+                 source_ref text, url text) on commit drop"""
+        )
+        c.execute("truncate tmp_ext_prices")
+        with (
+            c.cursor() as cur,
+            cur.copy(
+                "copy tmp_ext_prices (card_id, grader, grade, price, price_aud, source_ref, url) from stdin"
+            ) as copy,
+        ):
+            for row in rows:
+                copy.write_row(row)
+        params = {"obs": self.observed_at, "fx": fx.rate_to_aud, "fxd": fx.date, "src": self.source}
+        if "ask" in self.store_types:
+            c.execute(
+                """delete from public.price_points p using tmp_ext_prices t
+                    where p.source = %(src)s and p.type = 'ask' and p.source_ref = t.source_ref
+                      and p.observed_at < %(obs)s""",
+                params,
+            )
+            cur = c.execute(
+                """insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
+                     price_aud, source, source_ref, url, observed_at)
+                   select card_id, grader, grade, 'ask', price, 'USD', %(fx)s, %(fxd)s, price_aud, %(src)s,
+                          source_ref, url, %(obs)s
+                     from tmp_ext_prices
+                   on conflict (source, source_ref, type, observed_at) where source_ref is not null do update set
+                     card_id = excluded.card_id, price = excluded.price, price_aud = excluded.price_aud,
+                     fx_rate = excluded.fx_rate, fx_date = excluded.fx_date""",
+                params,
+            )
+            self.stats.asks_written = cur.rowcount
+        if "sold" in self.store_types:
+            cur = c.execute(
+                f"""insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
+                      price_aud, source, source_ref, url, observed_at)
+                    select t.card_id, t.grader, t.grade, 'sold', t.price, 'USD', %(fx)s, %(fxd)s, t.price_aud, %(src)s,
+                           t.source_ref, t.url, %(obs)s
+                      from tmp_ext_prices t
+                      left join lateral (
+                        select p.price, p.observed_at from public.price_points p
+                         where p.source = %(src)s and p.type = 'sold' and p.source_ref = t.source_ref
+                         order by p.observed_at desc limit 1) l on true
+                     where l.observed_at is null
+                        or (l.observed_at < %(obs)s
+                            and (l.price <> t.price or l.observed_at < %(obs)s - interval '{SOLD_REFRESH_DAYS} days'))""",
+                params,
+            )
+            self.stats.solds_written = cur.rowcount
+
+
+class PcIngestor(CatalogueIngestor):
+    source = SOURCE
+    settings_prefix = "pricecharting"
+    set_code_prefix = "pc-"
 
     # ---------------------------------------------------------------- load
     def load(self) -> None:
@@ -149,38 +431,8 @@ class PcIngestor:
             if r["excluded"] and info.excluded_reason is None:
                 info = ConsoleInfo(None, None, None, "excluded by an admin")
             self.consoles[r["console_name"]] = _Console(info, r["set_id"], r["code"])
-        self.mapped: dict[str, str] = {
-            r["external_id"]: r["card_id"]
-            for r in c.execute(
-                "select external_id, card_id::text as card_id from public.card_external_ids where source = %s",
-                (SOURCE,),
-            )
-        }
-        self.queue: dict[str, str] = {
-            r["external_id"]: r["status"]
-            for r in c.execute(
-                "select external_id, status::text as status from public.mapping_queue where source = %s",
-                (SOURCE,),
-            )
-        }
-        self.sets: dict[tuple[str, str, str], tuple[str, str]] = {}  # (game, lang, norm name) -> (id, code)
-        for r in c.execute("select id::text as id, game, lang, code, name from public.sets"):
-            self.sets.setdefault((r["game"], r["lang"], _norm_set_name(r["name"])), (r["id"], r["code"]))
-        self.by_set: dict[str, list[CatalogueCard]] = defaultdict(list)
-        self.by_number: dict[tuple[str, str, str], list[CatalogueCard]] = defaultdict(list)
-        for r in c.execute(
-            """select c.id::text as id, c.game, c.lang, c.set_id::text as set_id, s.code, c.number, c.variant, c.name
-                 from public.cards c join public.sets s on s.id = c.set_id"""
-        ):
-            self._index(
-                CatalogueCard(r["id"], r["game"], r["lang"], r["code"], r["number"], r["variant"], r["name"]),
-                r["set_id"],
-            )
+        self._load_catalogue()
         self._loaded = True
-
-    def _index(self, card: CatalogueCard, set_id: str) -> None:
-        self.by_set[set_id].append(card)
-        self.by_number[(card.game, card.lang, normalise_number(card.number))].append(card)
 
     # ------------------------------------------------------------ consoles
     def _console(self, console_name: str) -> _Console:
@@ -207,35 +459,6 @@ class PcIngestor:
         self.consoles[console_name] = console
         return console
 
-    def _set_for(self, game: str, lang: str, set_name: str) -> tuple[str, str]:
-        key = (game, lang, _norm_set_name(set_name))
-        if key in self.sets:
-            return self.sets[key]
-        code = "pc-" + re.sub(r"[^a-z0-9]+", "-", set_name.lower()).strip("-")[:60]
-        row = None
-        for suffix in ("", "-pc", "-pricecharting"):
-            row = self.conn.execute(
-                """insert into public.sets (game, lang, code, name, slug, auto_created)
-                   values (%s, %s, %s, %s, public.slugify(%s) || %s, true)
-                   on conflict do nothing returning id::text as id, code""",
-                (game, lang, code, set_name, set_name, suffix),
-            ).fetchone()
-            if row:
-                break
-            existing = self.conn.execute(
-                "select id::text as id, code from public.sets where game = %s and lang = %s and code = %s",
-                (game, lang, code),
-            ).fetchone()
-            if existing:
-                row = existing
-                break
-        if row is None:
-            raise RuntimeError(f"could not create a set for {game}/{lang} {set_name!r}")
-        self.stats.auto_created_sets += 1
-        self.sets[key] = (row["id"], row["code"])
-        log.info("pricecharting: auto-created set %s/%s %r (%s)", game, lang, set_name, row["code"])
-        return row["id"], row["code"]
-
     # --------------------------------------------------------------- cards
     def card_for(self, p: PcProduct) -> str | None:
         """The catalogue card for this product (creating/linking/queueing as needed)."""
@@ -249,23 +472,13 @@ class PcIngestor:
         if p.id in self.mapped:
             self.stats.already_mapped += 1
             return self.mapped[p.id]
-        status = self.queue.get(p.id)
-        if status == "rejected":
+        if self.queue.get(p.id) == "rejected":
             self.stats.rejected += 1
             return None
         pn = parse_product_name(p.product_name)
         if not pn.number:
             self.stats.no_number += 1
             return None
-        record = ExternalRecord(
-            SOURCE, p.id, info.game, info.lang, console.set_code or "", pn.number, pn.variant, pn.name
-        )
-        candidates = {c.id: c for c in self.by_set.get(console.set_id, [])}
-        for c in self.by_number.get((info.game, info.lang, normalise_number(pn.number)), []):
-            candidates[c.id] = c
-        decision = Matcher(candidates.values(), auto_accept=self.rules.market_matcher_auto_accept).match(
-            record
-        )
         payload = {
             **p.payload(),
             "set_name": info.set_name,
@@ -274,126 +487,23 @@ class PcIngestor:
             "variant_text": pn.variant_text,
             "name": pn.name,
         }
-
-        if decision.status is Status.AUTO and decision.card_id:
-            self._link(p.id, decision.card_id, info.lang, pn.variant, decision.confidence, "auto")
-            if status == "pending":
-                self.conn.execute(
-                    """update public.mapping_queue set status = 'approved', resolved_card_id = %s, reviewed_at = now()
-                        where source = %s and external_id = %s""",
-                    (decision.card_id, SOURCE, p.id),
-                )
-            self.stats.auto_linked += 1
-            return decision.card_id
-
-        suggested, reasons = decision.card_id, list(decision.reasons)
-        if decision.status is Status.UNMATCHED:
-            # PriceCharting names sets its own way ("Scarlet & Violet 151" vs
-            # our "151"), so a set miss alone must not create a duplicate card:
-            # same number + near-identical name goes to an admin instead.
-            twin = _lookalike(candidates.values(), pn.number, pn.name)
-            if twin:
-                suggested = twin.id
-                reasons.append(
-                    f"same number and name as {twin.set_code} {twin.number}: check the set mapping"
-                )
-
-        if decision.status is Status.REVIEW or suggested:
-            self._queue(p, payload, info, suggested, decision.confidence, reasons, "pending", None)
-            self.stats.queued_for_review += 1
-            return None
-
-        card_id = self._create_card(console.set_id, info, pn.number, pn.name, pn.variant, p.id)
-        self._link(p.id, card_id, info.lang, pn.variant, None, "auto_created")
-        self._queue(
-            p,
-            payload,
-            info,
-            None,
-            decision.confidence,
-            ["no catalogue match: card auto-created"],
-            "created_card",
-            card_id,
+        return self._match_card(
+            p.id,
+            game=info.game,
+            lang=info.lang,
+            set_id=console.set_id,
+            set_code=console.set_code or "",
+            number=pn.number,
+            variant=pn.variant,
+            name=pn.name,
+            payload=payload,
         )
-        self._index(
-            CatalogueCard(
-                card_id, info.game, info.lang, console.set_code or "", pn.number, pn.variant, pn.name
-            ),
-            console.set_id,
-        )
-        self.stats.auto_created_cards += 1
-        return card_id
-
-    def _link(
-        self, pc_id: str, card_id: str, lang: str, variant: str, confidence: Decimal | None, method: str
-    ) -> None:
-        self.conn.execute(
-            """insert into public.card_external_ids (card_id, source, external_id, lang, variant, match_confidence, match_method)
-               values (%s, %s, %s, %s, %s, %s, %s) on conflict (source, external_id) do nothing""",
-            (card_id, SOURCE, pc_id, lang, variant, confidence, method),
-        )
-        self.mapped[pc_id] = card_id
-
-    def _queue(
-        self,
-        p: PcProduct,
-        payload: dict[str, Any],
-        info: ConsoleInfo,
-        suggested: str | None,
-        confidence: Decimal,
-        reasons: list[str],
-        status: str,
-        resolved: str | None,
-    ) -> None:
-        self.conn.execute(
-            """insert into public.mapping_queue
-                 (source, external_id, payload, game, lang, suggested_card_id, confidence, reasons, status, resolved_card_id)
-               values (%s, %s, %s::jsonb, %s, %s, %s, %s, %s::jsonb, %s::public.mapping_status, %s)
-               on conflict (source, external_id) do update set
-                 payload = excluded.payload, suggested_card_id = excluded.suggested_card_id,
-                 confidence = excluded.confidence, reasons = excluded.reasons
-               where mapping_queue.status = 'pending'""",
-            (
-                SOURCE,
-                p.id,
-                json.dumps(payload),
-                info.game,
-                info.lang,
-                suggested,
-                min(confidence, Decimal("0.999")),
-                json.dumps(reasons),
-                status,
-                resolved,
-            ),
-        )
-        self.queue[p.id] = status
-
-    def _create_card(
-        self, set_id: str, info: ConsoleInfo, number: str, name: str, variant: str, pc_id: str
-    ) -> str:
-        base = f"{number} {name}" + ("" if variant == "standard" else f" {variant}")
-        for slug_extra in ("", f" {pc_id}"):
-            row = self.conn.execute(
-                """insert into public.cards (set_id, game, lang, number, name, slug, variant, auto_created)
-                   values (%s, %s, %s, %s, %s, public.slugify(%s), %s, true)
-                   on conflict do nothing returning id::text as id""",
-                (set_id, info.game, info.lang, number, name[:200], base + slug_extra, variant),
-            ).fetchone()
-            if row:
-                return str(row["id"])
-            existing = self.conn.execute(
-                "select id::text as id from public.cards where set_id = %s and number = %s and variant = %s",
-                (set_id, number, variant),
-            ).fetchone()
-            if existing:
-                return str(existing["id"])
-        raise RuntimeError(f"could not create a card for PriceCharting {pc_id}")
 
     # -------------------------------------------------------------- prices
     def ingest(self, products: Iterable[PcProduct], fx: Fx) -> IngestStats:
         if not self._loaded:
             self.load()
-        rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str]] = []
+        rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str | None]] = []
         for p in products:
             self.stats.products += 1
             card_id = self.card_for(p)
@@ -411,62 +521,6 @@ class PcIngestor:
         if rows:
             self._write_prices(rows, fx)
         return self.stats
-
-    def _write_prices(
-        self, rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str]], fx: Fx
-    ) -> None:
-        c = self.conn
-        c.execute(
-            """create temp table if not exists tmp_pc_prices (
-                 card_id uuid, grader text, grade numeric(3, 1), price numeric(12, 2), price_aud numeric(12, 2),
-                 source_ref text, url text) on commit drop"""
-        )
-        c.execute("truncate tmp_pc_prices")
-        with (
-            c.cursor() as cur,
-            cur.copy(
-                "copy tmp_pc_prices (card_id, grader, grade, price, price_aud, source_ref, url) from stdin"
-            ) as copy,
-        ):
-            for row in rows:
-                copy.write_row(row)
-        params = {"obs": self.observed_at, "fx": fx.rate_to_aud, "fxd": fx.date, "src": SOURCE}
-        if "ask" in self.store_types:
-            c.execute(
-                """delete from public.price_points p using tmp_pc_prices t
-                    where p.source = %(src)s and p.type = 'ask' and p.source_ref = t.source_ref
-                      and p.observed_at < %(obs)s""",
-                params,
-            )
-            cur = c.execute(
-                """insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
-                     price_aud, source, source_ref, url, observed_at)
-                   select card_id, grader, grade, 'ask', price, 'USD', %(fx)s, %(fxd)s, price_aud, %(src)s,
-                          source_ref, url, %(obs)s
-                     from tmp_pc_prices
-                   on conflict (source, source_ref, type, observed_at) where source_ref is not null do update set
-                     card_id = excluded.card_id, price = excluded.price, price_aud = excluded.price_aud,
-                     fx_rate = excluded.fx_rate, fx_date = excluded.fx_date""",
-                params,
-            )
-            self.stats.asks_written = cur.rowcount
-        if "sold" in self.store_types:
-            cur = c.execute(
-                f"""insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
-                      price_aud, source, source_ref, url, observed_at)
-                    select t.card_id, t.grader, t.grade, 'sold', t.price, 'USD', %(fx)s, %(fxd)s, t.price_aud, %(src)s,
-                           t.source_ref, t.url, %(obs)s
-                      from tmp_pc_prices t
-                      left join lateral (
-                        select p.price, p.observed_at from public.price_points p
-                         where p.source = %(src)s and p.type = 'sold' and p.source_ref = t.source_ref
-                         order by p.observed_at desc limit 1) l on true
-                     where l.observed_at is null
-                        or (l.observed_at < %(obs)s
-                            and (l.price <> t.price or l.observed_at < %(obs)s - interval '{SOLD_REFRESH_DAYS} days'))""",
-                params,
-            )
-            self.stats.solds_written = cur.rowcount
 
 
 def _lookalike(cards: Iterable[CatalogueCard], number: str, name: str) -> CatalogueCard | None:

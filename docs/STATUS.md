@@ -11,7 +11,8 @@ Owner decisions applied (2026-09-28): brand **TCGTracker**, domain **tcgtracker.
 | JP and EN are always separate cards (DB trigger blocks cross-matching) | ✅ | `catalogue.sql` |
 | Market cap = PSA pop × floor, in AUD with stored FX (RBA F11) | ✅ | `workers/tcgworkers/market/` |
 | **Price-only mode** until PSA population is licensed: ranks by value, labelled, and switches to market cap per card as soon as a population exists | ✅ | `20260928000200_price_rankings.sql` |
-| PriceCharting ingestion (CSV bulk + API), USD cents → AUD, grade field mapping, matcher → admin mapping queue | ✅ fixture tested; 🟡 needs token + licence | `sources/pricing/pricecharting.py` |
+| JustTCG ingestion (card prices per grading company + 1-year history backfill), USD → AUD at each day's RBA rate, matcher → admin mapping queue | ✅ fixture tested; 🟡 needs `JUSTTCG_API_KEY` (Professional plan) | `sources/pricing/justtcg.py`, `justtcg_ingest.py` |
+| PriceCharting ingestion (legacy fallback) | ✅ fixture tested; not used once JustTCG is set | `sources/pricing/pricecharting.py` |
 | Card, set, game and language hubs with charts, history tables, JSON-LD | ✅ | `app/[game]/**` |
 | Buy button: TCGTracker listings first, else **eBay AU** search for that exact card/lang/grade, plus Alert me / Sell | ✅ unit + e2e | `lib/domain/buyButton.ts`, `lib/domain/ebay.ts` |
 | eBay Partner Network: campaign ID entered in Admin → Settings populates every link; "Ad" disclosure next to links; `rel="sponsored"` | ✅ | `app/admin/settings` |

@@ -1,0 +1,15 @@
+{
+ "data": [
+  {
+   "id": "sv2a-pokemon-card-151-pokemon-japan",
+   "name": "SV2a: Pokemon Card 151",
+   "game_id": "pokemon-japan"
+  }
+ ],
+ "meta": {
+  "total": 1,
+  "limit": 100,
+  "offset": 0,
+  "hasMore": false
+ }
+}

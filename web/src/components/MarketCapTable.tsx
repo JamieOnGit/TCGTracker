@@ -172,7 +172,7 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
         asOf={result.asOf}
         demo={repo.isDemo}
         scope={`${result.total.toLocaleString('en-AU')} cards · ${gradeLabel(query.gradeKey)}${priceMode ? ' · ranked by value until licensed PSA population data is connected' : ''}`}
-        sources="PriceCharting (graded prices, converted from USD), TCGTracker marketplace asks"
+        sources="JustTCG (graded sale prices, converted from USD), TCGTracker marketplace asks"
       />
     </section>
   )

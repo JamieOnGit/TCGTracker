@@ -1,0 +1,57 @@
+{
+ "data": [
+  {
+   "id": "c0000000-0000-5000-a000-000000000215",
+   "slug": "umbreon",
+   "name": "Umbreon VMAX (Alternate Art Secret)",
+   "game": {
+    "id": "pokemon"
+   },
+   "set": {
+    "id": "sv-scarlet-violet-151-pokemon",
+    "name": "SV: Scarlet & Violet 151"
+   },
+   "number": "215/203",
+   "rarity": "Secret Rare",
+   "external_ids": {},
+   "variants": [
+    {
+     "id": "v-PSA-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 2100.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "meta": {
+  "count": 1,
+  "total": 3,
+  "limit": 2,
+  "has_more": false,
+  "cursor": {
+   "next": null,
+   "prev": "page1"
+  }
+ }
+}

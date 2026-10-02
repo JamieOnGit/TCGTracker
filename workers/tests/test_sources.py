@@ -5,7 +5,7 @@ from decimal import Decimal as D
 import httpx
 import pytest
 
-from tcgworkers.sources.fx.rba import parse_f11, to_aud
+from tcgworkers.sources.fx.rba import parse_f11, parse_f11_history, to_aud
 from tcgworkers.sources.population.base import SourceNotApproved
 from tcgworkers.sources.population.psa import (
     BASE_URL,
@@ -54,6 +54,14 @@ def test_rba_f11_parses_latest_rate_as_aud_per_unit(fixtures):
     assert to_aud(D("5"), "AUD", rates) == (D("5.00"), None)
     with pytest.raises(KeyError):
         to_aud(D("1"), "XYZ", rates)
+
+
+def test_rba_f11_history_keeps_every_day(fixtures):
+    text = (fixtures / "fx/rba-f11-sample.csv").read_text()
+    usd = sorted((r.date, r.rate_to_aud) for r in parse_f11_history(text) if r.currency == "USD")
+    assert len(usd) >= 3 and usd[-1][0].isoformat() == "2026-09-25"
+    assert usd[0][0] < usd[-1][0]  # earlier days are kept, for converting price history
+    assert {r.currency: r.date for r in parse_f11(text)}["USD"] == usd[-1][0]
 
 
 def test_psa_grade_parsing():

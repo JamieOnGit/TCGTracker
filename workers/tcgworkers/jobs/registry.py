@@ -2,9 +2,9 @@
 
 | job         | cadence (setting)                   | status                                  |
 |-------------|-------------------------------------|-----------------------------------------|
-| fx          | market.fx_refresh_hours (24h)       | live (RBA F11, CC BY 4.0)               |
+| fx          | market.fx_refresh_hours (24h)       | live (RBA F11 with history, CC BY 4.0)  |
 | population  | market.population_refresh_hours     | waiting on a licensed source (14.1)     |
-| prices      | market.floor_refresh_hours (4h)     | PriceCharting (needs PRICECHARTING_TOKEN) |
+| prices      | market.floor_refresh_hours (4h)     | JustTCG (needs JUSTTCG_API_KEY)          |
 | floors      | market.floor_refresh_hours (4h)     | ready; needs price data                 |
 | snapshots   | daily                               | ready; needs population + floors        |
 | expiry      | hourly                              | ready                                   |
@@ -35,7 +35,7 @@ from tcgworkers.db import pipeline_run
 from tcgworkers.drops.push import PushSender, sender_from_env
 from tcgworkers.email.providers import EmailProvider, provider_from_env
 from tcgworkers.sources.ebay_deals import RUN_EVERY_MINUTES, BrowseClient, DealFinder
-from tcgworkers.sources.fx.rba import F11_URL, parse_f11
+from tcgworkers.sources.fx.rba import F11_URL, parse_f11, parse_f11_history
 from tcgworkers.sources.population.base import SourceNotApproved
 
 log = logging.getLogger(__name__)
@@ -60,16 +60,25 @@ def refresh_fx(conn: Conn, user_agent: str) -> None:
     with pipeline_run(conn, "fx") as stats:
         r = httpx.get(F11_URL, headers={"User-Agent": user_agent}, timeout=30)
         r.raise_for_status()
+        history = parse_f11_history(r.text)
         rates = parse_f11(r.text)
-        for rate in rates:
-            conn.execute(
+        with conn.cursor() as cur:
+            # Past days once (historical prices convert at their own day's rate)...
+            cur.executemany(
+                """insert into public.fx_rates (currency, date, rate_to_aud, source)
+                   values (%s, %s, %s, %s) on conflict (currency, date) do nothing""",
+                [(x.currency, x.date, x.rate_to_aud, x.source) for x in history],
+            )
+            # ...and the latest day refreshed, in case the RBA revised it.
+            cur.executemany(
                 """insert into public.fx_rates (currency, date, rate_to_aud, source)
                    values (%s, %s, %s, %s)
                    on conflict (currency, date) do update set rate_to_aud = excluded.rate_to_aud,
                      fetched_at = now()""",
-                (rate.currency, rate.date, rate.rate_to_aud, rate.source),
+                [(x.currency, x.date, x.rate_to_aud, x.source) for x in rates],
             )
         stats["currencies"] = len(rates)
+        stats["days"] = len({x.date for x in history})
         stats["date"] = max((r.date for r in rates), default=None)
 
 
