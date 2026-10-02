@@ -20,6 +20,7 @@ is used instead for that game, at 1 call/second and at most
 
 from __future__ import annotations
 
+import json
 import logging
 from collections import Counter
 from dataclasses import asdict
@@ -195,6 +196,28 @@ def _due_sets(
 ) -> list[tuple[JtGame, dict[str, Any], bool]]:
     """(game, set, needs history backfill) for every set due a refresh, stalest first."""
     known: dict[tuple[str, str], tuple[datetime | None, datetime | None, bool]] = {}
+    # Until JustTCG has stored a single price, every set is due (with history):
+    # a run that fetched sets but stored nothing must not hold them back.
+    priced = conn.execute(
+        "select exists (select 1 from public.price_points where source = 'justtcg') as e"
+    ).fetchone()
+    if not (priced["e"] if isinstance(priced, dict) else priced[0]):
+        for game in games:
+            for s in listed.get(game.api_id, []):
+                known.setdefault((game.api_id, s["id"]), (None, None, False))
+        excluded_rows = conn.execute(
+            "select justtcg_game, justtcg_set_id from public.justtcg_sets group by 1, 2 having bool_and(excluded)"
+        ).fetchall()
+        excluded = {
+            (r["justtcg_game"], r["justtcg_set_id"]) if isinstance(r, dict) else (r[0], r[1])
+            for r in excluded_rows
+        }
+        return [
+            (g, s, True)
+            for g in games
+            for s in listed.get(g.api_id, [])
+            if (g.api_id, s["id"]) not in excluded
+        ]
     for r in conn.execute(
         """select justtcg_game, justtcg_set_id, max(refreshed_at) as refreshed_at,
                   max(history_backfilled_at) as backfilled_at, bool_and(excluded) as excluded
@@ -304,6 +327,7 @@ def refresh_justtcg(
         # What came back, so an empty import says why (no cards vs no graded variants vs no prices).
         cards_seen = 0
         variants_seen: Counter[str] = Counter()
+        logged_sample = False
         for game, s, backfill in due:
             try:
                 cards = list(
@@ -327,8 +351,19 @@ def refresh_justtcg(
                     if isinstance(v, dict):
                         variants_seen[str(v.get("type"))] += 1
             records = [(rec, game) for card in cards for rec in parse_card(card, game, companies)]
+            if cards and not records and not logged_sample:
+                # Cards came back but none parsed: show one (trimmed) so the cause is visible in the logs.
+                logged_sample = True
+                log.warning(
+                    "justtcg: %s/%s returned %d cards but no usable prices; first card: %s",
+                    game.api_id,
+                    s["id"],
+                    len(cards),
+                    json.dumps(cards[0], default=str)[:1500],
+                )
             ingestor.ingest(records, fx, fx_history=fx_history if backfill else None)
-            _mark_refreshed(conn, game, s, backfilled=backfill, now=now)
+            # History counts as backfilled only once the set produced prices.
+            _mark_refreshed(conn, game, s, backfilled=backfill and bool(records), now=now)
             conn.commit()
             done += 1
         stats["sets_refreshed"] = done
