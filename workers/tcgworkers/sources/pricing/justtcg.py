@@ -194,19 +194,23 @@ def _ts(v: Any) -> datetime | None:
 
 
 def _market(variant: dict[str, Any]) -> dict[str, Any] | None:
-    """The North American USD market (markets[0] when we only request NA)."""
-    for m in variant.get("markets") or []:
-        if (
-            isinstance(m, dict)
-            and (m.get("region") or "NA").upper() == "NA"
-            and (m.get("currency") or "USD") == "USD"
-        ):
+    """The US-dollar market with a price: North America first (markets[0] when
+    we only request NA), else any other USD market."""
+    usd = [
+        m
+        for m in variant.get("markets") or []
+        if isinstance(m, dict)
+        and str(m.get("currency") or "USD").upper() == "USD"
+        and m.get("price") is not None
+    ]
+    for m in usd:
+        if str(m.get("region") or "NA").upper() in ("NA", "US"):
             return m
-    return None
+    return usd[0] if usd else None
 
 
 def _price_of(variant: dict[str, Any], companies: tuple[str, ...]) -> JtPrice | None:
-    kind = variant.get("type")
+    kind = str(variant.get("type") or ("graded" if variant.get("grading") else "raw")).lower()
     if kind == "graded":
         g = variant.get("grading") or {}
         company = (g.get("company") or "").upper()
