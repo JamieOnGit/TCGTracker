@@ -7,7 +7,7 @@ drop event, so each event's content is built once, then:
 
 * ``email``   -> an ``email_outbox`` row (template ``drop``, dedupe
   ``drop:<delivery id>``); the outbox sender delivers it with retries.
-  Free members' emails carry the "24 hours after Premium" upgrade line.
+  Free members' emails carry the "5 minutes after Premium" upgrade line.
 * ``onsite``  -> a ``notifications`` row (the bell).
 * ``discord`` -> one post per event to the Premium channel webhook
   (DISCORD_DROPS_WEBHOOK_URL). Free members' Discord deliveries are skipped:
@@ -315,7 +315,7 @@ def push_message(event: EventInfo, tier: str) -> dict[str, Any]:
     if event.is_sighting:
         body = f"{body} · Member sighting"
     if tier != "premium":
-        body += " · Premium members got this 24 hours earlier"
+        body += " · Premium members got this 5 minutes earlier"
     return push_payload(headline(event), body, event.site_path, f"drop-{event.id}")
 
 

@@ -108,9 +108,34 @@ test('retailer page shows what is in stock there', async ({ page }) => {
 
 test('stock pages have no horizontal scroll at phone width', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', 'mobile only')
-  for (const path of ['/drops/', '/drops/in-stock/', '/drops/stores/', '/products/', PRODUCT]) {
+  for (const path of ['/drops/', '/drops/in-stock/', '/drops/stores/', '/products/', PRODUCT, '/stock/', '/stock/demo-card-shop/']) {
     await page.goto(path)
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow, path).toBeLessThanOrEqual(0)
   }
+})
+
+test('stock hub: totals, stores ranked by what is in stock, linked store pages', async ({ page }) => {
+  await page.goto('/stock/')
+  await expect(page.getByRole('heading', { level: 1, name: 'Pokémon & One Piece card stock in Australia' })).toBeVisible()
+  await expect(page.getByText('Listings in stock now')).toBeVisible()
+  const rows = page.locator('table tbody tr')
+  await expect(rows.first()).toHaveAttribute('data-in-stock', 'yes')
+  await rows.first().getByRole('link').click()
+  await expect(page).toHaveURL(/\/stock\/[a-z0-9-]+\/$/)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Pokémon & One Piece stock')
+})
+
+test('store stock page: every listing with status, price and a facet that is noindex', async ({ page }) => {
+  await page.goto('/stock/demo-card-shop/')
+  await expect(page.locator('tr[data-availability]')).toHaveCount(2)
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /^index/)
+  await page.getByRole('link', { name: /^In stock \(/ }).click()
+  await expect(page).toHaveURL(/status=in-stock/)
+  await expect(page.locator('tr[data-availability]')).toHaveCount(2)
+  // What a crawler gets on a fresh load of the facet.
+  await page.goto('/stock/demo-card-shop/?status=sold-out')
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+  const res = await page.goto('/stock/no-such-store/')
+  expect(res?.status()).toBe(404)
 })

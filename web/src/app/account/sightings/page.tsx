@@ -194,7 +194,7 @@ export default async function Sightings({ searchParams }: { searchParams: Promis
             <p className="eyebrow"><span className="holo-text">◆ Premium</span></p>
             <p className="serif mt-2 text-lg">Premium members confirm reports — and get their alerts instantly.</p>
             <p className="muted mt-2 text-sm">
-              New reports are shown to Premium members first, so they can check the shelf and confirm. Their alerts arrive the moment a report is confirmed; Free members get the same alert 24 hours later. Earn Premium free: every {reward.every} confirmed sightings you report.
+              New reports are shown to Premium members first, so they can check the shelf and confirm. Their alerts arrive the moment a report is confirmed; Free members get the same alert 5 minutes later. Earn Premium free: every {reward.every} confirmed sightings you report.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link href="/account/billing/upgrade/" className="btn btn-holo">Upgrade to Premium</Link>

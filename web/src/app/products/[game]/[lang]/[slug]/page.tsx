@@ -68,7 +68,7 @@ export default async function ProductPage({ params }: Props) {
         <PageIntro eyebrow={`${GAME_NAMES[p.game]} TCG · ${productTypeLabel(p.type)} · ${LANG_NAMES[p.lang]}`} title={heading} lead={`${productSummary(p)}.`}>
           <div className="mt-6">
             <NotifyButton productId={p.id} productName={p.name} nextPath={path} watchers={watchers} size="md" />
-            <p className="muted mt-2 max-w-[var(--measure)] text-xs">Notify me alerts you when this product is back in stock, opens for pre-order or drops in price at any store we watch: instantly with Premium, 24 hours later on Free.</p>
+            <p className="muted mt-2 max-w-[var(--measure)] text-xs">Notify me alerts you when this product is back in stock, opens for pre-order or drops in price at any store we watch: instantly with Premium, 5 minutes later on Free.</p>
           </div>
         </PageIntro>
         <div className="hidden md:block md:pt-16">

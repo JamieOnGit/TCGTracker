@@ -9,7 +9,7 @@ import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
 import { durationLabel, parseDropSource } from '@/lib/domain/drops'
 import { countByStatus, dropStatus, feedHref, parseGame, parseSort, parseStatus, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, productsPath, scoutsPath, storesPath } from '@/lib/seo/urls'
+import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, productsPath, scoutsPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
 type Props = { searchParams: Promise<SearchParams> }
@@ -78,6 +78,7 @@ export default async function Drops({ searchParams }: Props) {
           <ChipNav label="By state" links={AU_STATES.map((st) => ({ href: dropsStatePath(st), text: st, title: AU_STATE_NAMES[st] }))} />
         </div>
         <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Link href={stockPath()} className="btn btn-secondary btn-sm">Live stock by store</Link>
           <Link href={inStockPath()} className="btn btn-secondary btn-sm">In stock now</Link>
           <Link href={accountSightingsPath()} className="btn btn-primary btn-sm" rel="nofollow">Seen stock in store? Report it</Link>
           <Link href={storesPath()} className="prose-link text-sm">Stores we watch</Link>

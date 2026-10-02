@@ -72,7 +72,7 @@ export default async function Billing({ searchParams }: Props) {
               </>
             )}
             <dt>Listings</dt><dd>{acct.quota.limit} per month ({acct.quota.used} used)</dd>
-            <dt>Drop alerts</dt><dd>{tier === 'premium' ? 'Instant' : '24 hours after each drop'}</dd>
+            <dt>Drop alerts</dt><dd>{tier === 'premium' ? 'Instant' : '5 minutes after each drop'}</dd>
           </dl>
           <div className="mt-6 flex flex-wrap gap-3">
             {tier === 'free' && !paying && (

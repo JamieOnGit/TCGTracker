@@ -110,7 +110,7 @@ EVENT_LABELS: dict[str, str] = {
 
 QUANTITY_LABELS: dict[str, str] = {"few": "A few left", "some": "Some in stock", "plenty": "Plenty in stock"}
 
-FREE_DELAY_LINE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: {url}"
+FREE_DELAY_LINE = "You're seeing this 5 minutes after Premium members. Upgrade for instant alerts: {url}"
 
 # "Midnight Holo" palette, matching the site theme.
 BG = "#0B0D14"  # page background

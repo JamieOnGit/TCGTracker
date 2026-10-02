@@ -303,6 +303,8 @@ body {
 .provenance { font-size: var(--text-xs); color: var(--ink-muted); margin-block: 12px; }
 .provenance a { color: inherit; }
 @media (max-width: 767px) { .dt .hide-sm { display: none; } }
+.dt .show-sm { display: none; }
+@media (max-width: 767px) { .dt .show-sm { display: flex; } }
 @media (max-width: 1023px) { .dt .hide-md { display: none; } }
 
 /* Card imagery */

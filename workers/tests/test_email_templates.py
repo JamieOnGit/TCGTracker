@@ -243,7 +243,7 @@ def test_primary_button_and_rrp_tag_colours() -> None:
 def test_free_drop_email_has_the_24h_upgrade_line() -> None:
     r = render("drop", {**SAMPLE["drop"], "tier": "free"}, CTX)
     line = (
-        "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: "
+        "You're seeing this 5 minutes after Premium members. Upgrade for instant alerts: "
         "https://tcgtracker.com.au/premium/"
     )
     assert line in r.text
@@ -326,10 +326,10 @@ def test_in_store_sighting_email() -> None:
         "See VIC sightings: https://tcgtracker.com.au/drops/vic/",
     ):
         assert line in r.text, line
-    assert "24 hours after Premium" not in r.text
+    assert "5 minutes after Premium" not in r.text
     assert "https://tcgtracker.com.au/unsubscribe/?t=TOKEN123" in r.text
     free = render("drop", {**SIGHTING, "tier": "free"}, CTX)
-    assert "You're seeing this 24 hours after Premium members." in free.text
+    assert "You're seeing this 5 minutes after Premium members." in free.text
 
 
 def test_online_sighting_email_links_the_product_without_affiliate_tracking() -> None:

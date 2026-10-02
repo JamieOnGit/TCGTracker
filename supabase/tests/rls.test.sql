@@ -337,8 +337,8 @@ select id, 'OP09-BOX', 'https://example.test/op09', 'One Piece Card Game OP-09 B
 from public.retailers where slug = 'jb-hi-fi';
 insert into public.drop_events (retail_product_id, event_type, price_aud, rrp_aud, rrp_tag, dedupe_key)
 select id, 'IN_STOCK', 199, 199, 'AT_RRP', 'jb-hi-fi:OP09-BOX:IN_STOCK:1' from public.retail_products;
-select tests.ok((select public_at - occurred_at from public.drop_events limit 1) = interval '1 day',
-  'public_at = occurred_at + drops.public_delay_minutes (1 day)');
+select tests.ok((select public_at - occurred_at from public.drop_events limit 1) = interval '5 minutes',
+  'public_at = occurred_at + drops.public_delay_minutes (5 minutes)');
 select tests.throws($$
   insert into public.drop_events (retail_product_id, event_type, dedupe_key)
   select id, 'IN_STOCK', 'jb-hi-fi:OP09-BOX:IN_STOCK:1' from public.retail_products
@@ -403,7 +403,7 @@ select tests.ok(
   'market cap row and Buy-button stats resolve to the same card_id and grade');
 
 -- ------------------------------------------------ alert delivery (2026-09-28)
--- Drop alerts: Premium instant, Free 1 day later (drops.free_delay_minutes).
+-- Drop alerts: Premium instant, Free 5 minutes later (drops.free_delay_minutes).
 select tests.ok(
   (select tier_at_enqueue = 'premium' from public.drop_alert_deliveries
     where user_id = '00000000-0000-0000-0000-00000000000e' and channel = 'email'),
@@ -412,15 +412,15 @@ select tests.ok(
   (select f.deliver_at - p.deliver_at from public.drop_alert_deliveries f, public.drop_alert_deliveries p
     where f.user_id = '00000000-0000-0000-0000-00000000000b' and f.channel = 'email'
       and p.user_id = '00000000-0000-0000-0000-00000000000e' and p.channel = 'email'
-      and f.drop_event_id = p.drop_event_id) = interval '1 day',
-  'a Free member''s drop alert is due exactly 1 day after the Premium one');
+      and f.drop_event_id = p.drop_event_id) = interval '5 minutes',
+  'a Free member''s drop alert is due exactly 5 minutes after the Premium one');
 select tests.ok(not exists (select 1 from public.drop_alert_deliveries where channel = 'discord'),
   'Discord delivery is opt-in');
 -- If a queued instant alert becomes due after the member lapses to Free, it is pushed back, never sent early.
 insert into public.retail_products (retailer_id, sku, url, title, game)
 select id, 'ETB-1', 'https://example.test/etb', 'Pokemon TCG Elite Trainer Box', 'pokemon' from public.retailers where slug = 'jb-hi-fi';
 insert into public.drop_events (retail_product_id, event_type, price_aud, dedupe_key, occurred_at)
-select id, 'IN_STOCK', 89.95, 'jb-hi-fi:ETB-1:IN_STOCK:1', now() - interval '5 minutes' from public.retail_products where sku = 'ETB-1';
+select id, 'IN_STOCK', 89.95, 'jb-hi-fi:ETB-1:IN_STOCK:1', now() - interval '1 minute' from public.retail_products where sku = 'ETB-1';
 update public.subscriptions set status = 'canceled', tier = 'free' where user_id = '00000000-0000-0000-0000-00000000000e';
 select tests.ok(
   not exists (select 1 from public.claim_due_drop_alerts(1000) c
@@ -430,7 +430,7 @@ select tests.ok(
 select tests.ok(
   (select d.deliver_at - e.occurred_at from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
     where d.user_id = '00000000-0000-0000-0000-00000000000e' and e.dedupe_key = 'jb-hi-fi:ETB-1:IN_STOCK:1' and d.channel = 'email')
-  = interval '1 day', '...it is rescheduled to the Free timing');
+  = interval '5 minutes', '...it is rescheduled to the Free timing');
 update public.subscriptions set status = 'active', tier = 'premium' where user_id = '00000000-0000-0000-0000-00000000000e';
 
 -- Messages: one batched email per conversation per window, and an on-site notification.
@@ -510,7 +510,7 @@ select tests.ok(exists (select 1 from public.drop_alert_deliveries d join public
   'the sighting alert reaches Premium members instantly');
 select tests.ok((select d.deliver_at - e.occurred_at from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
                   where e.sighting_id = (select sighting_id from s1) and d.user_id = '00000000-0000-0000-0000-00000000000c' and d.channel = 'email')
-                 = interval '1 day', 'and Free members 1 day later');
+                 = interval '5 minutes', 'and Free members 5 minutes later');
 select tests.ok(exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-00000000000a' and title = 'Your sighting was confirmed'),
   'the scout is told their sighting was confirmed');
 
@@ -711,5 +711,17 @@ update public.drop_alert_filters set games = array['pokemon', 'one-piece'] where
 select tests.ok((select platform from public.retailers where slug = 'toymate') = 'none'
                 and (select kind from public.retailers where slug = 'jb-hi-fi') = 'big-box',
   'retailers carry a platform and kind');
+
+-- Stock overview: one row per store; counts only live TCG listings, and anon can call it.
+select tests.ok((select count(*) from public.stock_overview()) = (select count(*) from public.retailers),
+  'stock_overview returns one row per store');
+select tests.ok((select listings from public.stock_overview() where slug = 'jb-hi-fi')
+                = (select count(*) from public.retail_products p join public.retailers r on r.id = p.retailer_id
+                    where r.slug = 'jb-hi-fi' and p.game is not null and not p.is_marketplace_seller and p.last_seen_at > now() - interval '14 days'),
+  'stock_overview counts a store''s live TCG listings');
+select tests.ok((select in_stock from public.stock_overview('one-piece') where slug = 'jb-hi-fi')
+                <= (select listings from public.stock_overview('one-piece') where slug = 'jb-hi-fi'),
+  'stock_overview filters by game');
+select tests.ok(has_function_privilege('anon', 'public.stock_overview(text)', 'execute'), 'anon can read the stock overview');
 
 \echo 'All database tests passed'

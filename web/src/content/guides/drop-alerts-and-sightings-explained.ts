@@ -62,7 +62,7 @@ The [scouts leaderboard](/drops/scouts/) shows members with the most confirmed s
 ## Who gets what, and when
 
 - **Premium** members get alerts instantly and can see pending sightings.
-- **Free** members get the same alerts after a delay (currently 24 hours).
+- **Free** members get the same alerts after a short delay (currently 5 minutes).
 - **Everyone** can browse the public history on the [drops page](/drops/), each retailer's page and each state's page, after a delay.
 
 See [Premium](/premium/) for current pricing and features.

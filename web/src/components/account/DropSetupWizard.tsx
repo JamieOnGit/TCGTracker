@@ -77,7 +77,7 @@ export function DropSetupWizard({ initial, retailers, sets, tier, vapidKey }: {
         {tier === 'premium' ? (
           <><strong>◆ Premium: instant alerts.</strong> You hear about restocks and confirmed member sightings the moment they happen.</>
         ) : (
-          <><strong>Free plan: your alerts arrive 24 hours after Premium members get them.</strong> Stock often sells out sooner. <Link className="prose-link" href="/account/billing/upgrade/">Upgrade for instant alerts</Link></>
+          <><strong>Free plan: your alerts arrive 5 minutes after Premium members get them.</strong> Popular stock can sell out in that time. <Link className="prose-link" href="/account/billing/upgrade/">Upgrade for instant alerts</Link></>
         )}
       </div>
 

@@ -110,7 +110,7 @@ export default async function Alerts() {
               </div>
             </>
           )}
-          {acct.tier === 'free' && <p className="muted mt-3 text-xs">Free plan: drop alerts arrive 24 hours after Premium members get them.</p>}
+          {acct.tier === 'free' && <p className="muted mt-3 text-xs">Free plan: drop alerts arrive 5 minutes after Premium members get them.</p>}
         </section>
       </div>
     </div>

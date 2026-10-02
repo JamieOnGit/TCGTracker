@@ -27,7 +27,7 @@ from tcgworkers.drops.push import PushGone, PushSubscription
 from tcgworkers.email.templates import RenderContext, render
 
 NOW = datetime(2026, 9, 28, 1, 0, tzinfo=UTC)
-UPGRADE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: https://tcgtracker.com.au/premium/"
+UPGRADE = "You're seeing this 5 minutes after Premium members. Upgrade for instant alerts: https://tcgtracker.com.au/premium/"
 
 EVENT = EventInfo(
     id=10,
@@ -157,7 +157,7 @@ def test_onsite_notification_rows_and_tier_text() -> None:
     notes = {d.user_id: (title, body, url) for d, title, body, url, _ in store.notes}
     assert notes["prem"][0] == "IN STOCK: Pokémon TCG: Surging Sparks Elite Trainer Box"
     assert notes["prem"][1] == "JB Hi-Fi · A$89.00 · ABOVE RRP (+12.5%)"
-    assert "24 hours after Premium" in notes["free"][1] and "24 hours" not in notes["prem"][1]
+    assert "5 minutes after Premium" in notes["free"][1] and "5 minutes" not in notes["prem"][1]
     assert notes["prem"][2] == "/drops/"
     assert notification(EVENT, "free", "https://tcgtracker.com.au")[3]["tier"] == "free"
 
@@ -327,7 +327,7 @@ def test_sighting_email_data_and_render() -> None:
     assert r.subject == "In store: Pokémon booster bundles at Kmart Chadstone, VIC — A$45.00"
     assert "Confirmed by 3 members." in r.text and PHOTO in r.text
     assert "Purchase limit: Limit 2 per customer" in r.text and "Stock: Some in stock" in r.text
-    assert "24 hours after Premium" not in r.text
+    assert "5 minutes after Premium" not in r.text
     assert UPGRADE in render("drop", email_data(SIGHTING, "free"), RenderContext()).text
     assert email_data(EVENT, "premium")["source"] == "monitor" and "place" not in email_data(EVENT, "premium")
 
@@ -339,7 +339,7 @@ def test_sighting_onsite_notification() -> None:
     assert url == "/drops/vic/" and data["source"] == "member" and data["sighting_id"] == 7
     title, body, url, _ = notification(ONLINE, "free", "https://tcgtracker.com.au")
     assert title == "Online: Pokémon booster bundles at Kmart"
-    assert url == "/drops/kmart/" and "24 hours after Premium" in body
+    assert url == "/drops/kmart/" and "5 minutes after Premium" in body
     # Monitors keep their format.
     assert notification(EVENT, "premium", "https://tcgtracker.com.au")[2] == "/drops/"
 
@@ -421,7 +421,7 @@ def test_push_is_sent_to_every_device_with_the_payload() -> None:
         "url": "/drops/vic/",
         "tag": "drop-20",
     }
-    assert "Premium members got this 24 hours earlier" in sent[2][1]["body"]
+    assert "Premium members got this 5 minutes earlier" in sent[2][1]["body"]
     assert store.push_ok == {1: 1, 2: 1, 3: 1} and store.alerted == {20}
 
 

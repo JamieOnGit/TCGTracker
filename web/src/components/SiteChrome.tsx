@@ -6,6 +6,7 @@ export const NAV = [
   { href: '/', label: 'Market', match: ['/', '/market-cap/'] },
   { href: '/cards/', label: 'Cards', match: ['/cards/', '/releases/'] },
   { href: '/marketplace/', label: 'Marketplace', match: ['/marketplace/', '/sellers/'] },
+  { href: '/stock/', label: 'Stock', match: ['/stock/'] },
   { href: '/drops/', label: 'Drops', match: ['/drops/', '/deals/'] },
   { href: '/news/', label: 'News', match: ['/news/', '/guides/'] },
   { href: '/premium/', label: 'Premium', match: ['/premium/'] },

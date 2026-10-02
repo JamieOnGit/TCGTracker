@@ -52,7 +52,7 @@ export function LiveDrops() {
       {state.status === 'loading' && <p className="muted mt-3 text-sm">Loading…</p>}
       {(state.status === 'anon' || state.status === 'free') && (
         <div className="mt-3 text-sm">
-          <p>Premium members see restocks, pre-orders and member in-store sightings the moment they happen, by push, email, Discord and here. Everyone else gets them 24 hours later.</p>
+          <p>Premium members see restocks, pre-orders and member in-store sightings the moment they happen, by push, email, Discord and here. Everyone else gets them 5 minutes later.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/premium/" className="btn btn-holo btn-sm">Get instant alerts · A$12.99/mo</Link>
             {state.status === 'anon' && <Link href="/login/?next=/drops/" className="btn btn-secondary btn-sm">Sign in</Link>}
