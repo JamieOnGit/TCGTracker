@@ -30,12 +30,12 @@ The website is complete, but these parts are switched off until their services a
 | 1 | GitHub repo `JamieOnGit/TCGTracker` | ✅ Done |
 | 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Done. Check 2.8 (SSL **Full (strict)** + **Always Use HTTPS**) is on. |
 | 3a–3f | Supabase project, sign-in URLs, GitHub secrets, database deployed | ✅ Done |
-| 3f-2 | Deploy database again for the stock-monitor update | ✅ Do it now if you skipped it (1 min) |
+| 3f-2 | Deploy database again for the Kmart/Target update (PR #9, merged) | ⏭ **Do now** if you haven't since PR #9 merged (1 min): **Actions → Deploy database** |
 | 3g | Make yourself admin | ✅ Done |
 | 4 | Website on Cloudflare Workers + domain + www redirect | ✅ Done |
 | 5 | Resend email + Supabase SMTP + rate limit | ✅ Done (sign-in works) |
-| **6** | **Push-notification keys** | ⏭ **Do now** |
-| 7 | Fly.io workers in Sydney (monitor, alerts, emails) | ☐ |
+| 6 | Push-notification keys | ✅ Done |
+| **7** | **Fly.io workers in Sydney (monitor, alerts, emails)** | ◐ App created, secrets set, deployed. ⏭ **Do now:** `git pull` then `fly deploy --ha=false` for the database-connection fix (see 7d) |
 | 7e | Check the 44-store monitor from Sydney (incl. Kmart and Target) | ☐ After 7 |
 | 8 | Stripe (Premium) | ☐ |
 | 9 | PriceCharting (prices) | ☐ |
@@ -333,9 +333,9 @@ Later, to get Claude's newest code before redeploying: `git pull` (or **Fetch or
 ### 7c · Collect the values (keep them out of the chat)
 1. **`DATABASE_URL`** (**App: Supabase**):
    1. Open the **tcgtracker** project and click the **Connect** button at the top of the page.
-   2. Choose the **Session pooler** connection string (not "Direct connection", which only works over IPv6, and not "Transaction pooler").
+   2. Stay on the **Direct** tab and set **Method** to **Session pooler**. Don't use "Direct connection", which only works over IPv6, or "Transaction pooler".
    3. Copy it. It looks like `postgresql://postgres.abcdefghijklmnopqrst:[YOUR-PASSWORD]@aws-…-ap-southeast-2.pooler.supabase.com:5432/postgres`. Copy the host exactly as shown; don't retype it.
-   4. Replace `[YOUR-PASSWORD]` (including the brackets) with your database password from Step 3a. If the password contains `@ # ? & / :` or spaces, reset it first to one with only letters and numbers (**Database → Settings → Reset database password**), and update the GitHub secret `SUPABASE_DB_PASSWORD` to match.
+   4. Replace `[YOUR-PASSWORD]` (including the brackets) with your database password from Step 3a. If the password contains `! @ # ? & / :` or spaces, reset it first to one with only letters and numbers (**Database → Settings → Reset database password**), and update the GitHub secret `SUPABASE_DB_PASSWORD` to match.
 2. **`SUPABASE_URL`**: the Project URL from 4b, like `https://abcdefghijklmnopqrst.supabase.co`.
 3. **`RESEND_API_KEY`** (**App: Resend**): go to **API keys → + Create API key**. Name `tcgtracker-workers`, permission **Sending access**, domain `tcgtracker.com.au` → **Add**. Copy the `re_…` key. It's shown only once. Use a separate key from the Supabase one, so you can replace either without breaking the other.
 4. **`VAPID_PRIVATE_KEY`**: from Step 6.
@@ -350,13 +350,16 @@ Later, to get Claude's newest code before redeploying: `git pull` (or **Fetch or
 2. Store the secrets. Paste this as **one** command, with your values between the quotes. Mac: lines end with `\`. Windows PowerShell: put it all on one line, without the `\`.
    ```
    fly secrets set --stage \
-     DATABASE_URL="postgresql://postgres.xxxx:PASSWORD@aws-…-ap-southeast-2.pooler.supabase.com:5432/postgres" \
-     SUPABASE_URL="https://xxxx.supabase.co" \
-     RESEND_API_KEY="re_…" \
-     VAPID_PRIVATE_KEY="…" \
-     VAPID_SUBJECT="mailto:hello@tcgtracker.com.au" \
-     ADMIN_ALERT_EMAIL="jamieha1998@gmail.com"
+     DATABASE_URL='postgresql://postgres.xxxx:PASSWORD@aws-…-ap-southeast-2.pooler.supabase.com:5432/postgres' \
+     SUPABASE_URL='https://xxxx.supabase.co' \
+     RESEND_API_KEY='re_…' \
+     VAPID_PRIVATE_KEY='…' \
+     VAPID_SUBJECT='mailto:hello@tcgtracker.com.au' \
+     ADMIN_ALERT_EMAIL='jamieha1998@gmail.com'
    ```
+   - Use **straight single quotes** `'…'`. On a Mac, double quotes break on a `!` (zsh says `event not found`), and curly quotes `‘ ’` (which Notes, Messages and Word insert) leave the terminal stuck at `quote>`. If you see `quote>`, press **Ctrl+C** and paste again.
+   - No `[ ]` around the password, and nothing after each `\`, not even a space.
+
    It should say the secrets are staged for the next deploy. Check with `fly secrets list`, which shows names only, never values.
 3. Deploy:
    ```
@@ -370,9 +373,10 @@ Later, to get Claude's newest code before redeploying: `git pull` (or **Fetch or
    ```
    `fly status` should list one machine in `syd` with state **started**.
 5. Watch it work: `fly logs`. Within a minute you should see lines like `drops toysrus discovery: seen=… events=…` and `drops dispatch: claimed=…`. Press **Ctrl+C** to stop watching; the workers keep running.
+   - If the logs fill with `EMAXCONNSESSION max clients reached in session mode`, you're running code from before 2 Oct 2026, when each store monitor kept a database connection open. Run `git pull`, then `fly deploy --ha=false`.
 6. ✉️ Tell Claude: **"workers deployed"**, plus anything red in the logs (copy the lines, never the secrets).
 
-**Adding more secrets later** (Steps 9–11): `fly secrets set NAME="value"` from the `workers` folder. Fly restarts the worker by itself.
+**Adding more secrets later** (Steps 9–11): `fly secrets set NAME='value'` from the `workers` folder. Fly restarts the worker by itself.
 **Deploying Claude's newer code:** `git pull` then `fly deploy --ha=false` from the `workers` folder.
 
 ### 7e · Check the live stock monitor from Sydney (≈10 min, 30 min after deploying)
@@ -448,7 +452,7 @@ This fills the market cap, card pages and price charts. The price import also **
 1. Create an account, then subscribe to the **Legendary** plan (US$49/month). It's the only plan with the API and CSV downloads: https://www.pricecharting.com/pricecharting-pro
 2. **Before using their prices publicly, ask permission.** Their terms say the data is for *internal use* unless you have a commercial licence and written permission. Email **brady@vgpc.com** from your account email. Claude has a draft ready: ask for it ("draft the PriceCharting email"). It asks for permission to show derived AUD prices publicly, with a link back to PriceCharting on each card.
 3. Meanwhile, go to **Subscription** (account menu) → **API/Download** and copy your **40-character API token**.
-4. In the terminal, in the `workers` folder: `fly secrets set PRICECHARTING_TOKEN="your-token"`.
+4. In the terminal, in the `workers` folder: `fly secrets set PRICECHARTING_TOKEN='your-token'`.
 5. ✉️ Tell Claude: **"PriceCharting subscribed"**. Claude runs the first import and checks the cards and prices. Keep the site **unannounced** until PriceCharting says yes. Claude can hide prices behind sign-in until then if you prefer.
 
 ## Step 9b · eBay developer keys: the deal finder (≈20 min)
@@ -467,7 +471,7 @@ This powers **/deals/**: graded cards on eBay Australia listed well under market
    5. **Submit**.
 6. In the terminal (`workers` folder):
    ```
-   fly secrets set EBAY_CLIENT_ID="App ID here" EBAY_CLIENT_SECRET="Cert ID here"
+   fly secrets set EBAY_CLIENT_ID='App ID here' EBAY_CLIENT_SECRET='Cert ID here'
    ```
 7. On the site, go to **Admin → Settings → eBay deals** and turn on **Find eBay deals**. The defaults are deals at least 20% under value, and auctions ending within 2 hours. Then **Save**.
 8. ✉️ Tell Claude: **"eBay keys added"**. Claude checks the first run in the logs. eBay limits new apps to 5,000 calls a day; the deal finder stays well under that.
@@ -482,7 +486,7 @@ Until this is done, cards show the styled holo placeholder. Neither The Pokémon
 1. Decide, ideally with your lawyer in Step 14, whether to show card scans.
 2. If yes, subscribe at **https://scrydex.com/pricing**. **Starter** is US$29/month for 5,000 requests; **Growth** is US$99/month for 50,000. Start on Starter: Claude copies each image once to our own storage, so it doesn't use requests on every page view. Scrydex covers Pokémon EN + JP and One Piece (beta). Its docs say you're free to use the provided images in your app.
 3. In the Scrydex dashboard / **Account Hub**, create an **API key** and copy it together with your **Team ID**.
-4. Terminal (`workers` folder): `fly secrets set SCRYDEX_API_KEY="…" SCRYDEX_TEAM_ID="…"`.
+4. Terminal (`workers` folder): `fly secrets set SCRYDEX_API_KEY='…' SCRYDEX_TEAM_ID='…'`.
 5. ✉️ Tell Claude: **"Scrydex ready"**. Claude then builds the image import: WebP copies in our own storage, an on/off switch per game in Admin, and a takedown process.
 6. One Piece Japanese has no licensable source. It keeps the placeholder and members' own photos.
 7. Sealed product images come from your affiliate feeds once approved (Step 13). They include images you're allowed to use.
@@ -495,7 +499,7 @@ Every drop is posted instantly to a private Discord channel for Premium members.
 2. Create a role: **Server Settings → Roles → Create Role**, name `Premium` → **Save Changes**.
 3. Create the channel: click **+** next to *Text Channels* → name `premium-drops` → turn on **Private Channel** → **Next** → tick the **Premium** role → **Create Channel**.
 4. Create the webhook: **Server Settings → Integrations → Webhooks → New Webhook**. Click the new webhook, set **Name** `TCGTracker Drops` and **Channel** `#premium-drops`, then **Copy Webhook URL** → **Save Changes**.
-5. Terminal (`workers` folder): `fly secrets set DISCORD_DROPS_WEBHOOK_URL="https://discord.com/api/webhooks/…"`.
+5. Terminal (`workers` folder): `fly secrets set DISCORD_DROPS_WEBHOOK_URL='https://discord.com/api/webhooks/…'`.
 6. Linking members' Discord accounts to Premium **isn't automated yet**. Give the Premium role by hand, or launch with push and email only and ask Claude to add automatic linking later.
 
 ## Step 11 · Monitoring: know straight away if anything breaks (≈15 min)
@@ -503,7 +507,7 @@ Every drop is posted instantly to a private Discord channel for Premium members.
 **App: https://sentry.io.** The free **Developer** plan (1 user, 5,000 errors a month) is enough.
 1. Sign up. When asked to create a project, choose **Python**, name it `tcgtracker-workers` → **Create Project**.
 2. Copy the **DSN** it shows. It looks like `https://…@o….ingest.sentry.io/…`. You can find it again under **Settings → Projects → tcgtracker-workers → Client Keys (DSN)**.
-3. Terminal (`workers` folder): `fly secrets set SENTRY_DSN="https://…"`.
+3. Terminal (`workers` folder): `fly secrets set SENTRY_DSN='https://…'`.
 4. Create a second project: **Projects → Create Project → Next.js**, name `tcgtracker-web`, and copy its DSN.
 5. In Cloudflare, add a **build variable** `NEXT_PUBLIC_SENTRY_DSN` = that DSN, then **Retry build**. This reports errors that happen in visitors' browsers. Don't add a server-side `SENTRY_DSN` to Cloudflare yet: Claude will test Sentry's server reporting on Cloudflare first.
 
@@ -512,7 +516,7 @@ Every drop is posted instantly to a private Discord channel for Premium members.
 1. Sign up. On **Checks**, click **Add Check**.
 2. Name it `tcgtracker-workers`. Click **Change Schedule** (or the period shown): **Period** `1 minute`, **Grace Time** `5 minutes` → **Save**. The worker pings every minute only while all its jobs and store monitors are healthy, and sends a "fail" signal with the reason otherwise.
 3. Copy the check's **ping URL**, like `https://hc-ping.com/1234abcd-…`.
-4. Terminal (`workers` folder): `fly secrets set HEALTHCHECK_URL="https://hc-ping.com/…"`.
+4. Terminal (`workers` folder): `fly secrets set HEALTHCHECK_URL='https://hc-ping.com/…'`.
 5. Alerts to your phone: open **Integrations**. **Email** is already on. Then, next to **Telegram**, **Pushover** or **Discord**, click **Add Integration** and follow its steps. Telegram is free and the easiest.
 6. Test it: the check should turn **green** within 2 minutes.
 
@@ -574,7 +578,8 @@ These give reliable stock and price data **with permission**, and earn commissio
 | Sign-in link says it didn't work | Links work once and expire after an hour. Request a new one. |
 | A Cloudflare build is red | Open it → **View build log** → copy the last 30 lines to Claude. |
 | `fly deploy` fails | Copy the last 30 lines to Claude. |
-| Worker logs show `password authentication failed` | The password in `DATABASE_URL` is wrong. Reset it in Supabase (7c), then `fly secrets set DATABASE_URL="…"`. |
+| Worker logs show `password authentication failed` | The password in `DATABASE_URL` is wrong. Reset it in Supabase (7c), then `fly secrets set DATABASE_URL='…'`. |
+| Worker logs show `EMAXCONNSESSION max clients reached in session mode` | The worker opened more database connections than Supabase's pooler allows (15). Fixed in the code on 2 Oct 2026: `git pull`, then `fly deploy --ha=false`. If it ever comes back, `fly secrets set DB_MAX_CONNECTIONS=5` lowers the worker's limit (default 8). |
 | healthchecks.io says the check is down | Run `fly status` and `fly logs` in the `workers` folder and send Claude what you see. |
 
 ## What to send Claude, in order

@@ -215,10 +215,13 @@ class PostgresCycle:
             watch = load_watch_rules(conn, cfg.id)
             baseline = is_first_scan(conn, cfg.id)
             catalogue = self.catalogue(conn)
-            conn.commit()  # don't sit idle-in-transaction while fetching
-            urls = [r.value for r in watch if r.kind in ("url", "sku")]
-            observations = fetch(adapter, client, mode, urls)
-            now = datetime.now(UTC)
+            conn.commit()
+        # Fetch with no connection open: a polite fetch can take minutes, and
+        # dozens of monitors each holding one would exhaust the pooler.
+        urls = [r.value for r in watch if r.kind in ("url", "sku")]
+        observations = fetch(adapter, client, mode, urls)
+        now = datetime.now(UTC)
+        with connect(self.database_url) as conn:
             try:
                 result = run_cycle(
                     cfg.slug,
