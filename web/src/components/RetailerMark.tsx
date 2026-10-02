@@ -15,5 +15,6 @@ export function RetailerMark({ slug, name, size = 20 }: { slug: string; name: st
       </span>
     )
   }
+  // eslint-disable-next-line @next/next/no-img-element -- a 96px static icon from public/, already sized; no optimisation needed
   return <img src={src} alt="" aria-hidden="true" width={size} height={size} loading="lazy" decoding="async" className="retailer-logo" style={{ width: size, height: size }} />
 }

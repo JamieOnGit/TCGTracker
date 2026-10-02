@@ -16,7 +16,6 @@ import {
   absoluteTime,
   AVAILABILITY_LABEL,
   availabilityBadgeClass,
-  monogram,
   productDescription,
   productFaqs,
   productHeading,
