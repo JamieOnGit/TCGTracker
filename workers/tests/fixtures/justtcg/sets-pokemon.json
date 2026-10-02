@@ -1,0 +1,18 @@
+{
+ "data": [
+  {
+   "id": "sv-scarlet-violet-151-pokemon",
+   "name": "SV: Scarlet & Violet 151",
+   "game_id": "pokemon",
+   "game": "Pokemon",
+   "release_date": "2023-09-22",
+   "cards_count": 210
+  }
+ ],
+ "meta": {
+  "total": 1,
+  "limit": 100,
+  "offset": 0,
+  "hasMore": false
+ }
+}

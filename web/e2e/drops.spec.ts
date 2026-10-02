@@ -55,5 +55,7 @@ test('drops pages have no horizontal scroll at phone width', async ({ page }, in
     await page.goto(path)
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow, path).toBeLessThanOrEqual(0)
+    // Mobile browsers zoom out (widen innerWidth) instead of scrolling when content overflows.
+    expect(await page.evaluate(() => window.innerWidth), path).toBeLessThanOrEqual(page.viewportSize()!.width)
   }
 })

@@ -92,7 +92,8 @@ Wireframes: open `wireframes/index.html` in a browser. See `wireframes/README.md
 | `WORKER_USER_AGENT` | workers | Honest bot UA with a contact URL |
 | `PSA_API_TOKEN`, `PSA_POPULATION_ENABLED` | workers | PSA API. The population flag stays `false` until a licence is signed. |
 | `JB_ALGOLIA_APP_ID`, `JB_ALGOLIA_SEARCH_KEY` | workers | Optional. The JB Hi-Fi adapter reads these from JB's storefront theme bundle at runtime, caches them for 24h and re-reads them on a 401/403. Setting them only seeds that cache. |
-| `PRICECHARTING_TOKEN` | workers | PriceCharting Legendary API/CSV token (secret, never logged). Without it the `prices` job skips. |
+| `JUSTTCG_API_KEY` | workers | JustTCG API key (`tcg_…`, paid plan; secret, never logged). The card price source: the `prices` job uses it when set. |
+| `PRICECHARTING_TOKEN` | workers | Legacy fallback, used only when `JUSTTCG_API_KEY` is unset. PriceCharting Legendary API/CSV token (secret, never logged). Without it the `prices` job skips. |
 | `PRICECHARTING_CSV_URL_TEMPLATE` | workers | The CSV download URL from the PriceCharting Subscription page, with `{token}` and `{category}` placeholders. The default is the expected shape; see `docs/research/07` §D.5. |
 | `PRICECHARTING_DISPLAY_OK` | workers | Licence metadata only. Set it to `true` once PriceCharting grants a commercial licence for public display. Ingestion runs either way. |
 | `TARGET_DEEP_LINKS_OK` | workers | Target AU's terms forbid deep-linking without consent, so alerts link to the category page. Set this to `true` only once Target consents. |

@@ -165,3 +165,14 @@ Full data: `docs/research/sample-20-cards.json`. Prices were read from public pr
 5. JustTCG: do JP One Piece cards exist as `language=Japanese` variants, and when do graded (v2) and the JP region leave beta? UNVERIFIED.
 6. eBay developer docs could not be read from this environment (403). Should Jamie read the API License Agreement directly to confirm the "average selling price" prohibition?
 7. Is a licensed JP-market graded source (SNKRDUNK / Yuyu-tei) worth pursuing, or are USD eBay-derived prices acceptable for JP cards on an AUD site?
+
+---
+
+## 6. Decision update (2 Oct 2026): JustTCG replaces PriceCharting
+
+PriceCharting's Legendary plan is licensed for internal use only, and public display needs a separately negotiated commercial licence. The owner chose not to wait on that. JustTCG was re-checked live on 2 Oct 2026:
+- **Licence.** Pricing page: "Ship it commercially. No permission needed." ToS (last updated 7/27/2026) §7.1 allows, on any paid plan, end-user display of current prices, historical trends and percentage changes. It also allows "Derived analytics: Calculate and display derived metrics, market observations, and aggregate valuations", which covers market cap. §7.2/7.3 forbid exporting the raw data as a feed, dataset or proxy API.
+- **Graded data.** `/v2/cards` (beta) has graded variants per company (PSA, BGS, CGC, SGC, BCCG, BVG) and grade. Special labels and qualifiers are separate variants. Each comes with `markets[].price`, `updated_at` and `price_history`. Only the NA (USD) region has data so far.
+- **Plans.** Professional is US$49/mo: 50,000 requests a month, 5,000 a day, 100 a minute, and 100 cards per request.
+
+Implementation: `workers/tcgworkers/sources/pricing/justtcg.py` and `justtcg_ingest.py`; migration `20261002000400_justtcg.sql`. PSA grades drive market cap; BGS, CGC and SGC values are shown on card pages for comparison. Population is still not licensed (§1).

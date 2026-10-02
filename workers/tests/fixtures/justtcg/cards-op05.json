@@ -1,0 +1,145 @@
+{
+ "data": [
+  {
+   "id": "c0000000-0000-5000-a000-000000000119",
+   "slug": "luffy",
+   "name": "Monkey.D.Luffy (Manga)",
+   "game": {
+    "id": "one-piece-card-game"
+   },
+   "set": {
+    "id": "awakening-of-the-new-era-one-piece-card-game",
+    "name": "Awakening of the New Era"
+   },
+   "number": "OP05-119",
+   "rarity": "Secret Rare",
+   "external_ids": {
+    "tcgplayer": "512345"
+   },
+   "variants": [
+    {
+     "id": "en-PSA-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 3200.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": [
+        {
+         "t": 1790380800,
+         "p": 3100.0
+        },
+        {
+         "t": 1790467200,
+         "p": 3150.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "jp-PSA-10-None-None-Japanese",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": "Japanese",
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 2900.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "fr-PSA-10-None-None-French",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": "French",
+     "grading": {
+      "company": "PSA",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "PSA 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 1500.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    },
+    {
+     "id": "en-BGS-10-None-None-None",
+     "slug": "x",
+     "type": "graded",
+     "condition": null,
+     "printing": "Holofoil",
+     "language": null,
+     "grading": {
+      "company": "BGS",
+      "grade": 10,
+      "grade_label": null,
+      "qualifier": null,
+      "canonical": "BGS 10"
+     },
+     "markets": [
+      {
+       "region": "NA",
+       "currency": "USD",
+       "price": 5000.0,
+       "updated_at": 1790571600,
+       "change_24h_pct": 0.5,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "meta": {
+  "count": 1,
+  "total": 1,
+  "limit": 100,
+  "has_more": false,
+  "cursor": {
+   "next": null
+  }
+ }
+}

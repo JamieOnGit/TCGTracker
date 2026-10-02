@@ -62,6 +62,8 @@ export function cardProduct(input: {
   sku: string
   brand: string
   offers: { lowAud: number; highAud: number; count: number } | null
+  /** Market values per grade ('PSA 10 value'), as additionalProperty; never as offers (they aren't for sale here). */
+  values?: { name: string; aud: number }[]
 }): Thing {
   return {
     '@context': CTX,
@@ -72,6 +74,9 @@ export function cardProduct(input: {
     sku: input.sku,
     brand: { '@type': 'Brand', name: input.brand },
     ...(input.image ? { image: input.image } : {}),
+    ...(input.values?.length
+      ? { additionalProperty: input.values.map((v) => ({ '@type': 'PropertyValue', name: v.name, value: v.aud.toFixed(2), unitText: 'AUD' })) }
+      : {}),
     ...(input.offers && input.offers.count > 0
       ? {
           offers: {

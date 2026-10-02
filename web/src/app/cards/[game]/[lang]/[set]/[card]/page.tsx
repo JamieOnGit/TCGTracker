@@ -11,6 +11,7 @@ import { ListingTile } from '@/components/ListingTile'
 import { CardImage, Eyebrow, SegLinks, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
+import { gradeOptions, graderOf, isGradeKey, sortGradeKeys } from '@/lib/domain/grades'
 import { EBAY_DISCLOSURE, ebaySearchUrl } from '@/lib/domain/ebay'
 import { cardProduct } from '@/lib/seo/jsonld'
 import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
@@ -19,7 +20,6 @@ import { articlePath, cardMarketplacePath, cardPath, cardsPath, GAME_NAMES, isGa
 export const revalidate = 900
 type Params = { game: string; lang: string; set: string; card: string }
 type Props = { params: Promise<Params>; searchParams: Promise<SearchParams> }
-const GRADES = ['psa-10', 'psa-9', 'psa-8']
 
 async function load(p: Params) {
   if (!isGame(p.game) || !isLang(p.lang)) return null
@@ -45,8 +45,9 @@ export default async function CardPage({ params, searchParams }: Props) {
   const sp = await searchParams
   const repo = getRepo()
   const rules = await repo.getRules()
-  const gradeKey = typeof sp.grade === 'string' && GRADES.includes(sp.grade) ? sp.grade : rules.primaryGrade
-  const [grades, stats, active, closed, news, related, counterpart, history] = await Promise.all([
+  // Any PSA/BGS/CGC/SGC grade can be asked for; ?grade= pages are noindex facets.
+  const gradeKey = isGradeKey(sp.grade) ? sp.grade : rules.primaryGrade
+  const [gradeRows, stats, active, closed, news, related, counterpart, history] = await Promise.all([
     repo.cardGrades(card.id),
     repo.listingStats([card.id]),
     repo.listingsForCard(card.id, { status: 'active' }),
@@ -56,7 +57,10 @@ export default async function CardPage({ params, searchParams }: Props) {
     card.counterpartCardId ? repo.getCardsByIds([card.counterpartCardId]).then((c) => c[0] ?? null) : Promise.resolve(null),
     repo.valueHistory(card.id, gradeKey),
   ])
+  const grades = sortGradeKeys(gradeRows.map((x) => x.gradeKey)).map((k) => gradeRows.find((x) => x.gradeKey === k)!)
+  const options = gradeOptions(grades.map((x) => x.gradeKey))
   const g = grades.find((x) => x.gradeKey === gradeKey)
+  const isPsa = graderOf(gradeKey) === 'psa'
   const first = history[0]?.value
   const last = history.at(-1)?.value
   const change30 = first && last ? ((last - first) / first) * 100 : null
@@ -84,14 +88,14 @@ export default async function CardPage({ params, searchParams }: Props) {
       </div>
 
       <section className="grid gap-10 pt-8 lg:grid-cols-12 lg:gap-16">
-        <div className="lg:col-span-5">
+        <div className="min-w-0 lg:col-span-5">
           <div className="well lg:sticky lg:top-[calc(var(--header-h)+24px)]" style={{ padding: 48 }}>
             <div className="w-full max-w-[320px]">
               <CardImage src={card.imageUrl} alt={`${card.name} ${number} ${card.setName} ${card.lang === 'jp' ? 'Japanese' : 'English'} card`} name={card.name} />
             </div>
           </div>
         </div>
-        <div className="lg:col-span-7">
+        <div className="min-w-0 lg:col-span-7">
           <Eyebrow>
             {card.setName} · {number} · {card.variant.replace('-', ' ')}
           </Eyebrow>
@@ -112,7 +116,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           <div className="mt-8">
             <SegLinks
               label="Grade"
-              options={GRADES.map((k) => ({ href: k === rules.primaryGrade ? cardPath(card) : `${cardPath(card)}?grade=${k}`, label: gradeLabel(k), current: k === gradeKey, rel: k === rules.primaryGrade ? undefined : 'nofollow' }))}
+              options={(options.includes(gradeKey) ? options : [...options, gradeKey]).map((k) => ({ href: k === rules.primaryGrade ? cardPath(card) : `${cardPath(card)}?grade=${k}`, label: gradeLabel(k), current: k === gradeKey, rel: k === rules.primaryGrade ? undefined : 'nofollow' }))}
             />
             <div className="mt-6 flex flex-wrap items-baseline gap-4">
               <p className="num" style={{ fontSize: 'var(--text-4xl)', fontWeight: 300, lineHeight: 1 }}>{fmtAud(g?.floorAud)}</p>
@@ -140,8 +144,8 @@ export default async function CardPage({ params, searchParams }: Props) {
 
           <div className="mt-10">
             <StatStrip cols={3}>
-              <Stat small label={`${gradeLabel(gradeKey)} market cap`} value={fmtAudShort(g?.marketCapAud)} sub={g?.population ? `${fmtInt(g.population)} graded × ${fmtAud(g.floorAud)}` : 'Awaiting population data'} />
-              <Stat small label={`${gradeLabel(gradeKey)} population`} value={fmtInt(g?.population)} sub={totalPop ? `${Math.round(((g?.population ?? 0) / totalPop) * 100)}% of graded copies` : 'PSA'} />
+              <Stat small label={`${gradeLabel(gradeKey)} market cap`} value={fmtAudShort(g?.marketCapAud)} sub={g?.population ? `${fmtInt(g.population)} graded × ${fmtAud(g.floorAud)}` : isPsa ? 'Awaiting population data' : 'Market cap uses PSA grades'} />
+              <Stat small label={`${gradeLabel(gradeKey)} population`} value={fmtInt(g?.population)} sub={totalPop ? `${Math.round(((g?.population ?? 0) / totalPop) * 100)}% of graded copies` : isPsa ? 'PSA' : 'Not tracked yet'} />
               <Stat small label="For sale in Australia" value={active.length} sub={prices.length ? `from ${fmtAud(Math.min(...prices))}` : 'None listed yet'} />
             </StatStrip>
           </div>
@@ -161,13 +165,15 @@ export default async function CardPage({ params, searchParams }: Props) {
             </table>
           </div>
         </details>
-        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="PriceCharting, TCGTracker marketplace" />
+        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="JustTCG (graded sale prices, converted from USD), TCGTracker marketplace" />
       </section>
 
       <section aria-labelledby="grades-h">
         <h2 id="grades-h">By grade</h2>
+        <p className="muted mt-2 max-w-[var(--measure)] text-sm">PSA grades drive market cap. BGS, CGC and SGC values are shown for comparison: the same card can sell for different amounts in each company’s slab.</p>
         <div className="table-wrap mt-6">
           <table className="dt">
+            <caption className="sr-only">{card.name} value, population and market cap by grading company and grade</caption>
             <thead><tr><th scope="col">Grade</th><th scope="col" className="n">Value (A$)</th><th scope="col" className="n">Population</th><th scope="col" className="n hide-sm">Market cap</th><th scope="col" className="n hide-sm">Last sale</th><th scope="col" className="n hide-md">30d median sold</th></tr></thead>
             <tbody>
               {grades.map((x) => (
@@ -244,6 +250,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           sku: `${card.setCode}-${card.number}-${card.lang}`,
           brand: card.game === 'pokemon' ? 'Pokémon TCG' : 'One Piece Card Game',
           offers: prices.length ? { lowAud: Math.min(...prices), highAud: Math.max(...prices), count: prices.length } : null,
+          values: grades.filter((x) => x.floorAud !== null && isGradeKey(x.gradeKey)).map((x) => ({ name: `${gradeLabel(x.gradeKey)} value`, aud: x.floorAud! })),
         })}
       />
     </div>
