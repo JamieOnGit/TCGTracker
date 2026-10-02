@@ -399,7 +399,7 @@ class CatalogueIngestor:
                      fx_rate = excluded.fx_rate, fx_date = excluded.fx_date""",
                 params,
             )
-            self.stats.asks_written = cur.rowcount
+            self.stats.asks_written += cur.rowcount
         if "sold" in self.store_types:
             cur = c.execute(
                 f"""insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
@@ -416,7 +416,7 @@ class CatalogueIngestor:
                             and (l.price <> t.price or l.observed_at < %(obs)s - interval '{SOLD_REFRESH_DAYS} days'))""",
                 params,
             )
-            self.stats.solds_written = cur.rowcount
+            self.stats.solds_written += cur.rowcount
 
 
 class PcIngestor(CatalogueIngestor):
