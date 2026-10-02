@@ -111,6 +111,8 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
     assert stats["auto_linked"] == 1  # EN Luffy: same set name, number, variant and name
     assert stats["queued_for_review"] == 3  # EN + JP Charizard (sets named differently), JP Luffy
     assert stats["auto_created_cards"] == 1  # Umbreon VMAX
+    # Totals cover every set in the run, not just the last one.
+    assert stats["price_rows"] == 3 and stats["asks_written"] == 3 and stats["solds_written"] == 3
 
     # EN Luffy, every grader, converted at today's rate (x1.5).
     assert _price(conn, EN_LUFFY, "psa-10")["price_aud"] == D("4800.00")

@@ -166,7 +166,7 @@ class JtIngestor(CatalogueIngestor):
                     aud = (usd * rate[0]).quantize(CENT, rounding=ROUND_HALF_UP)
                     if aud > 0:
                         history.append((card_id, p.grader, p.grade, usd, aud, ref, day, rate[0], rate[1]))
-        self.stats.price_rows = len(rows)
+        self.stats.price_rows += len(rows)
         if rows:
             self._write_prices(rows, fx)
         if history:
@@ -209,7 +209,7 @@ class JtIngestor(CatalogueIngestor):
                on conflict (source, source_ref, type, observed_at) where source_ref is not null do nothing""",
             {"src": self.source},
         )
-        self.history.written = cur.rowcount
+        self.history.written += cur.rowcount
         # Value history: one row per card, grade and past day, from the day's
         # price. Population is unknown for past days; real snapshots (made
         # daily by the snapshots job) are never overwritten.
@@ -222,4 +222,4 @@ class JtIngestor(CatalogueIngestor):
                 order by card_id, public.grade_key(grader, grade), day, price_aud
                on conflict (card_id, grade_key, date) do nothing"""
         )
-        self.history.snapshots = cur.rowcount
+        self.history.snapshots += cur.rowcount
