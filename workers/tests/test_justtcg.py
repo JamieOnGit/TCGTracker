@@ -167,3 +167,12 @@ def test_errors_never_contain_the_key_and_the_budget_is_enforced():
     ok.sets("pokemon")
     with pytest.raises(BudgetExhausted):
         ok.sets("pokemon")
+
+
+def test_the_probe_summarises_what_came_back(fixtures):
+    from tcgworkers.sources.pricing.justtcg_probe import summarise
+
+    out = summarise(_load(fixtures, "cards-151-p1.json"))
+    assert out["cards"] == 2 and out["variants_by_type"] == {"graded": 8}
+    assert out["graded_companies"]["PSA"] == 4 and out["first_priced"]["number"] == "199/165"
+    assert summarise({"data": [], "meta": {"has_more": False}})["cards"] == 0

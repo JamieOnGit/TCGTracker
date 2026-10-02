@@ -21,6 +21,7 @@ is used instead for that game, at 1 call/second and at most
 from __future__ import annotations
 
 import logging
+from collections import Counter
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -300,6 +301,9 @@ def refresh_justtcg(
         ingestor.load()
         done = 0
         stopped = None
+        # What came back, so an empty import says why (no cards vs no graded variants vs no prices).
+        cards_seen = 0
+        variants_seen: Counter[str] = Counter()
         for game, s, backfill in due:
             try:
                 cards = list(
@@ -317,6 +321,11 @@ def refresh_justtcg(
                 errors[f"{game.api_id}/{s['id']}"] = str(exc)[:300]
                 conn.rollback()
                 continue
+            cards_seen += len(cards)
+            for card in cards:
+                for v in card.get("variants") or []:
+                    if isinstance(v, dict):
+                        variants_seen[str(v.get("type"))] += 1
             records = [(rec, game) for card in cards for rec in parse_card(card, game, companies)]
             ingestor.ingest(records, fx, fx_history=fx_history if backfill else None)
             _mark_refreshed(conn, game, s, backfilled=backfill, now=now)
@@ -325,6 +334,13 @@ def refresh_justtcg(
         stats["sets_refreshed"] = done
         stats["sets_remaining"] = len(due) - done
         stats["requests"] = client.requests
+        stats["cards_seen"] = cards_seen
+        stats["variants_seen"] = dict(variants_seen)
+        if done and not cards_seen:
+            log.warning(
+                "justtcg: %d sets returned no cards; run python -m tcgworkers.sources.pricing.justtcg_probe",
+                done,
+            )
         if stopped:
             stats["stopped"] = stopped
         if errors:
