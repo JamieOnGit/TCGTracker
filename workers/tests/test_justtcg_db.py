@@ -248,3 +248,45 @@ def test_the_scheduled_job_prefers_justtcg_and_needs_a_key(conn, fixtures):
     client, _ = _mock(fixtures)
     stats = refresh_prices(conn, Env.from_environ({}), client=client)
     assert stats["source"] == "justtcg"
+
+
+def test_an_empty_first_run_does_not_hold_sets_back(conn, fixtures):
+    """The first live run fetched every set but stored nothing: the next run must fetch them all again, with history."""
+
+    def empty(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/sets":
+            return httpx.Response(
+                200, text=(fixtures / f"justtcg/sets-{request.url.params['game']}.json").read_text()
+            )
+        return httpx.Response(200, json={"data": [], "meta": {"has_more": False}})
+
+    client, _ = _mock(fixtures, fail=empty)
+    stats = refresh_justtcg(conn, Env.from_environ({}), client=client, now=NOW)
+    assert stats["sets_refreshed"] == 3 and stats["cards_seen"] == 0 and stats["products"] == 0
+
+    again, calls = _mock(fixtures)
+    stats = refresh_justtcg(conn, Env.from_environ({}), client=again, now=NOW + timedelta(minutes=30))
+    assert stats["sets_due"] == 3 and stats["cards_seen"] > 0
+    assert all(c.url.params.get("include") == "price_history.1y" for c in calls if c.url.path == "/v2/cards")
+    assert _price(conn, EN_LUFFY, "psa-10") is not None
+    assert stats["history"]["written"] == 2
+
+
+def test_graded_variants_parse_with_loose_casing_and_other_usd_regions():
+    from tcgworkers.sources.pricing.justtcg import JtGame, parse_card
+
+    card = {
+        "id": "u1",
+        "name": "Pikachu - 025/165",
+        "number": "025/165",
+        "set": {"id": "s", "name": "S"},
+        "variants": [
+            {
+                "type": "Graded",
+                "grading": {"company": "psa", "grade": "10"},
+                "markets": [{"region": "US", "currency": "usd", "price": 99}],
+            },
+        ],
+    }
+    [rec] = parse_card(card, JtGame("pokemon", "pokemon"))
+    assert rec.prices["psa-10"].price_usd == D("99.00")

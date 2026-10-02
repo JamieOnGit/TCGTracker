@@ -5,14 +5,17 @@ import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
 import { JsonLd } from '@/components/JsonLd'
 import { ProductCard } from '@/components/ProductCard'
-import { PageIntro, SegLinks, Stat, StatStrip } from '@/components/ui'
+import { FilterBar } from '@/components/FilterBar'
+import { EmptyState, PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
 import { durationLabel } from '@/lib/domain/drops'
-import { absoluteTime, feedHref, intervalLabel, parseGame, relativeTime, sortStoresByStock, stockTotals, storeCoverage } from '@/lib/domain/stock'
+import { redirect } from 'next/navigation'
+import { parseLang, parseSearch, searchRows, searchText, sortProducts } from '@/lib/domain/search'
+import { absoluteTime, feedHref, intervalLabel, parseGame, parseSlug, relativeTime, sortStoresByStock, stockTotals, storeCoverage } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
 import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, stockPath, storesPath } from '@/lib/seo/urls'
+import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, stockPath, storesPath } from '@/lib/seo/urls'
 import { RetailerMark } from '@/components/RetailerMark'
 
 // Stock pages refresh every minute; the monitor checks most stores every 2–5 minutes.
@@ -33,18 +36,25 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function StockHub({ searchParams }: Props) {
   const sp = await searchParams
   const game = parseGame(sp.game)
+  const lang = parseLang(sp.lang)
+  const query = parseSearch(sp.q)
+  // "Jump to a store" (works without JavaScript too): ?store=kmart → /stock/kmart/.
+  const store = parseSlug(sp.store)
+  if (store) redirect(feedHref(stockPath(store), { game, lang, q: query }))
+  const searching = Boolean(query || lang)
   const repo = getRepo()
   const now = new Date()
   const [overview, products, recent, rules] = await Promise.all([
     repo.stockOverview({ game }),
-    repo.inStock({ game, limit: 60 }),
+    repo.inStock({ game, limit: searching ? 300 : 60 }),
     repo.drops({ game, source: 'monitor', limit: 8 }),
     repo.getRules(),
   ])
   const totals = stockTotals(overview.stores)
   const tracked = sortStoresByStock(overview.stores.filter((s) => s.listings > 0))
   const sightingsOnly = overview.stores.filter((s) => s.listings === 0).sort((a, b) => a.name.localeCompare(b.name))
-  const mostAvailable = [...products].sort((a, b) => b.inStockCount - a.inStockCount || (a.lowestInStockAud ?? 1e9) - (b.lowestInStockAud ?? 1e9)).slice(0, 9)
+  const matches = searching ? sortProducts(searchRows(products, query, (p) => searchText(p.name, p.set?.name, p.type.replace(/-/g, ' '))).filter((p) => !lang || p.lang === lang), 'recommended') : []
+  const mostAvailable = sortProducts(products, 'recommended').slice(0, 9)
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
   const gameLabel = game ? GAME_NAMES[game] : 'Pokémon and One Piece'
 
@@ -82,11 +92,13 @@ export default async function StockHub({ searchParams }: Props) {
         lead={`What ${gameLabel} sealed product is in stock and on pre-order right now at the Australian stores we watch, store by store. Live for everyone, refreshed every minute.`}
       >
         <div className="mt-6">
-          <SegLinks
-            label="Game"
-            options={[
-              { href: stockPath(), label: 'All games', current: !game },
-              ...GAMES.map((g) => ({ href: feedHref(stockPath(), { game: g }), label: GAME_NAMES[g], current: game === g })),
+          <FilterBar
+            action={stockPath()}
+            search={{ value: query, placeholder: 'Search stock at every store, e.g. prismatic etb or op*09', label: 'Search stock by product name' }}
+            selects={[
+              { name: 'store', label: 'Jump to a store', value: '', options: [{ value: '', label: 'Every store' }, ...sortStoresByStock(overview.stores.filter((st) => st.listings > 0)).map((st) => ({ value: st.slug, label: `${st.name} (${st.inStock} in stock)` }))] },
+              { name: 'game', label: 'Game', value: game ?? '', options: [{ value: '', label: 'All games' }, ...GAMES.map((g) => ({ value: g, label: GAME_NAMES[g] }))] },
+              { name: 'lang', label: 'Language', value: lang ?? '', options: [{ value: '', label: 'English & Japanese' }, ...LANGS.map((l) => ({ value: l, label: `${LANG_NAMES[l]} (${l.toUpperCase()})` }))] },
             ]}
           />
         </div>
@@ -99,6 +111,25 @@ export default async function StockHub({ searchParams }: Props) {
           </StatStrip>
         </div>
       </PageIntro>
+
+      {searching && (
+        <section className="section-tight" aria-labelledby="results-h">
+          <h2 id="results-h">{query ? `In stock & pre-order: “${query}”` : `${LANG_NAMES[lang!]} products in stock`}</h2>
+          <p className="muted mt-2 text-sm" data-result-count={matches.length}>
+            {matches.length} {matches.length === 1 ? 'product' : 'products'} in stock or on pre-order. Open a store for sold-out listings too.
+          </p>
+          {matches.length === 0 ? (
+            <EmptyState title="Nothing in stock matches" body="Try fewer words, or * as a wildcard (e.g. char*ex). Set a Notify me on a product page and we’ll tell you when it lands." />
+          ) : (
+            <div className="mt-6 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {matches.slice(0, 30).map((p) => <ProductCard key={p.id} p={p} showImages={rules.stockShowRetailerImages} />)}
+            </div>
+          )}
+          {matches.length > 30 && (
+            <p className="mt-6 text-sm"><Link href={feedHref(inStockPath(), { q: query, game, lang })} className="prose-link">All {matches.length} matching products</Link></p>
+          )}
+        </section>
+      )}
 
       <section className="section-tight" aria-labelledby="by-store-h">
         <h2 id="by-store-h">Stock by store</h2>
@@ -157,7 +188,7 @@ export default async function StockHub({ searchParams }: Props) {
         {repo.isDemo && <p className="provenance">Preview data.</p>}
       </section>
 
-      {mostAvailable.length > 0 && (
+      {!searching && mostAvailable.length > 0 && (
         <section className="section-tight" aria-labelledby="most-h">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h2 id="most-h">Most available right now</h2>

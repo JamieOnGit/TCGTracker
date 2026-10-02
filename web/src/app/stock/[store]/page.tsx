@@ -6,10 +6,13 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
 import { JsonLd } from '@/components/JsonLd'
-import { Notice, PageIntro, SegLinks, Stat, StatStrip } from '@/components/ui'
+import { FilterBar } from '@/components/FilterBar'
+import { Notice, PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { isInStock } from '@/lib/data/drops'
 import type { Game } from '@/lib/seo/urls'
+import type { StoreListingRow } from '@/lib/data/types'
+import { compareStock, listingLang, parseLang, parseSearch, parseTier, productTier, searchRows, searchText, TYPE_TIERS } from '@/lib/domain/search'
 import {
   absoluteTime,
   AVAILABILITY_LABEL,
@@ -28,11 +31,10 @@ import {
   storeCoverage,
   storeStockSummary,
   storeStockTitle,
-  type ListingFilter,
 } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
 import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, GAME_NAMES, GAMES, productPath, stockPath, storesPath } from '@/lib/seo/urls'
+import { accountSightingsPath, dropsPath, GAME_NAMES, GAMES, LANG_NAMES, LANGS, productPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 60
 type Props = { params: Promise<{ store: string }>; searchParams: Promise<SearchParams> }
@@ -45,12 +47,18 @@ const load = cache(async (slug: string, game: Game | undefined) => {
   return { retailer, rows, recent, isDemo: repo.isDemo }
 })
 
-function href(slug: string, q: { status?: ListingFilter; game?: Game }): string {
-  const p = new URLSearchParams()
-  if (q.status && q.status !== 'all') p.set('status', q.status)
-  if (q.game) p.set('game', q.game)
-  const s = p.toString()
-  return s ? `${stockPath(slug)}?${s}` : stockPath(slug)
+const SORTS = { recommended: 'In stock first', 'price-asc': 'Price: low to high', 'price-desc': 'Price: high to low', changed: 'Recently changed', name: 'Name A–Z' } as const
+type Sort = keyof typeof SORTS
+const parseSortKey = (v: unknown): Sort => (typeof v === 'string' && v in SORTS ? (v as Sort) : 'recommended')
+
+function sortListings(rows: StoreListingRow[], sort: Sort): StoreListingRow[] {
+  const out = [...rows]
+  const p = (r: StoreListingRow, missing: number) => r.priceAud ?? missing
+  if (sort === 'price-asc') return out.sort((a, b) => p(a, Infinity) - p(b, Infinity))
+  if (sort === 'price-desc') return out.sort((a, b) => p(b, -Infinity) - p(a, -Infinity))
+  if (sort === 'changed') return out.sort((a, b) => (b.lastChangeAt ?? '').localeCompare(a.lastChangeAt ?? ''))
+  if (sort === 'name') return out.sort((a, b) => a.title.localeCompare(b.title))
+  return out.sort(compareStock)
 }
 
 const aud = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' })
@@ -82,8 +90,21 @@ export default async function StoreStock({ params, searchParams }: Props) {
   if (!data) notFound()
   const { retailer, rows, recent, isDemo } = data
   const status = parseListingFilter(sp.status)
-  const counts = listingCounts(rows)
-  const shown = rows.filter((r) => matchesListingFilter(r.availability, status))
+  const lang = parseLang(sp.lang)
+  const query = parseSearch(sp.q)
+  const tier = parseTier(sp.type)
+  const sort = parseSortKey(sp.sort)
+  // Search, language and type narrow the list; the status counts are over what's left.
+  const narrowed = searchRows(rows, query, (r) => searchText(r.title, r.product?.name)).filter(
+    (r) => (!lang || listingLang(r.title, r.product) === lang) && (tier === undefined || productTier(r.title) === tier),
+  )
+  const totals = listingCounts(rows)
+  const counts = listingCounts(narrowed)
+  const shown = sortListings(
+    narrowed.filter((r) => matchesListingFilter(r.availability, status)),
+    sort,
+  )
+  const filtered = Boolean(query || lang || tier !== undefined || status !== 'all')
   const now = new Date()
   const coverage = storeCoverage(retailer, now)
   const interval = intervalLabel(retailer.watchIntervalSeconds)
@@ -124,17 +145,24 @@ export default async function StoreStock({ params, searchParams }: Props) {
       >
         <div className="mt-6">
           <StatStrip cols={4}>
-            <Stat label="In stock" value={counts['in-stock']} small />
-            <Stat label="Pre-order" value={counts.preorder} small />
-            <Stat label="Sold out" value={counts['sold-out']} small />
+            <Stat label="In stock" value={totals['in-stock']} small />
+            <Stat label="Pre-order" value={totals.preorder} small />
+            <Stat label="Sold out" value={totals['sold-out']} small />
             <Stat label="Last checked" value={retailer.lastCheckedAt ? relativeTime(retailer.lastCheckedAt, now) : '—'} sub={coverage.status === 'live' ? interval ?? undefined : coverage.label} small />
           </StatStrip>
         </div>
-        <div className="mt-6 grid gap-3">
-          <SegLinks label="Status" options={LISTING_FILTERS.map((f) => ({ href: href(retailer.slug, { status: f, game }), label: `${LISTING_FILTER_LABEL[f]} (${counts[f]})`, current: status === f, rel: f === 'all' ? undefined : 'nofollow' }))} />
-          <SegLinks
-            label="Game"
-            options={[{ href: href(retailer.slug, { status }), label: 'All games', current: !game }, ...GAMES.map((g) => ({ href: href(retailer.slug, { status, game: g }), label: GAME_NAMES[g], current: game === g, rel: 'nofollow' }))]}
+        <div className="mt-6">
+          <FilterBar
+            action={stockPath(retailer.slug)}
+            search={{ value: query, placeholder: `Search ${retailer.name} stock, e.g. etb or *151*`, label: `Search ${retailer.name} listings by product name` }}
+            selects={[
+              { name: 'status', label: 'Stock', value: status === 'all' ? '' : status, options: LISTING_FILTERS.map((f) => ({ value: f === 'all' ? '' : f, label: `${f === 'all' ? 'Any stock status' : LISTING_FILTER_LABEL[f]} (${counts[f]})` })) },
+              { name: 'game', label: 'Game', value: game ?? '', options: [{ value: '', label: 'All games' }, ...GAMES.map((g) => ({ value: g, label: GAME_NAMES[g] }))] },
+              { name: 'lang', label: 'Language', value: lang ?? '', options: [{ value: '', label: 'English & Japanese' }, ...LANGS.map((l) => ({ value: l, label: `${LANG_NAMES[l]} (${l.toUpperCase()})` }))] },
+              { name: 'type', label: 'Product type', value: tier === undefined ? '' : (TYPE_TIERS[tier]?.slug ?? ''), options: [{ value: '', label: 'All products' }, ...TYPE_TIERS.map((t) => ({ value: t.slug, label: t.label }))] },
+              { name: 'sort', label: 'Sort', value: sort === 'recommended' ? '' : sort, options: (Object.keys(SORTS) as Sort[]).map((k) => ({ value: k === 'recommended' ? '' : k, label: SORTS[k] })) },
+            ]}
+            summary={<span data-result-count={shown.length}>{shown.length} of {rows.length} {rows.length === 1 ? 'listing' : 'listings'}{query ? ` matching “${query}”` : ''}</span>}
           />
         </div>
       </PageIntro>
@@ -149,9 +177,9 @@ export default async function StoreStock({ params, searchParams }: Props) {
       )}
 
       <section className="section-tight" aria-labelledby="listings-h">
-        <h2 id="listings-h">{status === 'all' ? `Every listing at ${retailer.name}` : `${LISTING_FILTER_LABEL[status]} at ${retailer.name}`}</h2>
+        <h2 id="listings-h">{!filtered ? `Every listing at ${retailer.name}` : status !== 'all' ? `${LISTING_FILTER_LABEL[status]} at ${retailer.name}` : `Matching listings at ${retailer.name}`}</h2>
         {shown.length === 0 ? (
-          <p className="muted py-8">{rows.length ? 'Nothing matches this filter right now.' : 'No listings tracked here yet.'}</p>
+          <p className="muted py-8">{rows.length ? 'Nothing matches these filters right now. Try fewer words, or * as a wildcard.' : 'No listings tracked here yet.'}</p>
         ) : (
           <div className="table-wrap mt-4">
             <table className="dt">

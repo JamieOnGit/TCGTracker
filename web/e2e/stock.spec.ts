@@ -3,11 +3,14 @@ import { expect, test } from '@playwright/test'
 // Runs against demo data (no Supabase needed): signed out, so Notify me is a sign-in link.
 const PRODUCT = '/products/pokemon/en/demo-expansion-elite-trainer-box/'
 
-test('drops activity feed: status chips with counts, filters and rows', async ({ page }) => {
+test('drops activity feed: search, dropdown filters with counts, and rows', async ({ page }) => {
   await page.goto('/drops/')
-  const chips = page.getByRole('navigation', { name: 'Status' })
-  await expect(chips.getByRole('link')).toHaveText([/^All \d+$/, /^Back in stock \d+$/, /^New listing \d+$/, /^Pre-order live \d+$/, /^Price drop \d+$/, /^Member sightings \d+$/])
-  await expect(chips.getByRole('link', { name: /^All/ })).toHaveAttribute('aria-current', 'page')
+  const bar = page.getByRole('search', { name: 'Filter and search' })
+  const activity = bar.getByLabel('Activity', { exact: true })
+  await expect(activity.locator('option')).toHaveText([/^All activity \(\d+\)$/, /^Back in stock \(\d+\)$/, /^New listing \(\d+\)$/, /^Pre-order live \(\d+\)$/, /^Price drop \(\d+\)$/, /^Member sightings \(\d+\)$/])
+  await expect(activity).toHaveValue('')
+  for (const name of ['Game', 'Language', 'Store', 'State', 'Sort']) await expect(bar.getByLabel(name, { exact: true })).toBeVisible()
+  await expect(bar.getByLabel('Sort', { exact: true })).toHaveValue('') // in stock first
 
   // A price drop row: badge with the percentage, links to the product page, Notify me sends signed-out visitors to log in.
   const drop = page.locator('li[data-status="price-drop"]').first()
@@ -19,7 +22,8 @@ test('drops activity feed: status chips with counts, filters and rows', async ({
   await expect(notify).toHaveAttribute('href', `/login/?next=${encodeURIComponent(PRODUCT)}`)
   await expect(notify).toHaveAttribute('rel', 'nofollow')
 
-  await chips.getByRole('link', { name: /^Price drop/ }).click()
+  // Picking from a dropdown applies it straight away, and only that param lands in the URL.
+  await activity.selectOption('price-drop')
   await expect(page).toHaveURL(/\/drops\/\?status=price-drop$/)
   await expect(page.locator('li[data-status]')).toHaveCount(1)
   await page.goto('/drops/?status=price-drop')
@@ -29,13 +33,31 @@ test('drops activity feed: status chips with counts, filters and rows', async ({
   await page.goto('/drops/?game=one-piece')
   await expect(page.locator('li[data-status]').first()).toBeVisible()
   await expect(page.locator('li[data-status] .tag-quiet', { hasText: 'Pokémon' })).toHaveCount(0)
-  await expect(page.getByRole('navigation', { name: 'Game' }).getByRole('link', { name: 'One Piece' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByLabel('Game', { exact: true })).toHaveValue('one-piece')
 
   await page.goto('/drops/?status=sighting&sort=oldest')
   const sightings = page.locator('li[data-status]')
   await expect(sightings).toHaveCount(2)
   await expect(sightings.first()).toContainText('BIG W') // oldest first
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+})
+
+test('drops search: wildcards, every word, and the language filter', async ({ page }) => {
+  await page.goto('/drops/')
+  const search = page.getByRole('searchbox', { name: 'Search stock activity by product name' })
+  await search.fill('demo*trainer')
+  await search.press('Enter')
+  await expect(page).toHaveURL(/\/drops\/\?q=demo\*trainer$/)
+  const rows = page.locator('li[data-status]')
+  await expect(rows.first()).toBeVisible()
+  for (const t of await rows.allTextContents()) expect(t.toLowerCase()).toContain('trainer')
+  await expect(page.getByRole('link', { name: 'Clear filters' })).toHaveAttribute('href', '/drops/')
+
+  await page.goto('/drops/?q=zzzz-nothing')
+  await expect(page.getByText('Nothing matches these filters')).toBeVisible()
+  await page.goto('/drops/?lang=jp')
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+  await expect(page.getByLabel('Language', { exact: true })).toHaveValue('jp')
 })
 
 test('in stock now lists products with stores, Notify me and ItemList JSON-LD', async ({ page }) => {
@@ -50,8 +72,8 @@ test('in stock now lists products with stores, Notify me and ItemList JSON-LD', 
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents()
   expect(jsonLd.some((j) => j.includes('"ItemList"'))).toBe(true)
 
-  await page.getByRole('navigation', { name: 'Store' }).getByRole('link', { name: 'Premium Bandai AU' }).click()
-  await expect(page).toHaveURL(/retailer=premium-bandai-au/)
+  await page.getByRole('search').getByLabel('Store', { exact: true }).selectOption({ label: 'Premium Bandai AU' })
+  await expect(page).toHaveURL(/\?retailer=premium-bandai-au$/)
   await expect(page.locator('article[data-product]')).toHaveCount(1)
   await page.goto('/drops/in-stock/?retailer=premium-bandai-au') // a fresh load, so the head is the server's
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
@@ -129,15 +151,29 @@ test('stock hub: totals, stores ranked by what is in stock, linked store pages',
   await rows.first().getByRole('link').click()
   await expect(page).toHaveURL(/\/stock\/[a-z0-9-]+\/$/)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Pokémon & One Piece stock')
+
+  // Jump to a store from the dropdown; search across every store.
+  await page.goto('/stock/')
+  await page.getByRole('search').getByLabel('Jump to a store').selectOption('demo-card-shop')
+  await expect(page).toHaveURL(/\/stock\/demo-card-shop\/$/)
+  await page.goto('/stock/?q=demo+etb')
+  await expect(page.getByRole('heading', { level: 2, name: /demo etb/ })).toBeVisible()
+  await expect(page.locator('article[data-product="demo-expansion-elite-trainer-box"]')).toBeVisible()
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
 })
 
 test('store stock page: every listing with status, price and a facet that is noindex', async ({ page }) => {
   await page.goto('/stock/demo-card-shop/')
   await expect(page.locator('tr[data-availability]')).toHaveCount(2)
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /^index/)
-  await page.getByRole('link', { name: /^In stock \(/ }).click()
-  await expect(page).toHaveURL(/status=in-stock/)
+  // In stock first by default.
+  await expect(page.locator('tr[data-availability]').first()).toHaveAttribute('data-availability', /^in_stock/)
+  await page.getByRole('search').getByLabel('Stock', { exact: true }).selectOption('in-stock')
+  await expect(page).toHaveURL(/\?status=in-stock$/)
   await expect(page.locator('tr[data-availability]')).toHaveCount(2)
+  await page.goto('/stock/demo-card-shop/?q=*zzz*')
+  await expect(page.locator('tr[data-availability]')).toHaveCount(0)
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
   // What a crawler gets on a fresh load of the facet.
   await page.goto('/stock/demo-card-shop/?status=sold-out')
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)

@@ -5,7 +5,8 @@
  */
 import type { Availability, DropRow, OfferRow, RetailerRow, SealedProductRow, StoreListingRow, StoreStockRow } from '@/lib/data/types'
 import { isInStock } from '@/lib/data/drops'
-import { isGame, LANG_NAMES, type Game } from '@/lib/seo/urls'
+import { productTier } from '@/lib/domain/search'
+import { isGame, LANG_NAMES, type Game, type Lang } from '@/lib/seo/urls'
 
 // ------------------------------------------------------------ status badges
 
@@ -76,8 +77,29 @@ export function parseStatus(raw: string | string[] | undefined): StatusKey {
   const v = first(raw)
   return (STATUS_KEYS as readonly string[]).includes(v ?? '') ? (v as StatusKey) : 'all'
 }
-export function parseSort(raw: string | string[] | undefined): 'newest' | 'oldest' {
-  return first(raw) === 'oldest' ? 'oldest' : 'newest'
+/** Activity feed order. `recommended` (the default): in stock first, sought-after product types first, then newest. */
+export const FEED_SORTS = ['recommended', 'newest', 'oldest'] as const
+export type FeedSort = (typeof FEED_SORTS)[number]
+export const FEED_SORT_LABEL: Record<FeedSort, string> = { recommended: 'In stock first', newest: 'Newest', oldest: 'Oldest' }
+export function parseSort(raw: string | string[] | undefined): FeedSort {
+  const v = first(raw)
+  return (FEED_SORTS as readonly string[]).includes(v ?? '') ? (v as FeedSort) : 'recommended'
+}
+
+/** How "buyable now" a feed event is: restocks and sightings, then pre-orders, new listings, price changes. */
+export function dropRank(d: Pick<DropRow, 'eventType' | 'sighting'>): number {
+  if (d.sighting || d.eventType === 'IN_STOCK' || d.eventType === 'QUEUE_LIVE') return 0
+  if (d.eventType === 'PREORDER_OPEN') return 1
+  if (d.eventType === 'NEW_LISTING') return 2
+  return 3
+}
+
+/** Sort feed events; `recommended` is in stock first, then booster boxes / ETBs / packs, then newest. */
+export function sortDrops<T extends Pick<DropRow, 'eventType' | 'sighting' | 'occurredAt' | 'title'>>(rows: T[], sort: FeedSort): T[] {
+  const newest = (a: T, b: T) => b.occurredAt.localeCompare(a.occurredAt)
+  if (sort === 'oldest') return [...rows].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+  if (sort === 'newest') return [...rows].sort(newest)
+  return [...rows].sort((a, b) => dropRank(a) - dropRank(b) || productTier(a.title) - productTier(b.title) || newest(a, b))
 }
 export function parseGame(raw: string | string[] | undefined): Game | undefined {
   const v = first(raw)
@@ -89,16 +111,31 @@ export function parseSlug(raw: string | string[] | undefined): string | undefine
   return v && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(v) ? v : undefined
 }
 
+/** The query a list page can carry. Defaults are left out of links. */
+export interface FeedQuery {
+  status?: string
+  game?: Game
+  lang?: Lang
+  q?: string
+  retailer?: string
+  state?: string
+  sort?: string
+  page?: number
+}
+
 /**
- * A filtered /drops/ link. Defaults are left out so "All · Newest" is the
- * clean canonical /drops/; every other combination is a noindex,follow facet.
+ * A filtered list link. Defaults are left out so the unfiltered view is the
+ * clean canonical URL; every other combination is a noindex,follow facet.
  */
-export function feedHref(base: string, q: { status?: StatusKey; game?: Game; sort?: 'newest' | 'oldest'; page?: number; retailer?: string }): string {
+export function feedHref(base: string, q: FeedQuery): string {
   const p = new URLSearchParams()
+  if (q.q) p.set('q', q.q)
   if (q.status && q.status !== 'all') p.set('status', q.status)
   if (q.game) p.set('game', q.game)
+  if (q.lang) p.set('lang', q.lang)
   if (q.retailer) p.set('retailer', q.retailer)
-  if (q.sort === 'oldest') p.set('sort', 'oldest')
+  if (q.state) p.set('state', q.state)
+  if (q.sort && q.sort !== 'recommended') p.set('sort', q.sort)
   if (q.page && q.page > 1) p.set('page', String(q.page))
   const s = p.toString()
   return s ? `${base}?${s}` : base
