@@ -16,7 +16,6 @@ import {
   absoluteTime,
   AVAILABILITY_LABEL,
   availabilityBadgeClass,
-  monogram,
   productDescription,
   productFaqs,
   productHeading,
@@ -30,6 +29,7 @@ import {
 import { sealedProductLd } from '@/lib/seo/jsonld'
 import { buildMetadata } from '@/lib/seo/metadata'
 import { dropsPath, GAME_NAMES, inStockPath, isGame, isLang, LANG_NAMES, productPath, productsPath, releasePath, setPath } from '@/lib/seo/urls'
+import { RetailerMark } from '@/components/RetailerMark'
 
 export const revalidate = 300
 type Props = { params: Promise<{ game: string; lang: string; slug: string }> }
@@ -171,7 +171,7 @@ function StoreTable({ offers, rrpAud, name }: { offers: OfferRow[]; rrpAud: numb
             <tr key={o.retailerSlug + o.url} data-availability={o.availability}>
               <th scope="row">
                 <span className="inline-flex items-center gap-2">
-                  <span className="mono" aria-hidden="true">{monogram(o.retailerName)}</span>
+                  <RetailerMark slug={o.retailerSlug} name={o.retailerName} />
                   <Link href={dropsPath(o.retailerSlug)} className="prose-link" style={{ textDecorationColor: 'transparent' }}>{o.retailerName}</Link>
                 </span>
               </th>

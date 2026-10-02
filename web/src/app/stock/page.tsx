@@ -12,10 +12,11 @@ import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
 import { durationLabel } from '@/lib/domain/drops'
 import { redirect } from 'next/navigation'
 import { parseLang, parseSearch, searchRows, searchText, sortProducts } from '@/lib/domain/search'
-import { absoluteTime, feedHref, intervalLabel, monogram, parseGame, parseSlug, relativeTime, sortStoresByStock, stockTotals, storeCoverage } from '@/lib/domain/stock'
+import { absoluteTime, feedHref, intervalLabel, parseGame, parseSlug, relativeTime, sortStoresByStock, stockTotals, storeCoverage } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
 import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, stockPath, storesPath } from '@/lib/seo/urls'
+import { RetailerMark } from '@/components/RetailerMark'
 
 // Stock pages refresh every minute; the monitor checks most stores every 2–5 minutes.
 export const revalidate = 60
@@ -156,7 +157,7 @@ export default async function StockHub({ searchParams }: Props) {
                     <tr key={s.slug} data-in-stock={s.inStock > 0 ? 'yes' : 'no'}>
                       <th scope="row">
                         <span className="inline-flex items-center gap-2">
-                          <span className="mono" aria-hidden="true">{monogram(s.name)}</span>
+                          <RetailerMark slug={s.slug} name={s.name} />
                           <Link href={stockPath(s.slug)} className="prose-link">{s.name}</Link>
                         </span>
                       </th>

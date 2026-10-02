@@ -452,3 +452,6 @@ details > summary { border-radius: 4px; }
 .filter-field .select { min-height: 44px; }
 .filter-summary { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: var(--text-sm, .875rem); color: var(--ink-muted); }
 @media (max-width: 479px) { .filter-selects { grid-template-columns: 1fr 1fr; } }
+
+/* Store logos (RetailerMark): the store's own icon on a white tile. */
+.retailer-logo { display: inline-block; flex: none; border-radius: var(--radius-xs); border: 1px solid var(--line); background: #fff; object-fit: contain; }
