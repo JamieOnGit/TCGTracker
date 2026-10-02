@@ -1,0 +1,112 @@
+{
+ "data": [
+  {
+   "id": "c0000000-0000-5000-a000-000000000119",
+   "slug": "luffy",
+   "name": "Monkey.D.Luffy (Manga)",
+   "game": {
+    "id": "one-piece-card-game"
+   },
+   "set": {
+    "id": "awakening-of-the-new-era-one-piece-card-game",
+    "name": "Awakening of the New Era"
+   },
+   "number": "OP05-119",
+   "rarity": "Secret Rare",
+   "external_ids": {
+    "tcgplayer": "512345"
+   },
+   "variants": [
+    {
+     "id": "raw-nm",
+     "type": "raw",
+     "condition": "Near Mint",
+     "printing": "Holofoil",
+     "language": "English",
+     "grading": null,
+     "markets": [
+      {
+       "region": "US",
+       "currency": "USD",
+       "price": 900.0,
+       "updated_at": 1790571600,
+       "periods": {},
+       "price_history": [
+        {
+         "t": 1790380800,
+         "p": 880.0
+        },
+        {
+         "t": 1790467200,
+         "p": 890.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "raw-lp",
+     "type": "raw",
+     "condition": "Lightly Played",
+     "printing": "Holofoil",
+     "language": "English",
+     "grading": null,
+     "markets": [
+      {
+       "region": "US",
+       "currency": "USD",
+       "price": 700.0,
+       "updated_at": 1790571600,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "c0000000-0000-5000-a000-000000000777",
+   "slug": "nami",
+   "name": "Nami",
+   "game": {
+    "id": "one-piece-card-game"
+   },
+   "set": {
+    "id": "awakening-of-the-new-era-one-piece-card-game",
+    "name": "Awakening of the New Era"
+   },
+   "number": "OP05-777",
+   "rarity": "Common",
+   "external_ids": {
+    "tcgplayer": "1"
+   },
+   "variants": [
+    {
+     "id": "raw-nm-2",
+     "type": "raw",
+     "condition": "Near Mint",
+     "printing": "Normal",
+     "language": "English",
+     "grading": null,
+     "markets": [
+      {
+       "region": "US",
+       "currency": "USD",
+       "price": 0.25,
+       "updated_at": 1790571600,
+       "periods": {},
+       "price_history": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "meta": {
+  "count": 2,
+  "has_more": false,
+  "cursor": {
+   "next": null
+  }
+ }
+}

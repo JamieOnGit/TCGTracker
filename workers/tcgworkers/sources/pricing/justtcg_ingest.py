@@ -107,7 +107,7 @@ class JtIngestor(CatalogueIngestor):
         self.jt_sets[key] = jt
         return jt
 
-    def card_for(self, rec: JtRecord, game: JtGame) -> str | None:
+    def card_for(self, rec: JtRecord, game: JtGame, *, discover: bool = True) -> str | None:
         if not self._loaded:
             self.load()
         jt = self._jt_set(rec, game)
@@ -130,19 +130,27 @@ class JtIngestor(CatalogueIngestor):
             variant=rec.variant,
             name=rec.name,
             payload=rec.payload(),
+            discover=discover,
         )
 
     def ingest(
-        self, records: Iterable[tuple[JtRecord, JtGame]], fx: Fx, *, fx_history: FxHistory | None = None
+        self,
+        records: Iterable[tuple[JtRecord, JtGame]],
+        fx: Fx,
+        *,
+        fx_history: FxHistory | None = None,
+        discover: bool = True,
     ) -> IngestStats:
-        """Current prices for every record; with ``fx_history``, also backfill each record's price history."""
+        """Current prices for every record; with ``fx_history``, also backfill each
+        record's price history. ``discover=False`` (raw prices) only prices cards
+        we already have: it never queues or creates catalogue cards."""
         if not self._loaded:
             self.load()
         rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str | None]] = []
         history: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, date, Decimal, date]] = []
         for rec, game in records:
             self.stats.products += 1
-            card_id = self.card_for(rec, game)
+            card_id = self.card_for(rec, game, discover=discover)
             if card_id is None or not rec.prices:
                 continue
             self.stats.priced_products += 1

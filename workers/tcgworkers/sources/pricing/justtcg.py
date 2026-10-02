@@ -388,15 +388,14 @@ class JustTcgClient:
             offset += len(page)
 
     def cards(
-        self, game: str, set_id: str, *, history: str | None = None, raw: bool = False
+        self, game: str, set_id: str, *, history: str | None = None, graded: bool = True
     ) -> Iterator[dict[str, Any]]:
-        """Every card in a set, graded variants (plus Near Mint raw when ``raw``)."""
-        params: dict[str, Any] = {
-            "game": game,
-            "set": set_id,
-            "graded": "include" if raw else "only",
-            "limit": self.page_size,
-        }
+        """Every card in a set: graded variants only, or (``graded=False``) the
+        raw variants. JustTCG allows both together only on a single-card
+        lookup, so a set is fetched once for each."""
+        params: dict[str, Any] = {"game": game, "set": set_id, "limit": self.page_size}
+        if graded:
+            params["graded"] = "only"
         if history:
             params["include"] = f"price_history.{history}"
         while True:

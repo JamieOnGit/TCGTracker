@@ -70,6 +70,10 @@ def _mock(fixtures, *, max_requests=100, fail=None):
         p = request.url.params
         if request.url.path == "/v1/sets":
             return httpx.Response(200, text=(fixtures / f"justtcg/sets-{p['game']}.json").read_text())
+        if "graded" not in p:  # raw prices: one set has some, the others none
+            if p["set"] == "awakening-of-the-new-era-one-piece-card-game":
+                return httpx.Response(200, text=(fixtures / "justtcg/cards-op05-raw.json").read_text())
+            return httpx.Response(200, json={"data": [], "meta": {"has_more": False}})
         name = {
             "sv-scarlet-violet-151-pokemon": "cards-151-p2.json"
             if p.get("cursor") == "page2"
@@ -106,7 +110,7 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
 
     assert stats["source"] == "justtcg" and stats["licence"]["display"] is True
     assert stats["sets_refreshed"] == 3 and stats["sets_remaining"] == 0
-    assert stats["requests"] == 7  # 3 set lists + 4 card pages
+    assert stats["requests"] == 10  # 3 set lists + 4 graded card pages + 3 raw
     assert stats["no_number"] == 1  # the booster bundle
     assert stats["auto_linked"] == 1  # EN Luffy: same set name, number, variant and name
     assert stats["queued_for_review"] == 3  # EN + JP Charizard (sets named differently), JP Luffy
@@ -135,7 +139,18 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
         r["grade_key"]
         for r in conn.execute("select distinct grade_key from public.price_points where source = 'justtcg'")
     }
-    assert keys == {"psa-10", "bgs-10"}  # only linked/created cards are priced in this run
+    assert keys == {"psa-10", "bgs-10", "raw"}  # only linked/created cards are priced in this run
+
+    # Raw Near Mint (the main market price) for a card we have; other conditions are ignored,
+    # and a raw-only card we don't have is neither created nor queued.
+    assert _price(conn, EN_LUFFY, "raw")["price_aud"] == D("1350.00")
+    assert stats["not_linked"] == 1
+    assert (
+        conn.execute(
+            "select count(*) as n from public.mapping_queue where source = 'justtcg' and external_id like 'c0000000-0000-5000-a000-000000000777%'"
+        ).fetchone()["n"]
+        == 0
+    )
 
     sets = {(r["justtcg_set_id"], r["lang"]): r for r in conn.execute("select * from public.justtcg_sets")}
     assert (

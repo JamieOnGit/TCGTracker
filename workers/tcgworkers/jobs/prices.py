@@ -281,14 +281,15 @@ def refresh_justtcg(
     now = now or datetime.now(UTC)
     games = games_from_setting(extra.get("justtcg.games"))
     companies = _companies(extra.get("justtcg.companies"))
-    raw = extra.get("justtcg.raw_prices") is True
+    # Raw Near Mint prices are the site's main market price (market.primary_grade = raw).
+    raw = extra.get("justtcg.raw_prices", True) is not False
     window = extra.get("justtcg.history_window", "1y")
     window = window if window in HISTORY_WINDOWS else "1y"
     refresh_hours = _setting_int(extra, "justtcg.refresh_hours", 20)
     client = client or JustTcgClient(
         env.justtcg_api_key or "",
         user_agent=env.user_agent,
-        max_requests=_setting_int(extra, "justtcg.max_requests_per_run", 1500),
+        max_requests=_setting_int(extra, "justtcg.max_requests_per_run", 2500),
     )
     with pipeline_run(conn, "prices") as stats:
         stats["source"] = "justtcg"
@@ -326,9 +327,9 @@ def refresh_justtcg(
         logged_sample = False
         for game, s, backfill in due:
             try:
-                cards = list(
-                    client.cards(game.api_id, s["id"], history=window if backfill else None, raw=raw)
-                )
+                history = window if backfill else None
+                cards = list(client.cards(game.api_id, s["id"], history=history))
+                raw_cards = list(client.cards(game.api_id, s["id"], history=history, graded=False)) if raw else []
             except BudgetExhausted:
                 stopped = "request budget used"
                 break
@@ -341,12 +342,13 @@ def refresh_justtcg(
                 errors[f"{game.api_id}/{s['id']}"] = str(exc)[:300]
                 conn.rollback()
                 continue
-            cards_seen += len(cards)
-            for card in cards:
+            cards_seen += len(cards) + len(raw_cards)
+            for card in [*cards, *raw_cards]:
                 for v in card.get("variants") or []:
                     if isinstance(v, dict):
                         variants_seen[str(v.get("type"))] += 1
             records = [(rec, game) for card in cards for rec in parse_card(card, game, companies)]
+            raw_records = [(rec, game) for card in raw_cards for rec in parse_card(card, game, companies)]
             if cards and not records and not logged_sample:
                 # Cards came back but none parsed: show one (trimmed) so the cause is visible in the logs.
                 logged_sample = True
@@ -358,8 +360,10 @@ def refresh_justtcg(
                     json.dumps(cards[0], default=str)[:1500],
                 )
             ingestor.ingest(records, fx, fx_history=fx_history if backfill else None)
+            # Raw prices only for cards we have (graded records above link or queue new ones).
+            ingestor.ingest(raw_records, fx, fx_history=fx_history if backfill else None, discover=False)
             # History counts as backfilled only once the set produced prices.
-            _mark_refreshed(conn, game, s, backfilled=backfill and bool(records), now=now)
+            _mark_refreshed(conn, game, s, backfilled=backfill and bool(records or raw_records), now=now)
             conn.commit()
             done += 1
         stats["sets_refreshed"] = done
