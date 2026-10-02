@@ -81,6 +81,8 @@ test('the code from the email signs in the browser that asked, wherever the emai
   await page.getByRole('button', { name: 'Email me a sign-in link' }).click()
   await expect(page.getByTestId('login-sent')).toBeVisible()
 
+  // The code box is a fallback, folded away under the waiting message.
+  await page.getByText('Got a code in the email instead?').click()
   await page.getByLabel('Sign-in code').fill('000000')
   await page.getByRole('button', { name: 'Sign in with code' }).click()
   await expect(page.locator('#token-error')).toContainText('That code didn’t work')
