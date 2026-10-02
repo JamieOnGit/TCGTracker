@@ -3,18 +3,21 @@ import Link from 'next/link'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { ProductCard } from '@/components/ProductCard'
-import { EmptyState, PageIntro, SegLinks } from '@/components/ui'
+import { FilterBar } from '@/components/FilterBar'
+import { EmptyState, PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { isInStock } from '@/lib/data/drops'
-import { feedHref, parseGame, parseSlug } from '@/lib/domain/stock'
+import { parseLang, parseProductSort, parseSearch, parseTier, PRODUCT_SORT_LABEL, PRODUCT_SORTS, productTier, searchRows, searchText, sortProducts, TYPE_TIERS } from '@/lib/domain/search'
+import { parseGame, parseSlug } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
 import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
-import { dropsPath, GAME_NAMES, GAMES, inStockPath, productPath, productsPath, stockPath, storesPath } from '@/lib/seo/urls'
+import { dropsPath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, productPath, productsPath, stockPath, storesPath } from '@/lib/seo/urls'
+import type { SealedProductRow } from '@/lib/data/types'
 
 export const revalidate = 300
 type Props = { searchParams: Promise<SearchParams> }
 
-// ?game= / ?retailer= facets are noindex,follow and canonicalise here.
+// ?q= / ?game= / ?lang= / ?retailer= / ?type= / ?sort= facets are noindex,follow and canonicalise here.
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   return buildMetadata({
     path: inStockPath(),
@@ -24,18 +27,29 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   })
 }
 
-/** Products in stock or on pre-order anywhere we watch, most recently changed first. */
+const live = (o: SealedProductRow['offers'][number]) => isInStock(o.availability) || o.availability === 'preorder'
+
+/** Products in stock or on pre-order anywhere we watch: in stock and the sought-after types first. */
 export default async function InStock({ searchParams }: Props) {
   const sp = await searchParams
   const game = parseGame(sp.game)
+  const lang = parseLang(sp.lang)
+  const query = parseSearch(sp.q)
   const retailer = parseSlug(sp.retailer)
+  const tier = parseTier(sp.type)
+  const sort = parseProductSort(sp.sort)
   const repo = getRepo()
   const [all, rules] = await Promise.all([repo.inStock({ game, limit: 300 }), repo.getRules()])
-  // Store facet: every store with something live in this view.
+  // Store options: every store with something live in this view.
   const stores = new Map<string, string>()
-  for (const p of all) for (const o of p.offers) if (isInStock(o.availability) || o.availability === 'preorder') stores.set(o.retailerSlug, o.retailerName)
-  const rows = retailer ? all.filter((p) => p.offers.some((o) => o.retailerSlug === retailer && (isInStock(o.availability) || o.availability === 'preorder'))) : all
-  const q = { game, retailer }
+  for (const p of all) for (const o of p.offers) if (live(o)) stores.set(o.retailerSlug, o.retailerName)
+  const filtered = searchRows(all, query, (p) => searchText(p.name, p.set?.name, p.type.replace(/-/g, ' '))).filter(
+    (p) =>
+      (!lang || p.lang === lang) &&
+      (tier === undefined || productTier(p.name, p.type) === tier) &&
+      (!retailer || p.offers.some((o) => o.retailerSlug === retailer && live(o))),
+  )
+  const rows = sortProducts(filtered, sort)
   const storeName = retailer ? stores.get(retailer) : undefined
 
   return (
@@ -46,27 +60,34 @@ export default async function InStock({ searchParams }: Props) {
         title="In stock now"
         lead="Pokémon and One Piece sealed product that Australian stores list as in stock or on pre-order right now, grouped by product, with the lowest price we see against RRP. Tap Notify me and we’ll alert you the next time a product comes back anywhere."
       >
-        <div className="mt-6 grid gap-3">
-          <SegLinks label="Game" options={[{ href: feedHref(inStockPath(), { ...q, game: undefined }), label: 'All games', current: !game }, ...GAMES.map((g) => ({ href: feedHref(inStockPath(), { ...q, game: g }), label: GAME_NAMES[g], current: game === g }))]} />
-          {stores.size > 0 && (
-            <nav aria-label="Store" className="flex flex-wrap items-center gap-2">
-              <span className="tag-quiet mr-1">Store</span>
-              <Link href={feedHref(inStockPath(), { ...q, retailer: undefined })} className="chip-filter tap" aria-current={!retailer ? 'page' : undefined} scroll={false}>All stores</Link>
-              {[...stores].sort((a, b) => a[1].localeCompare(b[1])).map(([slug, name]) => (
-                <Link key={slug} href={feedHref(inStockPath(), { ...q, retailer: slug })} className="chip-filter tap" aria-current={retailer === slug ? 'page' : undefined} scroll={false}>{name}</Link>
-              ))}
-            </nav>
-          )}
+        <div className="mt-6">
+          <FilterBar
+            action={inStockPath()}
+            search={{ value: query, placeholder: 'Search products, e.g. 151 etb or *booster box', label: 'Search products in stock by name' }}
+            selects={[
+              { name: 'game', label: 'Game', value: game ?? '', options: [{ value: '', label: 'All games' }, ...GAMES.map((g) => ({ value: g, label: GAME_NAMES[g] }))] },
+              { name: 'lang', label: 'Language', value: lang ?? '', options: [{ value: '', label: 'English & Japanese' }, ...LANGS.map((l) => ({ value: l, label: `${LANG_NAMES[l]} (${l.toUpperCase()})` }))] },
+              { name: 'type', label: 'Product type', value: tier === undefined ? '' : (TYPE_TIERS[tier]?.slug ?? ''), options: [{ value: '', label: 'All products' }, ...TYPE_TIERS.map((t) => ({ value: t.slug, label: t.label }))] },
+              { name: 'retailer', label: 'Store', value: retailer ?? '', options: [{ value: '', label: 'All stores' }, ...[...stores].sort((a, b) => a[1].localeCompare(b[1])).map(([slug, name]) => ({ value: slug, label: name }))] },
+              { name: 'sort', label: 'Sort', value: sort === 'recommended' ? '' : sort, options: PRODUCT_SORTS.map((k) => ({ value: k === 'recommended' ? '' : k, label: PRODUCT_SORT_LABEL[k] })) },
+            ]}
+            summary={
+              <span data-result-count={rows.length}>
+                {rows.length} {rows.length === 1 ? 'product' : 'products'}
+                {storeName ? ` at ${storeName}` : ''}
+                {query ? ` matching “${query}”` : ''}. Prices in AUD as listed by each store.
+              </span>
+            }
+          />
         </div>
       </PageIntro>
 
       <section className="pb-16" aria-labelledby="list-h">
         <h2 id="list-h" className="sr-only">{storeName ? `In stock at ${storeName}` : 'Products in stock'}</h2>
-        <p className="muted text-sm">{rows.length} {rows.length === 1 ? 'product' : 'products'}{storeName ? ` at ${storeName}` : ''}{game ? ` · ${GAME_NAMES[game]}` : ''}. Prices in AUD as listed by each store.</p>
         {rows.length === 0 ? (
-          <EmptyState title="Nothing in stock right now" body="Stock comes and goes within minutes. Set a Notify me on a product, or turn on drop alerts, and we’ll tell you when it lands." action={<Link href={productsPath()} className="btn btn-secondary btn-sm">Browse all products</Link>} />
+          <EmptyState title={query || lang || tier !== undefined || retailer ? 'Nothing matches these filters' : 'Nothing in stock right now'} body="Stock comes and goes within minutes. Set a Notify me on a product, or turn on drop alerts, and we’ll tell you when it lands." action={<Link href={productsPath()} className="btn btn-secondary btn-sm">Browse all products</Link>} />
         ) : (
-          <div className="mt-6 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map((p) => <ProductCard key={p.id} p={p} showImages={rules.stockShowRetailerImages} />)}
           </div>
         )}

@@ -3,18 +3,20 @@ import Link from 'next/link'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { LiveDrops } from '@/components/LiveDrops'
-import { PageIntro, SegLinks } from '@/components/ui'
+import { FilterBar } from '@/components/FilterBar'
+import { PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
-import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
+import { AU_STATES, AU_STATE_NAMES, type AuState } from '@/lib/data/types'
 import { durationLabel, parseDropSource } from '@/lib/domain/drops'
-import { countByStatus, dropStatus, feedHref, parseGame, parseSort, parseStatus, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
+import { listingLang, parseLang, parseSearch, searchRows, searchText } from '@/lib/domain/search'
+import { countByStatus, dropStatus, FEED_SORT_LABEL, FEED_SORTS, feedHref, parseGame, parseSlug, parseSort, parseStatus, sortDrops, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, productsPath, scoutsPath, stockPath, storesPath } from '@/lib/seo/urls'
+import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, productsPath, scoutsPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
 type Props = { searchParams: Promise<SearchParams> }
 
-// ?status= / ?game= / ?sort= views are noindex,follow and canonicalise to
+// ?q= / ?status= / ?game= / ?lang= / ?retailer= / ?state= / ?sort= views are noindex,follow and canonicalise to
 // /drops/ (buildMetadata treats any param as a facet); ?page= is noindex too.
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sp = await searchParams
@@ -47,21 +49,25 @@ export default async function Drops({ searchParams }: Props) {
   const legacy = parseDropSource(sp.source)
   const status = sp.status ? parseStatus(sp.status) : legacy === 'member' ? 'sighting' : 'all'
   const game = parseGame(sp.game)
+  const lang = parseLang(sp.lang)
+  const query = parseSearch(sp.q)
   const sort = parseSort(sp.sort)
+  const stateParam = typeof sp.state === 'string' ? sp.state.toUpperCase() : undefined
+  const state = AU_STATES.find((st) => st === stateParam) as AuState | undefined
   const page = Math.min(pageNumber(sp), Math.ceil(FEED_LOAD / PAGE_SIZE))
   const repo = getRepo()
-  const [loaded, retailers, rules, scouts] = await Promise.all([
-    repo.drops({ game, source: legacy === 'monitor' ? 'monitor' : undefined, limit: FEED_LOAD }),
-    repo.retailers(),
-    repo.getRules(),
-    repo.scoutLeaderboard(30, 5),
-  ])
-  const counts = countByStatus(loaded)
-  const matching = loaded
-    .filter((d) => status === 'all' || dropStatus(d).key === status)
-    .sort((a, b) => (sort === 'oldest' ? a.occurredAt.localeCompare(b.occurredAt) : b.occurredAt.localeCompare(a.occurredAt)))
+  const [retailers, rules, scouts] = await Promise.all([repo.retailers(), repo.getRules(), repo.scoutLeaderboard(30, 5)])
+  const retailer = retailers.find((r) => r.slug === parseSlug(sp.retailer))?.slug
+  const loaded = await repo.drops({ game, retailerSlug: retailer, state, source: legacy === 'monitor' ? 'monitor' : undefined, limit: FEED_LOAD })
+  // Search and language narrow the feed first; the status counts are over what's left.
+  const searched = searchRows(loaded, query, (d) => searchText(d.title, d.product?.name)).filter((d) => !lang || listingLang(d.title, d.product) === lang)
+  const counts = countByStatus(searched)
+  const matching = sortDrops(
+    searched.filter((d) => status === 'all' || dropStatus(d).key === status),
+    sort,
+  )
   const rows = matching.slice(0, page * PAGE_SIZE)
-  const q = { status, game, sort }
+  const q = { q: query, status, game, lang, retailer, state, sort }
   const publicDelay = durationLabel(rules.dropsPublicDelayMinutes)
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
   const s = rules.sightings
@@ -72,11 +78,6 @@ export default async function Drops({ searchParams }: Props) {
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Drops', path: '/drops/' }]} /></div>
       <PageIntro eyebrow="Retail drops · Australia · AEST/AEDT" title="Restocks & pre-orders" lead={`Pokémon and One Piece sealed product at Kmart, BIG W, Target, JB Hi-Fi, EB Games, Toymate, Myer and independent game stores: online stores checked around the clock, and members report what they see on the shelf. Premium members are alerted instantly; everyone else ${freeDelay} later.`}>
-        <div className="mt-6 grid gap-3">
-          <ChipNav label="Monitored 24/7" links={monitored.map((r) => ({ href: dropsPath(r.slug), text: r.name }))} />
-          <ChipNav label="Member sightings" links={sightingsOnly.map((r) => ({ href: dropsPath(r.slug), text: r.name }))} />
-          <ChipNav label="By state" links={AU_STATES.map((st) => ({ href: dropsStatePath(st), text: st, title: AU_STATE_NAMES[st] }))} />
-        </div>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link href={stockPath()} className="btn btn-secondary btn-sm">Live stock by store</Link>
           <Link href={inStockPath()} className="btn btn-secondary btn-sm">In stock now</Link>
@@ -90,18 +91,31 @@ export default async function Drops({ searchParams }: Props) {
         <section className="section min-w-0" aria-labelledby="hist-h">
           <h2 id="hist-h">Stock activity</h2>
           <p className="muted mt-2 text-sm">Shown {publicDelay} after each event. Prices in AUD, tagged against RRP. Counts cover the latest {loaded.length} events.</p>
-          <nav aria-label="Status" className="mt-4 flex flex-wrap gap-2">
-            {STATUS_KEYS.map((k) => (
-              <Link key={k} href={feedHref('/drops/', { ...q, status: k })} className="chip-filter tap" aria-current={status === k ? 'page' : undefined} scroll={false} data-status-chip={k}>
-                {STATUS_CHIP_LABEL[k]} <span className="count">{counts[k]}</span>
-              </Link>
-            ))}
-          </nav>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <SegLinks label="Game" options={[{ href: feedHref('/drops/', { ...q, game: undefined }), label: 'All games', current: !game }, ...GAMES.map((g) => ({ href: feedHref('/drops/', { ...q, game: g }), label: GAME_NAMES[g], current: game === g }))]} />
-            <SegLinks label="Sort" options={[{ href: feedHref('/drops/', { ...q, sort: 'newest' }), label: 'Newest', current: sort === 'newest' }, { href: feedHref('/drops/', { ...q, sort: 'oldest' }), label: 'Oldest', current: sort === 'oldest' }]} />
+          <div className="mt-4">
+            <FilterBar
+              action="/drops/"
+              search={{ value: query, placeholder: 'Search products, e.g. prismatic etb or char*ex', label: 'Search stock activity by product name' }}
+              selects={[
+                { name: 'status', label: 'Activity', value: status === 'all' ? '' : status, options: STATUS_KEYS.map((k) => ({ value: k === 'all' ? '' : k, label: `${k === 'all' ? 'All activity' : STATUS_CHIP_LABEL[k]} (${counts[k]})` })) },
+                { name: 'game', label: 'Game', value: game ?? '', options: [{ value: '', label: 'All games' }, ...GAMES.map((g) => ({ value: g, label: GAME_NAMES[g] }))] },
+                { name: 'lang', label: 'Language', value: lang ?? '', options: [{ value: '', label: 'English & Japanese' }, ...LANGS.map((l) => ({ value: l, label: `${LANG_NAMES[l]} (${l.toUpperCase()})` }))] },
+                {
+                  name: 'retailer',
+                  label: 'Store',
+                  value: retailer ?? '',
+                  options: [
+                    { value: '', label: 'All stores' },
+                    ...monitored.map((r) => ({ value: r.slug, label: r.name, group: 'Checked 24/7' })),
+                    ...sightingsOnly.map((r) => ({ value: r.slug, label: r.name, group: 'Member sightings' })),
+                  ],
+                },
+                { name: 'state', label: 'State', value: state ?? '', options: [{ value: '', label: 'All of Australia' }, ...AU_STATES.map((st) => ({ value: st, label: AU_STATE_NAMES[st] }))] },
+                { name: 'sort', label: 'Sort', value: sort === 'recommended' ? '' : sort, options: FEED_SORTS.map((k) => ({ value: k === 'recommended' ? '' : k, label: FEED_SORT_LABEL[k] })) },
+              ]}
+              summary={<span data-result-count={matching.length}>{matching.length} {matching.length === 1 ? 'event' : 'events'}{query ? ` matching “${query}”` : ''}</span>}
+            />
           </div>
-          <div className="mt-6"><DropFeed rows={rows} empty={EMPTY[status]} /></div>
+          <div className="mt-6"><DropFeed rows={rows} empty={query || lang || retailer || state ? 'Nothing matches these filters. Try fewer words, or * as a wildcard (e.g. char*ex).' : EMPTY[status]} /></div>
           {matching.length > rows.length && (
             <p className="mt-6 flex flex-wrap items-center gap-3">
               <Link href={feedHref('/drops/', { ...q, page: page + 1 })} className="btn btn-secondary btn-sm" scroll={false}>Load more</Link>
@@ -111,6 +125,12 @@ export default async function Drops({ searchParams }: Props) {
           {repo.isDemo && <p className="provenance">Preview data.</p>}
         </section>
         <aside className="grid content-start gap-10 pb-16 lg:py-24">
+          <section aria-labelledby="browse-h">
+            <h2 id="browse-h" className="text-xl">Browse drops</h2>
+            <LinkList label="Checked 24/7" links={monitored.map((r) => ({ href: dropsPath(r.slug), text: r.name }))} />
+            <LinkList label="Member sightings" links={sightingsOnly.map((r) => ({ href: dropsPath(r.slug), text: r.name }))} />
+            <LinkList label="In store, by state" links={AU_STATES.map((st) => ({ href: dropsStatePath(st), text: st, title: AU_STATE_NAMES[st] }))} />
+          </section>
           <section aria-labelledby="scouts-h">
             <h2 id="scouts-h" className="text-xl">Top scouts this month</h2>
             {scouts.length === 0 ? (
@@ -142,13 +162,18 @@ export default async function Drops({ searchParams }: Props) {
   )
 }
 
-/** A labelled row of chip links; skipped when empty. */
-function ChipNav({ label, links }: { label: string; links: { href: string; text: string; title?: string }[] }) {
+/** A labelled, comma-separated list of crawlable links; skipped when empty. */
+function LinkList({ label, links }: { label: string; links: { href: string; text: string; title?: string }[] }) {
   if (links.length === 0) return null
   return (
-    <nav aria-label={label} className="flex flex-wrap items-center gap-2">
-      <span className="tag-quiet mr-1">{label}</span>
-      {links.map((l) => <Link key={l.href} href={l.href} className="chip-filter" title={l.title}>{l.text}</Link>)}
+    <nav aria-label={label} className="mt-3 text-sm">
+      <span className="tag-quiet mr-2">{label}</span>
+      {links.map((l, i) => (
+        <span key={l.href}>
+          {i > 0 && <span className="muted">, </span>}
+          <Link href={l.href} className="prose-link" title={l.title}>{l.text}</Link>
+        </span>
+      ))}
     </nav>
   )
 }
