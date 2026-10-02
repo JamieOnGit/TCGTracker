@@ -1,4 +1,4 @@
-"""JB Hi-Fi runtime discovery, Target AU, BIG W / Kmart skeletons and the
+"""JB Hi-Fi runtime discovery, Target AU, Kmart, the BIG W skeleton and the
 robots matcher (docs/research/07-retailers-pricing-ebay.md). Fixtures only."""
 
 from __future__ import annotations
@@ -19,7 +19,6 @@ from tcgworkers.drops.adapters.jb_hi_fi import (
     parse_storefront,
     sku_filter,
 )
-from tcgworkers.drops.adapters.kmart import Kmart
 from tcgworkers.drops.adapters.target_au import ONE_PIECE_URL, POKEMON_URL, TargetAu
 from tcgworkers.drops.base import REGISTRY, AdapterBlocked
 from tcgworkers.drops.http import Disallowed, PoliteClient
@@ -274,8 +273,8 @@ def test_target_robots_wildcards_are_respected(fixtures):
     assert not robots.can_fetch(UA, "https://www.target.com.au/checkout/")
 
 
-# -------------------------------------------------------- BIG W / Kmart
-@pytest.mark.parametrize("adapter", [BigW(), Kmart()])
+# ------------------------------------------------------------------ BIG W
+@pytest.mark.parametrize("adapter", [BigW()])
 def test_unverified_retailers_raise_without_any_request(adapter):
     calls: list[str] = []
     client = _polite(lambda r: calls.append(str(r.url)) or httpx.Response(200))

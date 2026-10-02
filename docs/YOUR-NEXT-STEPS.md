@@ -36,7 +36,7 @@ The website is complete, but these parts are switched off until their services a
 | 5 | Resend email + Supabase SMTP + rate limit | ✅ Done (sign-in works) |
 | **6** | **Push-notification keys** | ⏭ **Do now** |
 | 7 | Fly.io workers in Sydney (monitor, alerts, emails) | ☐ |
-| 7e | Check the 42-store monitor from Sydney | ☐ After 7 |
+| 7e | Check the 44-store monitor from Sydney (incl. Kmart and Target) | ☐ After 7 |
 | 8 | Stripe (Premium) | ☐ |
 | 9 | PriceCharting (prices) | ☐ |
 | 9b | eBay developer keys (deal finder) | ☐ |
@@ -303,7 +303,7 @@ Push alerts start working once Step 7 is done, because the Fly.io workers send t
 
 ## Step 7 · Fly.io: the 24/7 workers in Sydney (≈30 min)
 The **workers** are the always-on background program. They:
-- check 42 Australian stores for restocks, around the clock
+- check 44 Australian stores for new listings, pre-orders, restocks and price drops, around the clock (including **Kmart** and **Target** online)
 - send drop alerts by email, push and Discord (Premium instantly, Free 24 hours later)
 - send marketplace email notifications
 - import prices every 4 hours, once PriceCharting is set up
@@ -376,13 +376,16 @@ Later, to get Claude's newest code before redeploying: `git pull` (or **Fetch or
 **Deploying Claude's newer code:** `git pull` then `fly deploy --ha=false` from the `workers` folder.
 
 ### 7e · Check the live stock monitor from Sydney (≈10 min, 30 min after deploying)
-The monitor watches **42 Australian stores** (39 Shopify shops, 2 WooCommerce shops and JB Hi-Fi). It only reads what each store publishes openly, with an honestly named bot (`TCGTrackerBot`, explained at https://tcgtracker.com.au/about/bot/).
+The monitor watches **44 Australian stores**: 39 Shopify shops, 2 WooCommerce shops, JB Hi-Fi, **Kmart** and **Target** (their online stores, switched on 2 Oct 2026). It only reads what each store publishes openly, with an honestly named bot (`TCGTrackerBot`, explained at https://tcgtracker.com.au/about/bot/).
 1. Open **https://tcgtracker.com.au/drops/stores/**. Each store shows *Live · checked Xm ago*, *Member sightings only* or *Not reachable*.
 2. Test one store from the Sydney server. In the terminal, in the `workers` folder:
    ```
    fly ssh console -C "python -m tcgworkers.drops.probe https://www.toysrus.com.au --collection pokemon-tcg"
    ```
    It should list the store's Pokémon products and say which product page each one belongs to.
+   - **Kmart:** the first check after each deploy reads all ~127 Kmart Pokémon products once (about 8–10 minutes) and stores them quietly as the starting point. From then on, a new Kmart product is picked up within about 2 minutes. `fly logs` shows `drops kmart discovery: seen=…`.
+   - **Target:** reads Target's Pokémon and One Piece pages every 2 minutes. Alerts link to Target's Pokémon category page, not the product page, until Target agrees to deep links (send them the outreach email in Step 13).
+   - **BIG W and EB Games** still refuse automated visitors (BIG W drops the connection; EB Games shows a Cloudflare challenge). They stay on member sightings until they allow it or agree to a feed.
 3. ✉️ Tell Claude **"monitor check"**, plus what the stores page shows (e.g. "35 live, 7 not reachable"). Claude reads the results and tunes the monitor.
 4. **Why this matters:** Shopify gives honestly identified bots a small request allowance per internet address. From Claude's shared test machine that was only a few requests at a time, and the monitor slowed itself down rather than pushing (by design). The Sydney server has its own address, so its allowance should be better, but only this check can tell. The monitor tunes its own pace: it slows down whenever a shop asks it to and speeds up while everything's fine.
 
