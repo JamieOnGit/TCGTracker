@@ -201,22 +201,18 @@ def _due_sets(
     priced = conn.execute(
         "select exists (select 1 from public.price_points where source = 'justtcg') as e"
     ).fetchone()
-    if not (priced["e"] if isinstance(priced, dict) else priced[0]):
-        for game in games:
-            for s in listed.get(game.api_id, []):
-                known.setdefault((game.api_id, s["id"]), (None, None, False))
-        excluded_rows = conn.execute(
-            "select justtcg_game, justtcg_set_id from public.justtcg_sets group by 1, 2 having bool_and(excluded)"
-        ).fetchall()
-        excluded = {
-            (r["justtcg_game"], r["justtcg_set_id"]) if isinstance(r, dict) else (r[0], r[1])
-            for r in excluded_rows
+    if priced is None or not priced["e"]:
+        held_out = {
+            (r["justtcg_game"], r["justtcg_set_id"])
+            for r in conn.execute(
+                "select justtcg_game, justtcg_set_id from public.justtcg_sets group by 1, 2 having bool_and(excluded)"
+            )
         }
         return [
             (g, s, True)
             for g in games
             for s in listed.get(g.api_id, [])
-            if (g.api_id, s["id"]) not in excluded
+            if (g.api_id, s["id"]) not in held_out
         ]
     for r in conn.execute(
         """select justtcg_game, justtcg_set_id, max(refreshed_at) as refreshed_at,
