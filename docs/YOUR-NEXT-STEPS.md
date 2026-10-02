@@ -35,8 +35,8 @@ The website is complete, but these parts are switched off until their services a
 | 4 | Website on Cloudflare Workers + domain + www redirect | ✅ Done |
 | 5 | Resend email + Supabase SMTP + rate limit | ✅ Done (sign-in works) |
 | 6 | Push-notification keys | ✅ Done |
-| **7** | **Fly.io workers in Sydney (monitor, alerts, emails)** | ◐ App created, secrets set, deployed. ⏭ **Do now:** `git pull` then `fly deploy --ha=false` for the database-connection fix (see 7d) |
-| 7e | Check the 44-store monitor from Sydney (incl. Kmart and Target) | ☐ After 7 |
+| 7 | Fly.io workers in Sydney (monitor, alerts, emails) | ✅ Done (2 Oct 2026). Stores are being read; `fly logs` shows `discovery: seen=…` |
+| **7e** | **Check the 44-store monitor from Sydney (incl. Kmart and Target)** | ⏭ **Do now** (after Deploy database, 3f-2) |
 | 8 | Stripe (Premium) | ☐ |
 | 9 | PriceCharting (prices) | ☐ |
 | 9b | eBay developer keys (deal finder) | ☐ |
@@ -372,7 +372,7 @@ Later, to get Claude's newest code before redeploying: `git pull` (or **Fetch or
    fly status
    ```
    `fly status` should list one machine in `syd` with state **started**.
-5. Watch it work: `fly logs`. Within a minute you should see lines like `drops toysrus discovery: seen=… events=…` and `drops dispatch: claimed=…`. Press **Ctrl+C** to stop watching; the workers keep running.
+5. Watch it work: `fly logs`. It streams forever (it never "finishes"), so press **Ctrl+C** when you've seen enough. Within a minute you should see lines like `drops toysrus discovery: seen=… events=…` and `drops dispatch: claimed=…`. Press **Ctrl+C** to stop watching; the workers keep running.
    - If the logs fill with `EMAXCONNSESSION max clients reached in session mode`, you're running code from before 2 Oct 2026, when each store monitor kept a database connection open. Run `git pull`, then `fly deploy --ha=false`.
 6. ✉️ Tell Claude: **"workers deployed"**, plus anything red in the logs (copy the lines, never the secrets).
 
