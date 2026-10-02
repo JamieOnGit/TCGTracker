@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseForRequest } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/seo/urls'
+import { safeNext } from '@/lib/account/format'
 import type { ActionResult } from './result'
 
 const emailSchema = z.object({ email: z.email().max(254), next: z.string().startsWith('/').max(300).optional() })
@@ -31,6 +32,34 @@ export async function sendMagicLink(_prev: ActionResult | null, form: FormData):
     return { ok: false, error: error.status === 429 ? 'We’ve sent a lot of sign-in emails just now. Please wait a few minutes and try again.' : 'Could not send the link. Try again.' }
   }
   return { ok: true, message: `Check ${parsed.data.email} for a sign-in link.` }
+}
+
+const codeSchema = z.object({
+  email: z.email().max(254),
+  // Supabase's email OTP length is configurable (6 by default, up to 10).
+  token: z.string().regex(/^\d{6,10}$/),
+  next: z.string().startsWith('/').max(300).optional(),
+})
+
+/**
+ * Finish sign-in with the code from the same email. Tapping the link signs in
+ * whichever device opens it (often a phone); the code signs in this browser,
+ * the one that asked.
+ */
+export async function verifyEmailCode(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const parsed = codeSchema.safeParse({
+    email: form.get('email'),
+    token: String(form.get('token') ?? '').replace(/\s+/g, ''),
+    next: form.get('next') || undefined,
+  })
+  if (!parsed.success) return { ok: false, error: 'Enter the code from the email (numbers only).', field: 'token' }
+  const sb = await supabaseForRequest()
+  const { error } = await sb.auth.verifyOtp({ email: parsed.data.email, token: parsed.data.token, type: 'email' })
+  if (error) {
+    if (error.status === 429) return { ok: false, error: 'Too many tries. Please wait a few minutes and try again.', field: 'token' }
+    return { ok: false, error: 'That code didn’t work. Each code works once and expires after an hour. Check it, or send a new email.', field: 'token' }
+  }
+  redirect(safeNext(parsed.data.next))
 }
 
 export async function signOut(): Promise<void> {

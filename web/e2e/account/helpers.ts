@@ -48,7 +48,7 @@ export async function authUserId(email: string): Promise<string> {
   return u.id
 }
 
-export async function waitForMagicLink(email: string, after: number): Promise<string> {
+async function waitForEmail(email: string, after: number, find: (body: string) => string | null): Promise<string> {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {
     const res = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}&limit=5`)
@@ -57,13 +57,25 @@ export async function waitForMagicLink(email: string, after: number): Promise<st
       const msg = data.messages.find((m) => new Date(m.Created).getTime() >= after - 2000)
       if (msg) {
         const full = (await (await fetch(`${MAILPIT}/api/v1/message/${msg.ID}`)).json()) as { HTML: string; Text: string }
-        const m = /https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/.exec(`${full.Text}\n${full.HTML}`)
-        if (m) return m[0].replace(/&amp;/g, '&')
+        const found = find(`${full.Text}\n${full.HTML}`)
+        if (found) return found
       }
     }
     await new Promise((r) => setTimeout(r, 500))
   }
-  throw new Error(`No magic link email for ${email}`)
+  throw new Error(`No sign-in email for ${email}`)
+}
+
+export function waitForMagicLink(email: string, after: number): Promise<string> {
+  return waitForEmail(email, after, (body) => {
+    const m = /https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/.exec(body)
+    return m ? m[0].replace(/&amp;/g, '&') : null
+  })
+}
+
+/** The one-time code printed in the same email (supabase/templates/*.html). */
+export function waitForSignInCode(email: string, after: number): Promise<string> {
+  return waitForEmail(email, after, (body) => /sign-in code:\s*(\d{6,10})\b/i.exec(body.replace(/<[^>]+>/g, ' '))?.[1] ?? null)
 }
 
 /**

@@ -30,13 +30,14 @@ The website is complete, but these parts are switched off until their services a
 | 1 | GitHub repo `JamieOnGit/TCGTracker` | ✅ Done |
 | 2 | Domain `tcgtracker.com.au` (VentraIP) on Cloudflare | ✅ Done. Check 2.8 (SSL **Full (strict)** + **Always Use HTTPS**) is on. |
 | 3a–3f | Supabase project, sign-in URLs, GitHub secrets, database deployed | ✅ Done |
-| 3f-2 | Deploy database again for the Kmart/Target update (PR #9, merged) | ⏭ **Do now** if you haven't since PR #9 merged (1 min): **Actions → Deploy database** |
+| 3f-2 | Deploy database again for the Kmart/Target update (PR #9) | ✅ Done (2 Oct 2026) |
 | 3g | Make yourself admin | ✅ Done |
 | 4 | Website on Cloudflare Workers + domain + www redirect | ✅ Done |
 | 5 | Resend email + Supabase SMTP + rate limit | ✅ Done (sign-in works) |
+| **5b** | **Sign-in code in the email (sign in on a computer when you open the email on your phone)** | ⏭ **Do now** (5 min, after the PR that adds it is merged) |
 | 6 | Push-notification keys | ✅ Done |
 | 7 | Fly.io workers in Sydney (monitor, alerts, emails) | ✅ Done (2 Oct 2026). Stores are being read; `fly logs` shows `discovery: seen=…` |
-| **7e** | **Check the 44-store monitor from Sydney (incl. Kmart and Target)** | ⏭ **Do now** (after Deploy database, 3f-2) |
+| 7e | Check the 44-store monitor from Sydney (incl. Kmart and Target) | ⏭ Next, after 5b |
 | 8 | Stripe (Premium) | ☐ |
 | 9 | PriceCharting (prices) | ☐ |
 | 9b | eBay developer keys (deal finder) | ☐ |
@@ -279,9 +280,32 @@ What you set up, for reference:
 6. **Supabase → Authentication → Rate Limits:** emails per hour `100`. Supabase's built-in sender allows only 2 emails an hour for the whole site, which caused the "too many attempts" message.
 7. Leave **Enable Receiving** off in Resend. Cloudflare's "Email cannot reach @tcgtracker.com.au" notice is about *receiving* email and can be ignored.
 
-The Magic link email template doesn't need editing: since PR #7, the standard link works in the Gmail app and on other devices.
+## Step 5b · Put the sign-in code in the email (≈5 min) ⏭ do now
+**Why:** tapping the email's link signs in the device that opens it. If you ask to sign in on your computer but open the email on your phone, only the phone gets signed in. The sign-in page now has a **Sign-in code** box, so you type the code from the email on the computer instead. Supabase only puts the code in the email if the template asks for it, so both sign-in templates need updating. **Until this is done, the code box has nothing to use.**
 
-## Step 6 · Push-notification keys (≈5 min) ⏭ do now
+**App: Supabase**, **tcgtracker** project → **Authentication** → **Emails** → **Templates** tab.
+1. Click **Magic link**.
+   - **Subject:** `Your TCGTracker sign-in code`
+   - **Message body:** click **Source** (if there's a Source/Preview switch), select everything in the box, delete it, and paste the whole block below.
+   - Click **Save changes**.
+2. Click **Confirm sign up**. This is the email new members get. Do the same: the same **Subject**, paste the same block, then **Save changes**.
+3. Test it: in a private/incognito window on your computer, go to https://tcgtracker.com.au/login/, enter your email and click **Email me a sign-in link**. Open the email on your phone and type the code into **Sign-in code** on the computer → **Sign in with code**. You land on your account page, signed in on the computer. The **Sign in on this device** button in the email still signs in the phone if you tap it.
+
+```html
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">
+  <h2 style="margin:0 0 16px">Sign in to TCGTracker</h2>
+  <p style="margin:0 0 8px">Your sign-in code:</p>
+  <p style="margin:0 0 20px;font-size:32px;font-weight:700;letter-spacing:6px;font-family:Menlo,Consolas,monospace">{{ .Token }}</p>
+  <p style="margin:0 0 20px">Type it on the page where you asked to sign in. Or, to sign in on the device you're reading this on, tap the button:</p>
+  <p style="margin:0 0 24px"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">Sign in on this device</a></p>
+  <p style="margin:0;color:#666;font-size:13px">The code and button work once and expire in an hour. If you didn't ask to sign in, you can ignore this email.</p>
+</div>
+```
+Keep `{{ .Token }}` and `{{ .ConfirmationURL }}` exactly as written: Supabase swaps in the real code and link. The same template is kept in the repo at `supabase/templates/magic_link.html`.
+
+✉️ Tell Claude **"sign-in code works"**, or what the email showed if it didn't.
+
+## Step 6 · Push-notification keys (≈5 min) ✅ done
 These let the site send phone and desktop notifications for drops, with no app and no SMS cost. You create one key pair, once.
 
 **App: your computer's terminal.** You need Node.js. Check by typing `node -v` in Terminal (Mac) or PowerShell (Windows). If it says "not found", install the **LTS** version from https://nodejs.org first.
@@ -584,8 +608,9 @@ These give reliable stock and price data **with permission**, and earn commissio
 
 ## What to send Claude, in order
 1. ✅ "I'm admin" (3g)
-2. "push keys added" (6)
-3. "workers deployed", then "monitor check" (7d, 7e)
+2. ✅ "push keys added" (6)
+2b. "sign-in code works" (5b)
+3. ✅ "workers deployed" (7d), then "monitor check" (7e)
 4. "PriceCharting subscribed" and, later, their reply about display rights (9)
 5. "Stripe done" and whether you're GST-registered (8)
 6. "eBay keys added" (9b)
