@@ -2,8 +2,8 @@ import 'server-only'
 import { rulesFromSettings } from '@/lib/domain/rules'
 import { supabasePublic } from '@/lib/supabase/server'
 import type { Game, Lang } from '@/lib/seo/urls'
-import { DROP_SELECT, RELEASE_SELECT, SEALED_SELECT, sortReleases, toDrop, toRelease, toSealedProduct } from './drops'
-import type { ArticleRow, CardRow, GradeRow, ListingRow, MarketRow, Repository, SetRow } from './types'
+import { DROP_SELECT, RELEASE_SELECT, SEALED_SELECT, sortListings, sortReleases, STORE_LISTING_SELECT, toDrop, toRelease, toSealedProduct, toStoreListing } from './drops'
+import type { ArticleRow, CardRow, GradeRow, ListingRow, MarketRow, RetailerRow, Repository, SetRow } from './types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come from PostgREST as loosely typed JSON;
    generate types with `supabase gen types typescript` once the project exists and tighten this. */
@@ -81,6 +81,22 @@ function pct(cur: number, prev: number | null): number | null {
 
 export function supabaseRepository(): Repository {
   const sb = supabasePublic()
+  async function loadRetailers(): Promise<RetailerRow[]> {
+    const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored,platform,kind,state,blocked_reason,last_checked_at,watch_interval_seconds').order('name')
+    return (data ?? []).map((r: any) => ({
+      slug: r.slug,
+      name: r.name,
+      baseUrl: r.base_url,
+      enabled: r.enabled,
+      monitored: r.monitored !== false,
+      platform: r.platform ?? 'custom',
+      kind: r.kind ?? null,
+      state: r.state ?? null,
+      blockedReason: r.blocked_reason ?? null,
+      lastCheckedAt: r.last_checked_at ?? null,
+      watchIntervalSeconds: r.watch_interval_seconds ?? null,
+    }))
+  }
   return {
     isDemo: false,
     async getRules() {
@@ -228,20 +244,37 @@ export function supabaseRepository(): Repository {
       return (data ?? []).map(toListing)
     },
     async retailers() {
-      const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored,platform,kind,state,blocked_reason,last_checked_at,watch_interval_seconds').order('name')
-      return (data ?? []).map((r: any) => ({
-        slug: r.slug,
-        name: r.name,
-        baseUrl: r.base_url,
-        enabled: r.enabled,
-        monitored: r.monitored !== false,
-        platform: r.platform ?? 'custom',
-        kind: r.kind ?? null,
-        state: r.state ?? null,
-        blockedReason: r.blocked_reason ?? null,
-        lastCheckedAt: r.last_checked_at ?? null,
-        watchIntervalSeconds: r.watch_interval_seconds ?? null,
-      }))
+      return loadRetailers()
+    },
+    async stockOverview(filter) {
+      const since = new Date(Date.now() - 7 * 86_400_000).toISOString()
+      const [stores, counts, events] = await Promise.all([
+        loadRetailers(),
+        sb.rpc('stock_overview', { p_game: filter?.game ?? null }),
+        sb.from('drop_events').select('id', { count: 'exact', head: true }).gte('occurred_at', since),
+      ])
+      const bySlug = new Map<string, any>(((counts.data ?? []) as any[]).map((c) => [c.slug, c]))
+      return {
+        stores: stores.map((r) => {
+          const c = bySlug.get(r.slug)
+          return { ...r, listings: c?.listings ?? 0, inStock: c?.in_stock ?? 0, preorder: c?.preorder ?? 0, lastChangeAt: c?.last_change_at ?? null }
+        }),
+        events7d: events.count ?? 0,
+      }
+    },
+    async storeListings(slug, filter) {
+      let q = sb
+        .from('retail_products')
+        .select(STORE_LISTING_SELECT)
+        .eq('retailers.slug', slug)
+        .not('game', 'is', null)
+        .eq('is_marketplace_seller', false)
+        .gte('last_seen_at', new Date(Date.now() - 14 * 86_400_000).toISOString())
+        .order('last_change_at', { ascending: false, nullsFirst: false })
+        .limit(filter?.limit ?? 1000)
+      if (filter?.game) q = q.eq('game', filter.game)
+      const { data } = await q
+      return sortListings((data ?? []).map(toStoreListing))
     },
     async drops(filter) {
       // Anonymous client: RLS only returns events past their public_at delay.

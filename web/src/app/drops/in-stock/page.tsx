@@ -9,7 +9,7 @@ import { isInStock } from '@/lib/data/drops'
 import { feedHref, parseGame, parseSlug } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
 import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
-import { dropsPath, GAME_NAMES, GAMES, inStockPath, productPath, productsPath, storesPath } from '@/lib/seo/urls'
+import { dropsPath, GAME_NAMES, GAMES, inStockPath, productPath, productsPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
 type Props = { searchParams: Promise<SearchParams> }
@@ -73,6 +73,7 @@ export default async function InStock({ searchParams }: Props) {
         <p className="mt-10 flex flex-wrap gap-4 text-sm">
           <Link href={dropsPath()} className="prose-link">Stock activity feed</Link>
           <Link href={productsPath()} className="prose-link">All products</Link>
+          <Link href={stockPath()} className="prose-link">Live stock by store</Link>
           <Link href={storesPath()} className="prose-link">Stores we watch</Link>
         </p>
         {repo.isDemo && <p className="provenance">Preview data.</p>}

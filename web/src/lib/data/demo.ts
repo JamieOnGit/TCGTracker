@@ -7,7 +7,7 @@
 import { DEFAULT_RULES } from '@/lib/domain/rules'
 import type { ListingStats } from '@/lib/domain/buyButton'
 import { slugify, type Game, type Lang } from '@/lib/seo/urls'
-import { sortReleases } from './drops'
+import { isInStock, sortListings, sortReleases } from './drops'
 import type {
   ArticleRow,
   CardRow,
@@ -427,6 +427,43 @@ export const demoRepository: Repository = {
   },
   async retailers() {
     return RETAILERS
+  },
+  async stockOverview(filter) {
+    // Mirrors stock_overview(): counts from every product page's offers.
+    const products = SEALED.filter((p) => !filter?.game || p.game === filter.game)
+    return {
+      stores: RETAILERS.map((r) => {
+        const offers = products.flatMap((p) => p.offers).filter((o) => o.retailerSlug === r.slug)
+        const changes = offers.map((o) => o.lastChangeAt).filter((x): x is string => Boolean(x)).sort()
+        return {
+          ...r,
+          listings: offers.length,
+          inStock: offers.filter((o) => isInStock(o.availability)).length,
+          preorder: offers.filter((o) => o.availability === 'preorder').length,
+          lastChangeAt: changes.at(-1) ?? null,
+        }
+      }),
+      events7d: DROPS.length,
+    }
+  },
+  async storeListings(slug, filter) {
+    return sortListings(
+      SEALED.filter((p) => !filter?.game || p.game === filter.game).flatMap((p) =>
+        p.offers
+          .filter((o) => o.retailerSlug === slug)
+          .map((o) => ({
+            title: o.title,
+            url: o.url,
+            availability: o.availability,
+            priceAud: o.priceAud,
+            lastChangeAt: o.lastChangeAt,
+            lastSeenAt: o.lastChangeAt,
+            imageUrl: o.imageUrl,
+            game: p.game,
+            product: { id: p.id, game: p.game, lang: p.lang, slug: p.slug, name: p.name, rrpAud: p.rrpAud },
+          })),
+      ),
+    ).slice(0, filter?.limit ?? 1000)
   },
   async drops(filter) {
     return DROPS.filter(

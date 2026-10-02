@@ -147,7 +147,7 @@ test('buyer sets a wishlist alert from the Buy button link', async () => {
   await page.goto('/account/alerts/')
   await expect(page.getByTestId('wishlist')).toContainText('Umbreon VMAX 095')
   await expect(page.getByTestId('wishlist')).toContainText('PSA 10 · up to A$900')
-  await expect(page.getByText('Free plan: drop alerts arrive 24 hours after Premium members get them.')).toBeVisible()
+  await expect(page.getByText('Free plan: drop alerts arrive 5 minutes after Premium members get them.')).toBeVisible()
 })
 
 test('buyer messages the seller; both inboxes show the thread; Realtime delivers without reload; email queued', async () => {

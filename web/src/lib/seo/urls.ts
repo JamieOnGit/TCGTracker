@@ -64,6 +64,8 @@ export const scoutsPath = () => '/drops/scouts/'
 export const inStockPath = () => '/drops/in-stock/'
 /** Every store we watch and how (store coverage). */
 export const storesPath = () => '/drops/stores/'
+/** Live stock: the hub (/stock/) and one store's full listing (/stock/kmart/). */
+export const stockPath = (storeSlug?: string) => (storeSlug ? `/stock/${storeSlug}/` : '/stock/')
 /** One page per sealed product: /products/pokemon/en/prismatic-evolutions-elite-trainer-box/. */
 export const productPath = (p: { game: Game; lang: Lang; slug: string }) => `/products/${p.game}/${p.lang}/${p.slug}/`
 export const productsPath = (game?: Game) => (game ? `/products/${game}/` : '/products/')

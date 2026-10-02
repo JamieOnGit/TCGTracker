@@ -14,7 +14,7 @@ import { AU_STATES, AU_STATE_NAMES, type AuState, type DropRow, type RetailerRow
 import { hasRecentDrops, stateFromSlug } from '@/lib/domain/drops'
 import { feedHref } from '@/lib/domain/stock'
 import { buildMetadata } from '@/lib/seo/metadata'
-import { accountSightingsPath, dropsPath, dropsStatePath, inStockPath, storesPath } from '@/lib/seo/urls'
+import { accountSightingsPath, dropsPath, dropsStatePath, inStockPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
 type Props = { params: Promise<{ slug: string }> }
@@ -92,6 +92,7 @@ function RetailerDrops({ p }: { p: Extract<Page, { kind: 'retailer' }> }) {
           </div>
           <p className="mt-6 flex flex-wrap gap-4 text-sm">
             {p.inStock.length > 12 && <Link href={feedHref(inStockPath(), { retailer: r.slug })} className="prose-link">All {p.inStock.length} products in stock at {r.name}</Link>}
+            <Link href={stockPath(r.slug)} className="prose-link">Every {r.name} listing, live</Link>
             <Link href={inStockPath()} className="prose-link">In stock at every store</Link>
             <Link href={storesPath()} className="prose-link">How we watch {r.name}</Link>
           </p>

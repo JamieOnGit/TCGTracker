@@ -3,7 +3,7 @@
 Australia's graded Pokémon and One Piece card market, in AUD. It has three equal pillars:
 - **Market cap rankings:** graded values, population and market cap, with JP and EN printings as separate cards.
 - **Marketplace:** reviewed listings, on-site messaging and email alerts.
-- **24/7 retail drop alerts:** JB Hi-Fi, BIG W, Kmart, Target and more. Premium members get them instantly and Free members 24 hours later.
+- **24/7 retail drop alerts:** JB Hi-Fi, BIG W, Kmart, Target and more. Premium members get them instantly and Free members 5 minutes later.
 
 The original brief is in [`docs/BRIEF.md`](docs/BRIEF.md). **Setup steps for the owner (repo, domain, hosting, accounts) are in [`docs/SETUP.md`](docs/SETUP.md)**, and the SEO strategy is in [`docs/SEO-STRATEGY-AU.md`](docs/SEO-STRATEGY-AU.md).
 

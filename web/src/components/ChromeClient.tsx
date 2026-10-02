@@ -129,7 +129,7 @@ export function TabBar() {
     { href: '/cards/', label: 'Cards', icon: LayoutGrid, match: ['/cards/'] },
     { href: '/search/', label: 'Search', icon: Search, match: ['/search/'] },
     { href: '/marketplace/', label: 'Buy & sell', icon: Store, match: ['/marketplace/'] },
-    { href: '/drops/', label: 'Drops', icon: ShoppingBag, match: ['/drops/'] },
+    { href: '/stock/', label: 'Stock', icon: ShoppingBag, match: ['/stock/', '/drops/'] },
   ]
   return (
     <nav className="tabbar" aria-label="Sections">

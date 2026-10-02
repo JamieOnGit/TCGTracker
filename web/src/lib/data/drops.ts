@@ -1,5 +1,5 @@
 import type { Game } from '@/lib/seo/urls'
-import type { Availability, DropRow, OfferRow, ReleaseRow, SealedProductRow } from './types'
+import type { Availability, DropRow, OfferRow, ReleaseRow, SealedProductRow, StoreListingRow } from './types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- PostgREST rows are loosely typed JSON. */
 
@@ -105,6 +105,31 @@ const offerRank = (o: OfferRow) => (isInStock(o.availability) ? 0 : o.availabili
 
 export function sortOffers(offers: OfferRow[]): OfferRow[] {
   return [...offers].sort((a, b) => offerRank(a) - offerRank(b) || (a.priceAud ?? 1e9) - (b.priceAud ?? 1e9) || a.retailerName.localeCompare(b.retailerName))
+}
+
+const listingRank = (a: Availability) => (IN_STOCK.includes(a) ? 0 : a === 'preorder' ? 1 : a === 'out_of_stock' ? 2 : 3)
+
+/** In stock, then pre-order, then sold out, then unknown; most recent change first within each. */
+export function sortListings<T extends { availability: Availability; lastChangeAt: string | null; title: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => listingRank(a.availability) - listingRank(b.availability) || (b.lastChangeAt ?? '').localeCompare(a.lastChangeAt ?? '') || a.title.localeCompare(b.title))
+}
+
+export const STORE_LISTING_SELECT =
+  'title,url,image_url,game,current_availability,current_price_aud,last_change_at,last_seen_at,retailers!inner(slug),sealed_products(id,game,lang,slug,name,rrp_aud)'
+
+export function toStoreListing(r: any): StoreListingRow {
+  const sp = r.sealed_products ?? null
+  return {
+    title: r.title,
+    url: r.url,
+    availability: r.current_availability ?? 'unknown',
+    priceAud: r.current_price_aud === null || r.current_price_aud === undefined ? null : Number(r.current_price_aud),
+    lastChangeAt: r.last_change_at ?? null,
+    lastSeenAt: r.last_seen_at ?? null,
+    imageUrl: r.image_url ?? null,
+    game: r.game ?? null,
+    product: sp ? { id: sp.id, game: sp.game, lang: sp.lang, slug: sp.slug, name: sp.name, rrpAud: sp.rrp_aud === null || sp.rrp_aud === undefined ? null : Number(sp.rrp_aud) } : null,
+  }
 }
 
 export function toSealedProduct(r: any): SealedProductRow {

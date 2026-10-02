@@ -38,6 +38,7 @@ The website is complete, but these parts are switched off until their services a
 | 6 | Push-notification keys | ✅ Done |
 | 7 | Fly.io workers in Sydney (monitor, alerts, emails) | ✅ Done (2 Oct 2026). Stores are being read; `fly logs` shows `discovery: seen=…` |
 | 7e | Check the 44-store monitor from Sydney (incl. Kmart and Target) | ⏭ Next, after 5b |
+| **7f** | **Live stock section (`/stock/`) and the 5-minute free delay** | ⏭ After that PR is merged: **Actions → Deploy database** (adds the stock summary and switches the free delay from 24 hours to 5 minutes), then open https://tcgtracker.com.au/stock/ |
 | 8 | Stripe (Premium) | ☐ |
 | 9 | PriceCharting (prices) | ☐ |
 | 9b | eBay developer keys (deal finder) | ☐ |
@@ -424,6 +425,22 @@ The monitor watches **44 Australian stores**: 39 Shopify shops, 2 WooCommerce sh
 3. ✉️ Tell Claude **"monitor check"**, plus what the stores page shows (e.g. "35 live, 7 not reachable"). Claude reads the results and tunes the monitor.
 4. **Why this matters:** Shopify gives honestly identified bots a small request allowance per internet address. From Claude's shared test machine that was only a few requests at a time, and the monitor slowed itself down rather than pushing (by design). The Sydney server has its own address, so its allowance should be better, but only this check can tell. The monitor tunes its own pace: it slows down whenever a shop asks it to and speeds up while everything's fine.
 
+
+### 7f · The live stock section and the 5-minute free delay (≈5 min)
+**What it is:**
+- **https://tcgtracker.com.au/stock/** is the summary view:
+  - listings in stock now, stores with stock and stock changes this week
+  - a **Stock by store** table, ranked by what's in stock
+  - the most available products
+  - in-store member sightings by state
+- **/stock/{store}/** (e.g. **/stock/kmart/**) is the detailed view. It lists every Pokémon and One Piece listing at that store, with its status, price, change versus RRP, when it last changed, and a link to buy.
+
+Both pages refresh every minute and are live for everyone. Drop alerts reach Premium instantly and free members **5 minutes** later (was 24 hours). You can change the delay any time in **Admin → Settings → Drops → Free member alert delay**.
+
+**Do once:** after the pull request that adds it is merged, run GitHub → **Actions → Deploy database → Run workflow** (type `deploy`). Then open https://tcgtracker.com.au/stock/.
+
+✉️ Tell Claude **"stock section live"** with what the summary shows, for example "120 in stock, 14 stores".
+
 ## Step 8 · Stripe: Premium at A$12.99/month (≈30 min)
 **App: https://dashboard.stripe.com.** Stripe now has **sandboxes** for testing and **live mode** for real money. Set things up in live mode, except where the guide says otherwise. The mode switch is in the account menu at the top left.
 
@@ -582,6 +599,11 @@ These give reliable stock and price data **with permission**, and earn commissio
 4. **Kmart, Target AU, JB Hi-Fi:** their programs are on other networks: Target AU on FlexOffers, JB Hi-Fi through Skimlinks, Kmart unconfirmed. Apply once the site has some traffic; ✉️ tell Claude about any approval and it wires the feed in.
 5. **Amazon Associates AU:** https://affiliate-program.amazon.com.au → **Sign up**. Amazon's product-data API (now the "Creators API") only opens after **10 qualifying sales in 30 days**, so it's a later win.
 6. **eBay Partner Network:** see Step 9b.
+7. **Per-store stock levels** ("7 in stock at Box Hill"), the one thing some competitors show that we don't:
+   - **Good Games** and **Toyworld** publish per-store stock through a service called *Stock In Store*, whose rules forbid automated reading.
+   - **Kmart** publishes it through a part of its site its rules also forbid (`/api/`).
+   - We only show them with permission. Send `docs/templates/store-stock-levels-request.md` to each of the three, and the short version to Stock In Store.
+   - ✉️ When one says yes, tell Claude **"store stock approved: {store}"**. Claude then adds per-store counts to `/stock/{store}/` and to the hub.
 
 ## Step 14 · Legal (before announcing)
 1. Have an Australian lawyer review the **Terms**, **Privacy Policy** and **Marketplace rules**. They're drafts, marked noindex. Ask them to cover:

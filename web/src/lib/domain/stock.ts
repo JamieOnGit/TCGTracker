@@ -3,7 +3,7 @@
  * pages, store coverage): status badges, price drops, relative times, filter
  * parsing and data-derived copy. Client-safe: no data access here.
  */
-import type { Availability, DropRow, OfferRow, RetailerRow, SealedProductRow } from '@/lib/data/types'
+import type { Availability, DropRow, OfferRow, RetailerRow, SealedProductRow, StoreListingRow, StoreStockRow } from '@/lib/data/types'
 import { isInStock } from '@/lib/data/drops'
 import { isGame, LANG_NAMES, type Game } from '@/lib/seo/urls'
 
@@ -281,4 +281,68 @@ export function productTitle(p: Pick<SealedProductRow, 'name' | 'lang'>): string
 /** Product meta description from the data (≤155 characters once clamped). */
 export function productDescription(p: Pick<SealedProductRow, 'name' | 'lang' | 'offers' | 'rrpAud'>): string {
   return `${productSummary(p)}. ${productHeading(p)}: compare Australian stores, see restock history and get alerted when it is back in stock.`
+}
+
+// ------------------------------------------------------------ /stock/ hub
+
+export interface StockTotals {
+  inStock: number // listings in stock right now, across every store
+  preorder: number
+  listings: number
+  storesWithStock: number
+  storesLive: number // stores our monitor checks around the clock
+}
+
+export function stockTotals(stores: Pick<StoreStockRow, 'inStock' | 'preorder' | 'listings' | 'enabled' | 'monitored' | 'blockedReason'>[]): StockTotals {
+  return {
+    inStock: stores.reduce((n, s) => n + s.inStock, 0),
+    preorder: stores.reduce((n, s) => n + s.preorder, 0),
+    listings: stores.reduce((n, s) => n + s.listings, 0),
+    storesWithStock: stores.filter((s) => s.inStock > 0).length,
+    storesLive: stores.filter((s) => s.monitored && s.enabled && !s.blockedReason).length,
+  }
+}
+
+/** Hub order: most in stock first, then pre-orders, then most listings, then name. */
+export function sortStoresByStock<T extends Pick<StoreStockRow, 'inStock' | 'preorder' | 'listings' | 'name'>>(stores: T[]): T[] {
+  return [...stores].sort((a, b) => b.inStock - a.inStock || b.preorder - a.preorder || b.listings - a.listings || a.name.localeCompare(b.name))
+}
+
+/** /stock/<store>/ status facet. `all` is the canonical page. */
+export const LISTING_FILTERS = ['all', 'in-stock', 'preorder', 'sold-out'] as const
+export type ListingFilter = (typeof LISTING_FILTERS)[number]
+export const LISTING_FILTER_LABEL: Record<ListingFilter, string> = { all: 'All', 'in-stock': 'In stock', preorder: 'Pre-order', 'sold-out': 'Sold out' }
+
+export function parseListingFilter(raw: string | string[] | undefined): ListingFilter {
+  const v = first(raw)
+  return (LISTING_FILTERS as readonly string[]).includes(v ?? '') ? (v as ListingFilter) : 'all'
+}
+
+export function matchesListingFilter(a: Availability, f: ListingFilter): boolean {
+  if (f === 'in-stock') return isInStock(a)
+  if (f === 'preorder') return a === 'preorder'
+  if (f === 'sold-out') return a === 'out_of_stock'
+  return true
+}
+
+export function listingCounts(rows: Pick<StoreListingRow, 'availability'>[]): Record<ListingFilter, number> {
+  return {
+    all: rows.length,
+    'in-stock': rows.filter((r) => isInStock(r.availability)).length,
+    preorder: rows.filter((r) => r.availability === 'preorder').length,
+    'sold-out': rows.filter((r) => r.availability === 'out_of_stock').length,
+  }
+}
+
+/** /stock/<store>/ <title>: the longest pattern that fits in 60 characters. */
+export function storeStockTitle(name: string): string {
+  return [`${name} Pokémon & One Piece Card Stock, Live`, `${name} Pokémon Card Stock, Live`, `${name} TCG Stock`].find((t) => t.length <= 60) ?? name
+}
+
+/** "12 of 105 Pokémon and One Piece listings in stock at Kmart right now" — facts only. */
+export function storeStockSummary(name: string, rows: Pick<StoreListingRow, 'availability'>[]): string {
+  const c = listingCounts(rows)
+  if (c.all === 0) return `We don’t track any Pokémon or One Piece listings at ${name} right now.`
+  const pre = c.preorder ? `, ${c.preorder} on pre-order` : ''
+  return `${c['in-stock']} of ${c.all} Pokémon and One Piece ${c.all === 1 ? 'listing' : 'listings'} in stock at ${name} right now${pre}.`
 }

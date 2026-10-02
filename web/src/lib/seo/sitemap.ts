@@ -14,6 +14,7 @@ import {
   GAMES,
   guidesPath,
   inStockPath,
+  stockPath,
   LANGS,
   listingPath,
   marketCapPath,
@@ -98,6 +99,15 @@ export async function entriesFor(type: SitemapType): Promise<SitemapEntry[]> {
         { path: inStockPath(), lastmod: latest((await repo.inStock({ limit: 1 })).map((p) => p.updatedAt)) },
         { path: storesPath() },
         { path: scoutsPath() },
+        // Live stock: the hub, and every store page that has listings (empty ones are noindex).
+        ...(await (async () => {
+          const { stores } = await repo.stockOverview()
+          const withListings = stores.filter((s) => s.listings > 0)
+          return [
+            { path: stockPath(), lastmod: latest(withListings.map((s) => s.lastChangeAt)) },
+            ...withListings.map((s) => ({ path: stockPath(s.slug), lastmod: s.lastChangeAt })),
+          ]
+        })()),
         ...[...retailers, ...states].filter((x) => dropsPageIndexable(x.last, x.copy, now)).map((x) => ({ path: x.path, lastmod: x.last })),
       ]
     }

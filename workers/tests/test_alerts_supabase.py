@@ -39,7 +39,7 @@ MAILPIT = os.environ.get("MAILPIT_URL", "http://127.0.0.1:54324").rstrip("/")
 SMTP_HOST = os.environ.get("MAILPIT_SMTP_HOST", "127.0.0.1")
 SMTP_PORT = int(os.environ.get("MAILPIT_SMTP_PORT", "54325"))
 SITE = "https://tcgtracker.com.au"
-UPGRADE = "You're seeing this 24 hours after Premium members. Upgrade for instant alerts: https://tcgtracker.com.au/premium/"
+UPGRADE = "You're seeing this 5 minutes after Premium members. Upgrade for instant alerts: https://tcgtracker.com.au/premium/"
 
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_SUPABASE_DB_URL not set")
 

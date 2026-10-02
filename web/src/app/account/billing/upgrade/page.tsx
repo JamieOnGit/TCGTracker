@@ -23,7 +23,7 @@ export default async function Upgrade() {
       <section className="upgrade-card">
         <ul className="grid gap-2 text-sm">
           <li>Up to {acct.rules.premiumQuota} listings a month instead of {acct.rules.freeQuota}</li>
-          <li>Instant retail drop alerts (Free members get them 24 hours later)</li>
+          <li>Instant retail drop alerts (Free members get them 5 minutes later)</li>
           <li>◆ Premium badge on your profile and listings</li>
         </ul>
         <form action={startCheckout} className="mt-6">

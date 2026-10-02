@@ -26,7 +26,7 @@ const warn = (msg) => warnings.push(msg)
 
 // Always crawled, even if nothing links to them yet.
 const PRIVATE = ['/account/', '/messages/', '/admin/', '/login/', '/report/']
-const SEEDS = ['/', '/releases/', '/releases/pokemon/', '/releases/one-piece/', '/guides/', '/drops/', '/drops/vic/', '/drops/scouts/', '/drops/in-stock/', '/drops/stores/', '/products/']
+const SEEDS = ['/', '/releases/', '/releases/pokemon/', '/releases/one-piece/', '/guides/', '/drops/', '/drops/vic/', '/drops/scouts/', '/drops/in-stock/', '/drops/stores/', '/products/', '/stock/', '/stock/jb-hi-fi/']
 
 async function get(path) {
   const res = await fetch(BASE + path, { redirect: 'manual' })
@@ -173,7 +173,7 @@ async function checkNormalisation() {
   if (robots.status !== 200 || !/Disallow: \/account\//.test(robots.body) || !/Sitemap:/.test(robots.body)) fail('/robots.txt: missing disallow rules or sitemap')
   const llms = await get('/llms.txt')
   if (llms.status !== 200 || !llms.body.includes('/methodology/')) fail('/llms.txt: missing')
-  for (const section of ['/releases/', '/guides/', '/deals/', '/drops/in-stock/', '/products/']) if (!llms.body.includes(section)) fail(`/llms.txt: no ${section} section`)
+  for (const section of ['/releases/', '/guides/', '/deals/', '/drops/in-stock/', '/products/', '/stock/']) if (!llms.body.includes(section)) fail(`/llms.txt: no ${section} section`)
 }
 
 async function checkNewRoutes() {

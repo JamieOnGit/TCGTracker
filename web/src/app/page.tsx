@@ -100,7 +100,7 @@ export default async function Home({ searchParams }: Props) {
               <h2 id="drops-h">Latest retail drops</h2>
               <Link href="/drops/" className="btn-ghost text-sm">All drops</Link>
             </div>
-            <p className="muted mt-2 text-sm">JB Hi-Fi, BIG W, Kmart, Target and more. Premium members are alerted instantly; everyone else a day later.</p>
+            <p className="muted mt-2 text-sm">JB Hi-Fi, BIG W, Kmart, Target and more. Premium members are alerted instantly; everyone else 5 minutes later.</p>
             <div className="mt-4"><DropFeed rows={drops} compact /></div>
           </section>
         </div>

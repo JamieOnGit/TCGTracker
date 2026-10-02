@@ -152,6 +152,32 @@ export interface RetailerRow {
   watchIntervalSeconds: number | null // how often the monitor checks this store
 }
 
+/** One store's stock summary for the /stock/ hub. */
+export interface StoreStockRow extends RetailerRow {
+  listings: number // TCG listings we track there (seen in the last 2 weeks, marketplace sellers excluded)
+  inStock: number
+  preorder: number
+  lastChangeAt: string | null
+}
+
+export interface StockOverview {
+  stores: StoreStockRow[]
+  events7d: number // public stock events in the last 7 days
+}
+
+/** One listing at one store, for /stock/<store>/. */
+export interface StoreListingRow {
+  title: string
+  url: string
+  availability: Availability
+  priceAud: number | null
+  lastChangeAt: string | null
+  lastSeenAt: string | null
+  imageUrl: string | null
+  game: Game | null
+  product: (SealedProductRef & { rrpAud: number | null }) | null
+}
+
 export type Availability = 'unknown' | 'out_of_stock' | 'preorder' | 'in_stock_online' | 'in_stock_cnc' | 'in_stock_both'
 
 /** A sealed product (one product page), e.g. "Prismatic Evolutions Elite Trainer Box" (EN). */
@@ -348,6 +374,10 @@ export interface Repository {
   /** Published release calendar entries, soonest first; TBC last. */
   releases(filter?: { game?: Game; from?: string }): Promise<ReleaseRow[]>
   getRelease(game: Game, slug: string): Promise<ReleaseRow | null>
+  /** Per-store stock counts for the /stock/ hub (live, no delay). */
+  stockOverview(filter?: { game?: Game }): Promise<StockOverview>
+  /** Every TCG listing we track at one store: in stock first, then pre-order, then the rest; newest change first. */
+  storeListings(slug: string, filter?: { game?: Game; limit?: number }): Promise<StoreListingRow[]>
   /** Products currently in stock or on pre-order somewhere, most recently changed first. */
   inStock(filter?: { game?: Game; retailerSlug?: string; limit?: number }): Promise<SealedProductRow[]>
   /** Sealed products (product pages), most recently active first. */
