@@ -4,7 +4,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { Change, fmtAud, fmtAudShort } from '@/components/Format'
 import { JsonLd } from '@/components/JsonLd'
-import { MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
+import { effectivePrimaryGrade, MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
 import { Eyebrow, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { formatAud } from '@/lib/domain/rules'
@@ -28,7 +28,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function Home({ searchParams }: Props) {
   const repo = getRepo()
   const rules = await repo.getRules()
-  const query = parseMarketQuery(await searchParams, {}, rules.primaryGrade)
+  const query = parseMarketQuery(await searchParams, {}, await effectivePrimaryGrade(rules.primaryGrade))
   const [all, drops, sets] = await Promise.all([
     repo.marketCap({ ...query, sort: 'market_cap', order: 'desc', page: 1, pageSize: 1000, q: undefined }),
     repo.drops({ limit: 5 }),

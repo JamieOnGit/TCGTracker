@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { fmtDate, LangBadge } from '@/components/Format'
-import { MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
+import { effectivePrimaryGrade, MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
 import { CardImage, PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
@@ -35,7 +35,7 @@ export default async function SetPage({ params, searchParams }: Props) {
   const [cards, rules, releases, sealed] = await Promise.all([repo.listCardsInSet(set.id), repo.getRules(), repo.releases({ game: set.game }), repo.listSealedProducts({ game: set.game, lang: set.lang })])
   const products = sealed.filter((p) => p.set?.slug === set.slug)
   const release = releases.find((r) => r.set?.slug === set.slug && r.lang === set.lang)
-  const query = parseMarketQuery(await searchParams, { game: set.game, lang: set.lang, setId: set.id }, rules.primaryGrade)
+  const query = parseMarketQuery(await searchParams, { game: set.game, lang: set.lang, setId: set.id }, await effectivePrimaryGrade(rules.primaryGrade))
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Cards', path: '/cards/' }, { name: GAME_NAMES[set.game], path: cardsPath(set.game) }, { name: LANG_NAMES[set.lang], path: cardsPath(set.game, set.lang) }, { name: set.name, path: setPath(set) }]} /></div>

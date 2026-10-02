@@ -47,9 +47,11 @@ export default async function CardPage({ params, searchParams }: Props) {
   const repo = getRepo()
   const rules = await repo.getRules()
   // Any PSA/BGS/CGC/SGC grade can be asked for; ?grade= pages are noindex facets.
-  const gradeKey = isPriceKey(sp.grade) ? sp.grade : rules.primaryGrade
-  const [gradeRows, stats, active, closed, news, related, counterpart, history] = await Promise.all([
-    repo.cardGrades(card.id),
+  const gradeRows = await repo.cardGrades(card.id)
+  // The market price (raw) by default; PSA 10 for a card with no raw price yet.
+  const fallback = rules.primaryGrade === 'raw' && !gradeRows.some((x) => x.gradeKey === 'raw' && x.floorAud !== null) ? 'psa-10' : rules.primaryGrade
+  const gradeKey = isPriceKey(sp.grade) ? sp.grade : fallback
+  const [stats, active, closed, news, related, counterpart, history] = await Promise.all([
     repo.listingStats([card.id]),
     repo.listingsForCard(card.id, { status: 'active' }),
     repo.listingsForCard(card.id, { status: 'closed' }),
@@ -117,7 +119,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           <div className="mt-8">
             <SegLinks
               label="Grade"
-              options={(options.includes(gradeKey) ? options : [...options, gradeKey]).map((k) => ({ href: k === rules.primaryGrade ? cardPath(card) : `${cardPath(card)}?grade=${k}`, label: gradeLabel(k), current: k === gradeKey, rel: k === rules.primaryGrade ? undefined : 'nofollow' }))}
+              options={(options.includes(gradeKey) ? options : [...options, gradeKey]).map((k) => ({ href: k === fallback ? cardPath(card) : `${cardPath(card)}?grade=${k}`, label: gradeLabel(k), current: k === gradeKey, rel: k === fallback ? undefined : 'nofollow' }))}
             />
             <div className="mt-6 flex flex-wrap items-baseline gap-4">
               <p className="num" style={{ fontSize: 'var(--text-4xl)', fontWeight: 300, lineHeight: 1 }}>{fmtAud(g?.floorAud)}</p>
@@ -179,7 +181,7 @@ export default async function CardPage({ params, searchParams }: Props) {
             <tbody>
               {grades.map((x) => (
                 <tr key={x.gradeKey} aria-selected={x.gradeKey === gradeKey}>
-                  <th scope="row"><Link href={x.gradeKey === rules.primaryGrade ? cardPath(card) : `${cardPath(card)}?grade=${x.gradeKey}`} rel="nofollow" className="prose-link">{gradeLabel(x.gradeKey)}</Link></th>
+                  <th scope="row"><Link href={x.gradeKey === fallback ? cardPath(card) : `${cardPath(card)}?grade=${x.gradeKey}`} rel="nofollow" className="prose-link">{gradeLabel(x.gradeKey)}</Link></th>
                   <td className="n">{fmtAud(x.floorAud).replace('A$', '')}</td>
                   <td className="n">{fmtInt(x.population)}</td>
                   <td className="n hide-sm">{fmtAudShort(x.marketCapAud)}</td>

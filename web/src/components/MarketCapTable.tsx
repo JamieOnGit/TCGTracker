@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cache } from 'react'
 import { getRepo, type MarketQuery, type MarketRow, type MarketSort } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
 import { EBAY_DISCLOSURE, ebaySearchUrl } from '@/lib/domain/ebay'
@@ -16,6 +17,17 @@ const SORTS: MarketSort[] = ['market_cap', 'population', 'floor', 'change_7d', '
 const GRADE_OPTIONS = ['raw', 'psa-10', 'psa-9', 'all']
 const viewLabel = (g: string) => (g === 'raw' ? 'Market price' : gradeLabel(g))
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
+
+/**
+ * The default view: the configured primary grade, unless that is raw and no
+ * raw market prices exist yet (a new install, or before the first raw import),
+ * when the rankings fall back to PSA 10 rather than showing an empty table.
+ */
+export const effectivePrimaryGrade = cache(async (configured: string): Promise<string> => {
+  if (configured !== 'raw') return configured
+  const probe = await getRepo().marketCap({ gradeKey: 'raw', sort: 'market_cap', order: 'desc', page: 1, pageSize: 1 })
+  return probe.total > 0 ? 'raw' : 'psa-10'
+})
 
 export function parseMarketQuery(sp: SearchParams, scope: { game?: Game; lang?: Lang; setId?: string }, primaryGrade: string): MarketQuery {
   const sort = (SORTS.find((s) => s === one(sp.sort)) ?? 'market_cap') as MarketSort
@@ -65,7 +77,10 @@ function BuyCell({ row, rules, stats }: { row: MarketRow; rules: Rules; stats: P
  */
 export async function MarketCapTable({ query, basePath, caption, showControls = true }: { query: MarketQuery; basePath: string; caption: string; showControls?: boolean }) {
   const repo = getRepo()
-  const [result, rules] = await Promise.all([repo.marketCap(query), repo.getRules()])
+  const [result, loaded] = await Promise.all([repo.marketCap(query), repo.getRules()])
+  const primaryGrade = await effectivePrimaryGrade(loaded.primaryGrade)
+  const rules = { ...loaded, primaryGrade }
+  const gradeOptions = GRADE_OPTIONS.filter((g) => g !== 'raw' || primaryGrade === 'raw' || query.gradeKey === 'raw')
   const stats = await repo.listingStats(result.rows.map((r) => r.card.id))
   const priceMode = result.rows.some((r) => r.population === null)
   const keep = (extra: Record<string, string>) => {
@@ -109,7 +124,7 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
           />
           <SegLinks
             label="Grade"
-            options={GRADE_OPTIONS.map((g) => ({ href: g === rules.primaryGrade ? basePath : `${basePath}?grade=${g}`, label: viewLabel(g), current: query.gradeKey === g, rel: g === rules.primaryGrade ? undefined : 'nofollow' }))}
+            options={gradeOptions.map((g) => ({ href: g === rules.primaryGrade ? basePath : `${basePath}?grade=${g}`, label: viewLabel(g), current: query.gradeKey === g, rel: g === rules.primaryGrade ? undefined : 'nofollow' }))}
           />
           <form action={basePath} role="search" className="w-full sm:ml-auto sm:w-64">
             <label htmlFor="rank-q" className="sr-only">Search the rankings</label>
