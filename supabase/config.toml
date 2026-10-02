@@ -242,6 +242,18 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Sign-in emails carry the one-time code as well as the link, so the browser
+# that asked can sign in with the code when the link is opened on a phone.
+# Keep these in step with the hosted project's templates (Authentication ->
+# Emails -> Templates; docs/YOUR-NEXT-STEPS.md, Step 5).
+[auth.email.template.magic_link]
+subject = "Your TCGTracker sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Your TCGTracker sign-in code"
+content_path = "./supabase/templates/confirmation.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

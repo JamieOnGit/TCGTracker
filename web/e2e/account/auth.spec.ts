@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { live, uniq, waitForMagicLink } from './helpers'
+import { live, uniq, waitForMagicLink, waitForSignInCode } from './helpers'
 
 /**
  * Magic links must work in a different browser from the one that asked for
@@ -35,6 +35,25 @@ test('a magic link requested in one browser signs you in from another', async ({
   // The tokens don't linger in the address bar.
   expect(new URL(tap.url()).hash).toBe('')
   await other.close()
+})
+
+test('the code from the email signs in the browser that asked, wherever the email was opened', async ({ page }) => {
+  const email = `${uniq('e2e')}-code@example.test`
+  const started = Date.now()
+  await page.goto('/login/?next=/account/')
+  await page.getByLabel('Email address').fill(email)
+  await page.getByRole('button', { name: 'Email me a sign-in link' }).click()
+  await expect(page.getByTestId('login-sent')).toBeVisible()
+
+  await page.getByLabel('Sign-in code').fill('000000')
+  await page.getByRole('button', { name: 'Sign in with code' }).click()
+  await expect(page.locator('#token-error')).toContainText('That code didn’t work')
+
+  const code = await waitForSignInCode(email, started)
+  await page.getByLabel('Sign-in code').fill(code)
+  await page.getByRole('button', { name: 'Sign in with code' }).click()
+  await page.waitForURL((u) => u.pathname.startsWith('/account/'), { timeout: 30_000 })
+  await expect(page.getByRole('main')).not.toContainText('Sign in or join')
 })
 
 test('a used or broken link lands on the sign-in page with a clear message', async ({ page }) => {
