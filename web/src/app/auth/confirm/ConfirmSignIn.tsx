@@ -13,6 +13,9 @@ export function ConfirmSignIn() {
     started = true
     const url = new URL(window.location.href)
     const next = safeNext(url.searchParams.get('next'))
+    // A sign-in asked for on another device: offer to sign that one in too.
+    const r = url.searchParams.get('r')
+    const after = r ? `/auth/approve/?r=${encodeURIComponent(r)}&next=${encodeURIComponent(next)}` : next
     // A PKCE link (?code=) still goes to the server exchange.
     const code = url.searchParams.get('code')
     if (code) {
@@ -31,7 +34,7 @@ export function ConfirmSignIn() {
     }
     sb.auth
       .setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ error }) => window.location.replace(error ? FAILED : next))
+      .then(({ error }) => window.location.replace(error ? FAILED : after))
       .catch(() => window.location.replace(FAILED))
   }, [])
 

@@ -1,15 +1,55 @@
 'use client'
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { Mail } from 'lucide-react'
 import { sendMagicLink, verifyEmailCode } from '@/lib/actions/auth'
 import type { ActionResult } from '@/lib/actions/result'
 
-export function LoginForm({ next, linkError }: { next: string; linkError: boolean }) {
+const POLL_MS = 3000
+const POLL_FOR_MS = 65 * 60_000
+
+/**
+ * While this page waits, ask the server whether the sign-in was approved from
+ * the device that opened the email; if so the server has signed this browser
+ * in, so go on. See app/auth/login-status/route.ts.
+ */
+function useSignInWhenApproved(active: boolean) {
+  useEffect(() => {
+    if (!active) return
+    const until = Date.now() + POLL_FOR_MS
+    let stopped = false
+    const tick = async () => {
+      if (stopped) return
+      if (document.visibilityState === 'visible') {
+        try {
+          const res = await fetch('/auth/login-status/', { cache: 'no-store' })
+          const body = (await res.json()) as { state: string; next?: string }
+          if (body.state === 'signed-in' && body.next) {
+            stopped = true
+            window.location.assign(body.next)
+            return
+          }
+          if (body.state === 'expired' || body.state === 'none') stopped = true
+        } catch {
+          // offline for a moment: try again next tick
+        }
+      }
+      if (!stopped && Date.now() < until) timer = setTimeout(tick, POLL_MS)
+    }
+    let timer = setTimeout(tick, POLL_MS)
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+    }
+  }, [active])
+}
+
+export function LoginForm({ next, linkError, waiting = false }: { next: string; linkError: boolean; waiting?: boolean }) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(sendMagicLink, null)
   const [email, setEmail] = useState('')
   const [dismissed, setDismissed] = useState<ActionResult | null>(null)
   const sent = state?.ok === true && state !== dismissed
   const err = state && !state.ok ? state.error : null
+  useSignInWhenApproved(sent || (waiting && !state))
 
   if (sent) {
     return (
@@ -17,9 +57,13 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
         <span className="success-mark" aria-hidden="true"><Mail size={22} strokeWidth={1.5} /></span>
         <h2 className="mt-4">Check your email</h2>
         <p className="mt-2">
-          We&apos;ve sent a sign-in email to <strong>{email}</strong>. Type the code from it below to sign in here, or tap its link to sign in on the device you open it on. Both expire in an hour.
+          We&apos;ve sent a sign-in link to <strong>{email}</strong>. Open it on any device, this one or your phone. If you open it on another device, tap <strong>Yes</strong> when it asks, and this page signs in by itself. The link expires in an hour.
         </p>
-        <CodeForm email={email} next={next} />
+        <p className="muted mt-3 text-sm" data-testid="login-waiting">Keep this page open. Waiting for you to open the link…</p>
+        <details className="mt-4">
+          <summary className="text-sm">Got a code in the email instead?</summary>
+          <CodeForm email={email} next={next} />
+        </details>
         <p className="muted mt-4 text-sm">Nothing after a couple of minutes? Check your spam or promotions folder, or send it again.</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <button type="button" className="btn btn-secondary" onClick={() => setDismissed(state)}>Use a different email</button>
@@ -51,7 +95,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
           aria-invalid={err ? true : undefined}
           aria-describedby={err ? 'email-error email-hint' : 'email-hint'}
         />
-        <p id="email-hint" className="hint">We&apos;ll email you a one-time link and code. New here? The same email creates your account.</p>
+        <p id="email-hint" className="hint">We&apos;ll email you a one-time sign-in link. New here? The same link creates your account.</p>
         {err && <p id="email-error" className="field-error" role="alert">{err}</p>}
       </div>
       <button type="submit" className="btn btn-primary w-full" disabled={pending}>
