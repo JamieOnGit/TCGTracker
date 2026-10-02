@@ -4,9 +4,10 @@ import { headers } from 'next/headers'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseForRequest } from '@/lib/supabase/server'
+import { supabaseForRequest, supabaseService } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/seo/urls'
 import { safeNext } from '@/lib/account/format'
+import { createLoginRequest, isLive, isRequestId, loadLoginRequest } from '@/lib/auth/loginRequests'
 import type { ActionResult } from './result'
 
 const emailSchema = z.object({ email: z.email().max(254), next: z.string().startsWith('/').max(300).optional() })
@@ -15,7 +16,13 @@ const emailSchema = z.object({ email: z.email().max(254), next: z.string().start
 export async function sendMagicLink(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
   const parsed = emailSchema.safeParse({ email: form.get('email'), next: form.get('next') || undefined })
   if (!parsed.success) return { ok: false, error: 'Enter a valid email address.', field: 'email' }
-  const origin = (await headers()).get('origin') ?? siteUrl()
+  const h = await headers()
+  const origin = h.get('origin') ?? siteUrl()
+  const next = safeNext(parsed.data.next)
+  // Lets this browser be signed in when the link is opened on another device
+  // (lib/auth/loginRequests.ts). The link carries only the request id.
+  const requestId = await createLoginRequest(parsed.data.email, next, h.get('user-agent'))
+  const confirmUrl = `${origin}/auth/confirm/?next=${encodeURIComponent(next)}${requestId ? `&r=${requestId}` : ''}`
   // Implicit flow, not PKCE: a PKCE link only works in the browser that asked
   // for it, so tapping it in the Gmail app (its own in-app browser) or on
   // another device failed. /auth/confirm/ finishes the sign-in in any browser.
@@ -24,7 +31,7 @@ export async function sendMagicLink(_prev: ActionResult | null, form: FormData):
   })
   const { error } = await sb.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { emailRedirectTo: `${origin}/auth/confirm/?next=${encodeURIComponent(parsed.data.next ?? '/account/')}` },
+    options: { emailRedirectTo: confirmUrl },
   })
   if (error) {
     // 429 covers both the per-address wait (60 s) and the project-wide email cap,
@@ -107,4 +114,28 @@ export async function updateProfile(_prev: ActionResult | null, form: FormData):
   if (priv.error) return { ok: false, error: 'Could not save your postcode. Try again.', field: 'postcode' }
   revalidatePath('/account/', 'layout')
   return { ok: true, message: 'Profile saved.' }
+}
+
+/**
+ * From the device that opened the email link (and is now signed in): approve
+ * the sign-in request made on another device, which then signs itself in.
+ * Only for a live request made for this account's own email.
+ */
+export async function approveLoginRequest(form: FormData): Promise<void> {
+  const id = form.get('r')
+  const next = safeNext(String(form.get('next') ?? ''))
+  if (!isRequestId(id)) redirect(next)
+  const sb = await supabaseForRequest()
+  const { data } = await sb.auth.getUser()
+  const user = data.user
+  if (!user?.email) redirect(`/login/?next=${encodeURIComponent(next)}`)
+  const row = await loadLoginRequest(id)
+  if (!row || !isLive(row) || row.approved_at || row.email !== user.email.toLowerCase()) redirect(next)
+  await supabaseService()
+    .from('login_requests')
+    .update({ approved_user_id: user.id, approved_email: user.email, approved_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('approved_at', null)
+    .is('consumed_at', null)
+  redirect(`/auth/approve/?r=${id}&next=${encodeURIComponent(next)}`)
 }
