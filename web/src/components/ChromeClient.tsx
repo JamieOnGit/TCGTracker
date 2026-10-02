@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Bell, Home, LayoutGrid, Menu, Search, ShoppingBag, Store, X } from 'lucide-react'
 import { loadSupabaseBrowser, supabaseAvailable } from '@/lib/supabase/browser-lazy'
+import { BrandMark } from './ui'
 
 type Item = { href: string; label: string; match: string[] }
 
@@ -74,7 +75,7 @@ export function AccountArea() {
   return (
     <>
       <Link href="/account/notifications/" className="icon-btn relative" aria-label={`Notifications${state.unread ? `, ${state.unread} unread` : ''}`}>
-        <Bell size={18} strokeWidth={1.25} />
+        <Bell size={18} strokeWidth={1.75} />
         {state.unread > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />}
       </Link>
       <Link href="/account/" className="nav-link hidden sm:inline">Account</Link>
@@ -94,27 +95,28 @@ export function MobileMenu({ items }: { items: Item[] }) {
   return (
     <div className="lg:hidden">
       <button className="icon-btn" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(true)}>
-        <Menu size={20} strokeWidth={1.25} />
+        <Menu size={20} strokeWidth={1.75} />
       </button>
       {open && (
         <div role="dialog" aria-modal="true" aria-label="Menu" className="fixed inset-0 z-50 overflow-y-auto" style={{ background: 'var(--bg)' }}>
           <div className="container-x flex h-[var(--header-h)] items-center justify-between border-b" style={{ borderColor: 'var(--line)' }}>
-            <span className="wordmark">TCGTracker</span>
-            <button className="icon-btn" aria-label="Close menu" onClick={() => setOpen(false)}><X size={20} strokeWidth={1.25} /></button>
+            <span className="wordmark"><BrandMark /><span><span className="holo-text">TCG</span>Tracker</span></span>
+            <button className="icon-btn" aria-label="Close menu" onClick={() => setOpen(false)}><X size={20} strokeWidth={1.75} /></button>
           </div>
-          <nav className="container-x grid gap-5 py-8" aria-label="Mobile">
-            <form action="/search/" role="search">
+          <nav className="container-x grid gap-2 py-6" aria-label="Mobile">
+            <form action="/search/" role="search" className="search-wrap mb-3">
+              <Search size={16} strokeWidth={2} aria-hidden="true" className="search-icon" />
               <label htmlFor="m-q" className="sr-only">Search cards</label>
               <input id="m-q" name="q" type="search" className="search-field" placeholder="Search cards, sets" />
             </form>
             {items.map((i) => (
-              <Link key={i.href} href={i.href} className="text-2xl" style={{ textDecoration: 'none', color: 'var(--ink)' }}>{i.label}</Link>
+              <Link key={i.href} href={i.href} className="menu-link" aria-current={isActive(pathname, i) ? 'page' : undefined}>{i.label}</Link>
             ))}
-            <hr className="hairline" />
-            <Link href="/account/" style={{ color: 'var(--ink)' }}>Account</Link>
-            <Link href="/messages/" style={{ color: 'var(--ink)' }}>Messages</Link>
-            <Link href="/account/alerts/" style={{ color: 'var(--ink)' }}>Alerts</Link>
-            <Link href="/account/listings/new/" className="btn btn-primary">Sell a card</Link>
+            <hr className="hairline my-2" />
+            <Link href="/account/" className="menu-link menu-link-sm">Account</Link>
+            <Link href="/messages/" className="menu-link menu-link-sm">Messages</Link>
+            <Link href="/account/alerts/" className="menu-link menu-link-sm">Alerts</Link>
+            <Link href="/account/listings/new/" className="btn btn-primary mt-4">Sell a card</Link>
           </nav>
         </div>
       )}
@@ -135,7 +137,7 @@ export function TabBar() {
     <nav className="tabbar" aria-label="Sections">
       {tabs.map((t) => (
         <Link key={t.href} href={t.href} aria-current={isActive(pathname, t) ? 'page' : undefined}>
-          <t.icon size={20} strokeWidth={1.25} aria-hidden="true" />
+          <t.icon size={20} strokeWidth={1.75} aria-hidden="true" />
           {t.label}
         </Link>
       ))}
@@ -145,9 +147,10 @@ export function TabBar() {
 
 const themeListeners = new Set<() => void>()
 function readTheme(): string {
-  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
 }
 
+/** Light (Daylight) is the default; a dark choice is saved and re-applied before paint by layout.tsx. */
 export function ThemeToggle() {
   const theme = useSyncExternalStore(
     (cb) => {
@@ -155,19 +158,18 @@ export function ThemeToggle() {
       return () => themeListeners.delete(cb)
     },
     readTheme,
-    () => 'dark',
+    () => 'light',
   )
   const apply = (t: string) => {
     try {
       localStorage.setItem('theme', t)
     } catch {}
-    if (t === 'dark') document.documentElement.removeAttribute('data-theme')
-    else document.documentElement.setAttribute('data-theme', t)
+    document.documentElement.setAttribute('data-theme', t)
     themeListeners.forEach((l) => l())
   }
   return (
     <div className="seg" role="radiogroup" aria-label="Theme">
-      {['dark', 'light'].map((t) => (
+      {['light', 'dark'].map((t) => (
         <button key={t} role="radio" aria-checked={theme === t} onClick={() => apply(t)} type="button">
           {t[0]!.toUpperCase() + t.slice(1)}
         </button>

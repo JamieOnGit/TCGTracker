@@ -1,7 +1,19 @@
 import Link from 'next/link'
 
+/** The logo mark: a brand-filled tile with a card and a rising line. Decorative; the wordmark text names the site. */
+export function BrandMark({ size = 28 }: { size?: number }) {
+  return (
+    <svg className="brand-mark" width={size} height={size} viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+      <rect width="28" height="28" rx="8" className="brand-mark-bg" />
+      <rect x="6.5" y="7" width="10" height="14" rx="2" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="1.5" transform="rotate(-12 11.5 14)" />
+      <rect x="10.5" y="6.5" width="10.5" height="15" rx="2.25" fill="#fff" />
+      <path d="M12.75 17.5l2.25-2.25 1.75 1.25 2.25-3" fill="none" className="brand-mark-line" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="eyebrow">{children}</p>
+  return <p className="eyebrow eyebrow-accent">{children}</p>
 }
 
 export function PageIntro({ eyebrow, title, lead, children }: { eyebrow?: string; title: string; lead?: React.ReactNode; children?: React.ReactNode }) {
