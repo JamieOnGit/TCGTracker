@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import type { DropRow } from '@/lib/data/types'
 import { confirmationsLabel, purchaseLimitLabel, QUANTITY_LABEL, sightingPlace } from '@/lib/domain/drops'
-import { absoluteTime, dropStatus, monogram, relativeTime, STATUS_BADGE_CLASS } from '@/lib/domain/stock'
+import { absoluteTime, dropStatus, relativeTime, STATUS_BADGE_CLASS } from '@/lib/domain/stock'
 import { dropsPath, GAME_NAMES, productPath } from '@/lib/seo/urls'
 import { fmtAud2 } from './Format'
 import { NotifyButton } from './NotifyButton'
+import { RetailerMark } from '@/components/RetailerMark'
 
 export const EVENT_LABEL: Record<DropRow['eventType'], string> = {
   NEW_LISTING: 'New listing',
@@ -62,7 +63,7 @@ export function DropItem({ d, withDay = false, now }: { d: DropRow; withDay?: bo
           </p>
           <div className="card-meta items-center">
             <span className="inline-flex items-center gap-1.5">
-              <span className="mono" aria-hidden="true">{monogram(d.retailerName)}</span>
+              <RetailerMark slug={d.retailerSlug} name={d.retailerName} />
               {d.retailerSlug ? <Link href={dropsPath(d.retailerSlug)} className="prose-link" style={{ textDecorationColor: 'transparent' }}>{s ? place : d.retailerName}</Link> : <span>{s ? place : d.retailerName}</span>}
             </span>
             {s?.storeName && <span>{s.storeName}</span>}

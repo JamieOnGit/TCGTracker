@@ -123,6 +123,9 @@ test('stock hub: totals, stores ranked by what is in stock, linked store pages',
   await expect(page.getByText('Listings in stock now')).toBeVisible()
   const rows = page.locator('table tbody tr')
   await expect(rows.first()).toHaveAttribute('data-in-stock', 'yes')
+  // Stores show their own logo; one without a logo keeps its monogram.
+  await expect(page.locator('img.retailer-logo[src="/retailers/jb-hi-fi.png"]').first()).toBeVisible()
+  expect(await page.locator('img.retailer-logo').first().evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0)
   await rows.first().getByRole('link').click()
   await expect(page).toHaveURL(/\/stock\/[a-z0-9-]+\/$/)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Pokémon & One Piece stock')

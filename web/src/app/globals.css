@@ -383,3 +383,6 @@ body {
 
 /* Buy column: small text links still get 24px touch targets (WCAG 2.2 target size). */
 .buy-links > a { display: inline-flex; align-items: center; min-height: 24px; padding: 0 4px; }
+
+/* Store logos (RetailerMark): the store's own icon on a white tile. */
+.retailer-logo { display: inline-block; flex: none; border-radius: var(--radius-xs); border: 1px solid var(--line); background: #fff; object-fit: contain; }

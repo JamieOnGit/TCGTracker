@@ -5,9 +5,10 @@ import { Faq } from '@/components/DropsCopy'
 import { PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { AU_STATE_NAMES } from '@/lib/data/types'
-import { intervalLabel, monogram, storeCoverage, STORE_KIND_LABEL, type CoverageStatus } from '@/lib/domain/stock'
+import { intervalLabel, storeCoverage, STORE_KIND_LABEL, type CoverageStatus } from '@/lib/domain/stock'
 import { buildMetadata } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, inStockPath, scoutsPath, storesPath } from '@/lib/seo/urls'
+import { RetailerMark } from '@/components/RetailerMark'
 
 export const revalidate = 300
 
@@ -72,7 +73,7 @@ export default async function Stores() {
                 <tr key={r.slug} data-coverage={c.status}>
                   <th scope="row">
                     <span className="inline-flex items-center gap-2">
-                      <span className="mono" aria-hidden="true">{monogram(r.name)}</span>
+                      <RetailerMark slug={r.slug} name={r.name} />
                       <Link href={dropsPath(r.slug)} className="prose-link" style={{ textDecorationColor: 'transparent' }}>{r.name}</Link>
                     </span>
                   </th>

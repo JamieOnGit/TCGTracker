@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { isInStock } from '@/lib/data/drops'
 import type { SealedProductRow } from '@/lib/data/types'
-import { absoluteTime, lowestLivePrice, monogram, productTypeLabel, relativeTime, rrpDeltaLabel, stockLine } from '@/lib/domain/stock'
+import { absoluteTime, lowestLivePrice, productTypeLabel, relativeTime, rrpDeltaLabel, stockLine } from '@/lib/domain/stock'
 import { GAME_NAMES, productPath } from '@/lib/seo/urls'
 import { LangBadge, fmtAud2 } from './Format'
 import { NotifyButton } from './NotifyButton'
+import { RetailerMark } from '@/components/RetailerMark'
 
 /**
  * A sealed product in a stock list: lowest live price against RRP, where it is
@@ -50,7 +51,7 @@ export function ProductCard({ p, showImages = false, headingLevel = 3 }: { p: Se
           {live.map((o) => (
             <li key={o.retailerSlug + o.url}>
               <a href={o.url} rel="nofollow noopener" target="_blank" className="chip-filter tap" title={`${o.retailerName}: ${o.availability === 'preorder' ? 'pre-order' : 'in stock'}`}>
-                <span className="mono" aria-hidden="true">{monogram(o.retailerName)}</span>
+                <RetailerMark slug={o.retailerSlug} name={o.retailerName} />
                 {o.retailerName}
                 {o.priceAud !== null && <span className="count num">{fmtAud2(o.priceAud)}</span>}
                 {o.availability === 'preorder' && <span className="count">pre-order</span>}
