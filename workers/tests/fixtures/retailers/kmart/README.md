@@ -1,6 +1,8 @@
-# Kmart fixtures: none saved (blocked)
+# Kmart fixtures
 
-Attempted 2026-09-27 from a cloud container (US egress, not AU or residential).
-- `GET https://www.kmart.com.au/robots.txt` returned **HTTP 403 "Access Denied"** with `server: AkamaiGHost` and an `akamai-grn` header, for both curl and headless Chromium.
-- The 403 response still set these cookies: `__country_code_=AU`, `mnm_rollout=TARGET_MARKETPLACE`, `new_search_enabled=true` and `__adv_opt_ko_=true`. They suggest a marketplace rollout and a new search backend (UNVERIFIED).
-- No bypass was attempted and no samples were saved. The same requests need to be re-verified from an AU residential connection.
+Trimmed from the live site on 2 Oct 2026. Kmart served these pages with HTTP 200 to `TCGTrackerBot/1.0 (+https://tcgtracker.com.au/about/bot/)`, and its robots.txt allows `/category/` and `/product/` pages.
+- `category.html`: the category page's schema.org `ItemList`, cut down to 3 products.
+- `product_preorder.html`: `__NEXT_DATA__.props.pageProps.productDetail` for a Kmart pre-order (30th Celebration Booster Bundle, `isPreOrderActive`).
+- `product_nostock.html`: a Kmart Marketplace (third-party seller) listing that is out of stock in every state except NSW.
+
+(On 27 Sep 2026 the same site returned Akamai 403 to a US cloud container. That is why it was disabled until it was re-checked.)

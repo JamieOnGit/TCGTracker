@@ -38,8 +38,9 @@ Owner decisions applied (2026-09-28): brand **TCGTracker**, domain **tcgtracker.
 | Tier timing: **Premium instant**, **Free +24 h**; tier re-checked at send time so upgrades/downgrades apply | ✅ SQL tested |
 | Delivery by email, on-site feed (Premium live panel via RLS) and Discord webhook, with retries | ✅ |
 | JB Hi-Fi adapter (Algolia, key discovered at runtime) | ✅ enabled |
-| Target AU adapter | 🟡 built, disabled: Target blocks cloud IPs and its terms need consent for deep links |
-| BIG W, Kmart | ❌ block data-centre traffic; test from Fly.io Sydney once deployed |
+| Target AU adapter | ✅ live 2 Oct 2026 (category pages served to the honest bot); alerts link to the category page until Target consents to deep links |
+| Kmart | ✅ live 2 Oct 2026: category ItemList + product pages (robots-allowed, HTTP 200 to TCGTrackerBot); new listings within one 2-min cycle, stock/price in rotation, marketplace sellers flagged |
+| BIG W | ❌ refuses connections from cloud IPs; retest from Fly.io Sydney |
 | Premium Bandai, EB Games | ❌ terms ban bots |
 | `/account/drops/` preference page, Discord account linking | ⏳ (drop filters are in the schema; drops page has the live panel) |
 
@@ -62,7 +63,7 @@ Owner decisions applied (2026-09-28): brand **TCGTracker**, domain **tcgtracker.
 ## Live stock monitor (added 1 Oct 2026, CardWatch-style)
 | Item | Status | Where |
 |---|---|---|
-| Store registry: 67 AU stores surveyed; **42 monitored** (39 Shopify + 2 WooCommerce open catalogue feeds + JB Hi-Fi) | ✅ | `docs/research/09-retailer-registry.*`, migration `20261001000200` |
+| Store registry: 67 AU stores surveyed; **44 monitored** (39 Shopify + 2 WooCommerce open catalogue feeds + JB Hi-Fi + Kmart + Target) | ✅ | `docs/research/09-retailer-registry.*`, migration `20261001000200` |
 | Generic Shopify and WooCommerce monitors, configured per store in admin (collections, categories, keywords) | ✅ fixture + live tested | `workers/tcgworkers/drops/adapters/{shopify,woocommerce,catalogue}.py` |
 | Honest-bot rules: robots.txt and Crawl-delay, `TCGTrackerBot` user agent, back-off on 429/403, blocked stores recorded, never worked around | ✅ | `/about/bot/` |
 | Shared, self-tuning request budget across all Shopify shops (Shopify's edge limits per IP) | ✅ tested | `http.SharedGate` |
@@ -73,7 +74,7 @@ Owner decisions applied (2026-09-28): brand **TCGTracker**, domain **tcgtracker.
 | In stock now, product pages (Product + AggregateOffer JSON-LD), product indexes, store coverage, retailer in-stock lists | ✅ e2e | `/drops/in-stock/`, `/products/…`, `/drops/stores/` |
 | Admin: add a store, edit platform/config/blocked reason, probe CLI | ✅ | `/admin/drops/`, `python -m tcgworkers.drops.probe` |
 | Live run (1 Oct 2026, from a shared cloud IP) | 🟡 WooCommerce store: 211 products ✅. Toys"R"Us: products, matching and pages ✅. Other Shopify shops: Shopify allowed only a few requests from that shared IP, and the monitor backed off as designed. **To verify from the Sydney server (Step 7b).** | |
-| Big chains that block automated access (Kmart, BIG W, EB Games, ZiNG, Mr Toys, Toymate, Amazon) | ❌ covered by member sightings; retest from Sydney; outreach template | |
+| Big chains that block automated access (BIG W, EB Games, ZiNG, Mr Toys, Toymate, Amazon) | ❌ covered by member sightings; retest from Sydney; outreach template | |
 
 ## SEO (Australia)
 Canonical, lowercase, trailing-slash URLs with 301s in middleware; redirects table without chains; filter pages `noindex,follow`; self-canonical pagination; `en-AU` + AUD everywhere; titles say "in AUD"; JSON-LD (Organization, WebSite, Breadcrumbs, Product/Offer, Dataset, FAQPage on Premium); split sitemaps; robots.txt; llms.txt. ✅ Crawl check: 400 pages, 124 sitemap URLs, no errors. Plan in `docs/SEO-STRATEGY-AU.md`.
