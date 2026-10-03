@@ -11,7 +11,7 @@ import { ListingTile } from '@/components/ListingTile'
 import { CardImage, Eyebrow, SegLinks, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
-import { gradeOptions, graderOf, isGradeKey, sortGradeKeys } from '@/lib/domain/grades'
+import { gradeOptions, graderOf, isPriceKey, sortGradeKeys } from '@/lib/domain/grades'
 import { EBAY_DISCLOSURE, ebaySearchUrl } from '@/lib/domain/ebay'
 import { cardProduct } from '@/lib/seo/jsonld'
 import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
@@ -31,10 +31,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   if (!card) return {}
   const grades = await getRepo().cardGrades(card.id)
   const psa10 = grades.find((g) => g.gradeKey === 'psa-10')
+  const raw = grades.find((g) => g.gradeKey === 'raw')
   return buildMetadata({
     path: cardPath(card),
     title: titles.card({ name: card.name, number: card.number, printedTotal: card.printedTotal, setName: card.setName, lang: card.lang }),
-    description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'}) PSA 10 value ${fmtAud(psa10?.floorAud)} in Australian dollars${psa10?.population ? `, PSA 10 population ${fmtInt(psa10.population)}` : ''}. Price history, grades, and copies for sale in Australia.`,
+    description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'})${raw?.floorAud ? ` market price ${fmtAud(raw.floorAud)},` : ''} PSA 10 value ${fmtAud(psa10?.floorAud)} in Australian dollars${psa10?.population ? `, PSA 10 population ${fmtInt(psa10.population)}` : ''}. Price history, grades, and copies for sale in Australia.`,
     searchParams: await searchParams,
   })
 }
@@ -46,9 +47,11 @@ export default async function CardPage({ params, searchParams }: Props) {
   const repo = getRepo()
   const rules = await repo.getRules()
   // Any PSA/BGS/CGC/SGC grade can be asked for; ?grade= pages are noindex facets.
-  const gradeKey = isGradeKey(sp.grade) ? sp.grade : rules.primaryGrade
-  const [gradeRows, stats, active, closed, news, related, counterpart, history] = await Promise.all([
-    repo.cardGrades(card.id),
+  const gradeRows = await repo.cardGrades(card.id)
+  // The market price (raw) by default; PSA 10 for a card with no raw price yet.
+  const fallback = rules.primaryGrade === 'raw' && !gradeRows.some((x) => x.gradeKey === 'raw' && x.floorAud !== null) ? 'psa-10' : rules.primaryGrade
+  const gradeKey = isPriceKey(sp.grade) ? sp.grade : fallback
+  const [stats, active, closed, news, related, counterpart, history] = await Promise.all([
     repo.listingStats([card.id]),
     repo.listingsForCard(card.id, { status: 'active' }),
     repo.listingsForCard(card.id, { status: 'closed' }),
@@ -116,7 +119,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           <div className="mt-8">
             <SegLinks
               label="Grade"
-              options={(options.includes(gradeKey) ? options : [...options, gradeKey]).map((k) => ({ href: k === rules.primaryGrade ? cardPath(card) : `${cardPath(card)}?grade=${k}`, label: gradeLabel(k), current: k === gradeKey, rel: k === rules.primaryGrade ? undefined : 'nofollow' }))}
+              options={(options.includes(gradeKey) ? options : [...options, gradeKey]).map((k) => ({ href: k === fallback ? cardPath(card) : `${cardPath(card)}?grade=${k}`, label: gradeLabel(k), current: k === gradeKey, rel: k === fallback ? undefined : 'nofollow' }))}
             />
             <div className="mt-6 flex flex-wrap items-baseline gap-4">
               <p className="num" style={{ fontSize: 'var(--text-4xl)', fontWeight: 300, lineHeight: 1 }}>{fmtAud(g?.floorAud)}</p>
@@ -165,7 +168,7 @@ export default async function CardPage({ params, searchParams }: Props) {
             </table>
           </div>
         </details>
-        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="JustTCG (graded sale prices, converted from USD), TCGTracker marketplace" />
+        <DataNotice asOf={g?.observedAt ?? null} demo={repo.isDemo} sources="JustTCG market prices from recent sales (raw and graded, converted from USD), TCGTracker marketplace" />
       </section>
 
       <section aria-labelledby="grades-h">
@@ -178,7 +181,7 @@ export default async function CardPage({ params, searchParams }: Props) {
             <tbody>
               {grades.map((x) => (
                 <tr key={x.gradeKey} aria-selected={x.gradeKey === gradeKey}>
-                  <th scope="row"><Link href={x.gradeKey === rules.primaryGrade ? cardPath(card) : `${cardPath(card)}?grade=${x.gradeKey}`} rel="nofollow" className="prose-link">{gradeLabel(x.gradeKey)}</Link></th>
+                  <th scope="row"><Link href={x.gradeKey === fallback ? cardPath(card) : `${cardPath(card)}?grade=${x.gradeKey}`} rel="nofollow" className="prose-link">{gradeLabel(x.gradeKey)}</Link></th>
                   <td className="n">{fmtAud(x.floorAud).replace('A$', '')}</td>
                   <td className="n">{fmtInt(x.population)}</td>
                   <td className="n hide-sm">{fmtAudShort(x.marketCapAud)}</td>
@@ -250,7 +253,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           sku: `${card.setCode}-${card.number}-${card.lang}`,
           brand: card.game === 'pokemon' ? 'Pokémon TCG' : 'One Piece Card Game',
           offers: prices.length ? { lowAud: Math.min(...prices), highAud: Math.max(...prices), count: prices.length } : null,
-          values: grades.filter((x) => x.floorAud !== null && isGradeKey(x.gradeKey)).map((x) => ({ name: `${gradeLabel(x.gradeKey)} value`, aud: x.floorAud! })),
+          values: grades.filter((x) => x.floorAud !== null && isPriceKey(x.gradeKey)).map((x) => ({ name: x.gradeKey === 'raw' ? 'Market price (ungraded, Near Mint)' : `${gradeLabel(x.gradeKey)} value`, aud: x.floorAud! })),
         })}
       />
     </div>

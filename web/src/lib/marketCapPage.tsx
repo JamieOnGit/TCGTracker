@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
-import { MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
+import { effectivePrimaryGrade, MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
 import { PageIntro } from '@/components/ui'
 import { getRepo, type SetRow } from '@/lib/data'
 import { dataset } from '@/lib/seo/jsonld'
@@ -44,7 +44,7 @@ export async function MarketCapPage({ params, searchParams }: { params: MarketCa
   const scope = await resolveScope(params)
   if (!scope) notFound()
   const rules = await getRepo().getRules()
-  const query = parseMarketQuery(searchParams, { game: scope.game, lang: scope.lang, setId: scope.set?.id }, rules.primaryGrade)
+  const query = parseMarketQuery(searchParams, { game: scope.game, lang: scope.lang, setId: scope.set?.id }, await effectivePrimaryGrade(rules.primaryGrade))
   const crumbs: { name: string; path: string }[] = [] // Home (= all-games market cap) is prepended by Breadcrumbs
   if (scope.game) crumbs.push({ name: GAME_NAMES[scope.game], path: marketCapPath(scope.game) })
   if (scope.lang) crumbs.push({ name: scope.lang.toUpperCase(), path: marketCapPath(scope.game, scope.lang) })

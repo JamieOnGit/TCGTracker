@@ -112,7 +112,7 @@ export const DEFAULT_RULES: Rules = {
   externalBuyFallback: true,
   dropsPublicDelayMinutes: 5,
   freeDelayedDropAlerts: true,
-  primaryGrade: 'psa-10',
+  primaryGrade: 'raw',
   freeDropDelayMinutes: 5,
   rankByPriceUntilPopulation: true,
   ebay: DEFAULT_EBAY,

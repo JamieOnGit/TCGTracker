@@ -128,7 +128,7 @@ export function dataset(input: { name: string; description: string; path: string
     dateModified: input.dateModified,
     creator: { '@id': `${siteUrl()}/#organization` },
     isAccessibleForFree: true,
-    measurementTechnique: 'Graded population × floor price, in AUD. See /methodology/.',
+    measurementTechnique: 'Market price from recent sales (ungraded, Near Mint) and graded population × floor price, in AUD. See /methodology/.',
     spatialCoverage: 'Australia',
     ...(input.downloadUrl
       ? { distribution: [{ '@type': 'DataDownload', encodingFormat: 'text/csv', contentUrl: absoluteUrl(input.downloadUrl) }] }

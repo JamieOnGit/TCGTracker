@@ -147,6 +147,8 @@ function gradeData(card: CardRow, gradeKey: string) {
   const r = rand(card.id + gradeKey)
   const g = GRADES.indexOf(gradeKey)
   const base = 300 + rand(card.id) * 9000
+  // Raw (ungraded Near Mint): the main market price, no population.
+  if (gradeKey === 'raw') return { population: null, floorAud: Math.round(base * (0.08 + r * 0.08)), marketCapAud: null }
   if (g < 0) return { population: null, floorAud: Math.round(base * (OTHER_FACTOR[gradeKey] ?? 0.5)), marketCapAud: null }
   const population = Math.round((200 + r * 4000) * [1, 1.8, 0.9][g]!)
   const floorAud = Math.round(base * [1, 0.35, 0.2][g]!)
@@ -324,7 +326,7 @@ export const demoRepository: Repository = {
     return CARDS.filter((c) => `${c.name} ${c.number} ${c.setName}`.toLowerCase().includes(needle)).slice(0, limit)
   },
   async marketCap(query: MarketQuery) {
-    const grades = query.gradeKey === 'all' ? GRADES : [query.gradeKey]
+    const grades = query.gradeKey === 'all' ? ['raw', ...GRADES] : [query.gradeKey]
     let rows = CARDS.filter(
       (c) =>
         (!query.game || c.game === query.game) &&
@@ -342,6 +344,7 @@ export const demoRepository: Repository = {
           floorAud: d.floorAud,
           basis: LISTINGS.some((l) => l.cardId === card.id && l.gradeKey === gradeKey && l.status === 'active') ? 'marketplace_ask' : 'external_ask',
           marketCapAud: d.marketCapAud,
+          psa10Aud: gradeData(card, 'psa-10').floorAud,
           spark7d: history(card.id + gradeKey + 'sp', d.floorAud, 8).map((h) => h.value),
           change1d: Math.round((rand(card.id + 'd1') - 0.5) * 60) / 10,
           change7d: Math.round((rand(card.id + 'd7') - 0.5) * 200) / 10,
@@ -366,7 +369,7 @@ export const demoRepository: Repository = {
   async cardGrades(cardId) {
     const card = CARDS.find((c) => c.id === cardId)
     if (!card) return []
-    return [...GRADES, ...OTHER_GRADES].map((gradeKey): GradeRow => {
+    return ['raw', ...GRADES, ...OTHER_GRADES].map((gradeKey): GradeRow => {
       const d = gradeData(card, gradeKey)
       return { gradeKey, population: d.population, floorAud: d.floorAud, basis: 'external_ask', source: 'demo', sampleSize: 3, marketCapAud: d.marketCapAud, lastSoldAud: Math.round(d.floorAud * 0.97), medianSold30dAud: Math.round(d.floorAud * 0.95), observedAt: `${AS_OF}T06:00:00Z` }
     })

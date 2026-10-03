@@ -74,7 +74,8 @@ export function buildMetadata(input: PageSeoInput): Metadata {
 export const titles = {
   home: () => 'Pokémon & One Piece Card Prices & Market Cap in AUD',
   card: (c: { name: string; number: string; printedTotal?: string | null; setName: string; lang: string; grade?: string }) =>
-    `${c.name} ${c.printedTotal ? `${c.number}/${c.printedTotal}` : c.number} (${c.setName}${c.lang === 'jp' ? ', Japanese' : ''}) ${c.grade ?? 'PSA 10'} Price in AUD`,
+    // The market price (raw, from recent sales) leads; PSA 10 is the most-searched grade.
+    `${c.name} ${c.printedTotal ? `${c.number}/${c.printedTotal}` : c.number} (${c.setName}${c.lang === 'jp' ? ', Japanese' : ''}) ${c.grade ? `${c.grade} Price` : 'Price & PSA 10 Value'} in AUD`,
   set: (s: { name: string; gameName: string; lang: string }) =>
     `${s.name} (${s.gameName} ${s.lang.toUpperCase()}) Card List & Prices in AUD`,
   cardMarketplace: (c: { name: string; number: string; setName: string; lang: string }) =>

@@ -107,7 +107,7 @@ class JtIngestor(CatalogueIngestor):
         self.jt_sets[key] = jt
         return jt
 
-    def card_for(self, rec: JtRecord, game: JtGame) -> str | None:
+    def card_for(self, rec: JtRecord, game: JtGame, *, discover: bool = True) -> str | None:
         if not self._loaded:
             self.load()
         jt = self._jt_set(rec, game)
@@ -130,19 +130,27 @@ class JtIngestor(CatalogueIngestor):
             variant=rec.variant,
             name=rec.name,
             payload=rec.payload(),
+            discover=discover,
         )
 
     def ingest(
-        self, records: Iterable[tuple[JtRecord, JtGame]], fx: Fx, *, fx_history: FxHistory | None = None
+        self,
+        records: Iterable[tuple[JtRecord, JtGame]],
+        fx: Fx,
+        *,
+        fx_history: FxHistory | None = None,
+        discover: bool = True,
     ) -> IngestStats:
-        """Current prices for every record; with ``fx_history``, also backfill each record's price history."""
+        """Current prices for every record; with ``fx_history``, also backfill each
+        record's price history. ``discover=False`` (raw prices) only prices cards
+        we already have: it never queues or creates catalogue cards."""
         if not self._loaded:
             self.load()
         rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str | None]] = []
         history: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, date, Decimal, date]] = []
         for rec, game in records:
             self.stats.products += 1
-            card_id = self.card_for(rec, game)
+            card_id = self.card_for(rec, game, discover=discover)
             if card_id is None or not rec.prices:
                 continue
             self.stats.priced_products += 1
@@ -166,7 +174,7 @@ class JtIngestor(CatalogueIngestor):
                     aud = (usd * rate[0]).quantize(CENT, rounding=ROUND_HALF_UP)
                     if aud > 0:
                         history.append((card_id, p.grader, p.grade, usd, aud, ref, day, rate[0], rate[1]))
-        self.stats.price_rows = len(rows)
+        self.stats.price_rows += len(rows)
         if rows:
             self._write_prices(rows, fx)
         if history:
@@ -209,7 +217,7 @@ class JtIngestor(CatalogueIngestor):
                on conflict (source, source_ref, type, observed_at) where source_ref is not null do nothing""",
             {"src": self.source},
         )
-        self.history.written = cur.rowcount
+        self.history.written += cur.rowcount
         # Value history: one row per card, grade and past day, from the day's
         # price. Population is unknown for past days; real snapshots (made
         # daily by the snapshots job) are never overwritten.
@@ -222,4 +230,4 @@ class JtIngestor(CatalogueIngestor):
                 order by card_id, public.grade_key(grader, grade), day, price_aud
                on conflict (card_id, grade_key, date) do nothing"""
         )
-        self.history.snapshots = cur.rowcount
+        self.history.snapshots += cur.rowcount

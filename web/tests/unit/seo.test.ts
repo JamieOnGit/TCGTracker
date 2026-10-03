@@ -48,7 +48,7 @@ describe('metadata (brief 7.2)', () => {
   })
   it('card title follows the brief pattern', () => {
     expect(titles.card({ name: 'Charizard ex', number: '199', printedTotal: '165', setName: '151', lang: 'en' })).toBe(
-      'Charizard ex 199/165 (151) PSA 10 Price in AUD',
+      'Charizard ex 199/165 (151) Price & PSA 10 Value in AUD',
     )
   })
 })
@@ -72,7 +72,7 @@ describe('JSON-LD', () => {
 describe('snippet lengths', () => {
   it('keeps the brand suffix only when the title fits in ~60 characters', () => {
     expect(buildMetadata({ path: '/x/', title: 'Short title', description: 'd' }).title).toEqual({ absolute: `Short title | ${siteName()}` })
-    const long = 'Pikachu with Grey Felt Hat SVP 085 (Scarlet & Violet Black Star Promos) PSA 10 Price in AUD'
+    const long = 'Pikachu with Grey Felt Hat SVP 085 (Scarlet & Violet Black Star Promos) Price & PSA 10 Value in AUD'
     expect(buildMetadata({ path: '/x/', title: long, description: 'd' }).title).toEqual({ absolute: long })
   })
   it('trims long descriptions at a word boundary', () => {

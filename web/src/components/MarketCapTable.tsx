@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cache } from 'react'
 import { getRepo, type MarketQuery, type MarketRow, type MarketSort } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
 import { EBAY_DISCLOSURE, ebaySearchUrl } from '@/lib/domain/ebay'
@@ -12,8 +13,21 @@ import { Pagination } from './Pagination'
 import { SegLinks, Thumb } from './ui'
 
 const SORTS: MarketSort[] = ['market_cap', 'population', 'floor', 'change_7d', 'change_30d']
-const GRADE_OPTIONS = ['psa-10', 'psa-9', 'all']
+/** Raw (the ungraded card's market price from recent sales) is the main view; PSA grades carry population and market cap. */
+const GRADE_OPTIONS = ['raw', 'psa-10', 'psa-9', 'all']
+const viewLabel = (g: string) => (g === 'raw' ? 'Market price' : gradeLabel(g))
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
+
+/**
+ * The default view: the configured primary grade, unless that is raw and no
+ * raw market prices exist yet (a new install, or before the first raw import),
+ * when the rankings fall back to PSA 10 rather than showing an empty table.
+ */
+export const effectivePrimaryGrade = cache(async (configured: string): Promise<string> => {
+  if (configured !== 'raw') return configured
+  const probe = await getRepo().marketCap({ gradeKey: 'raw', sort: 'market_cap', order: 'desc', page: 1, pageSize: 1 })
+  return probe.total > 0 ? 'raw' : 'psa-10'
+})
 
 export function parseMarketQuery(sp: SearchParams, scope: { game?: Game; lang?: Lang; setId?: string }, primaryGrade: string): MarketQuery {
   const sort = (SORTS.find((s) => s === one(sp.sort)) ?? 'market_cap') as MarketSort
@@ -63,7 +77,10 @@ function BuyCell({ row, rules, stats }: { row: MarketRow; rules: Rules; stats: P
  */
 export async function MarketCapTable({ query, basePath, caption, showControls = true }: { query: MarketQuery; basePath: string; caption: string; showControls?: boolean }) {
   const repo = getRepo()
-  const [result, rules] = await Promise.all([repo.marketCap(query), repo.getRules()])
+  const [result, loaded] = await Promise.all([repo.marketCap(query), repo.getRules()])
+  const primaryGrade = await effectivePrimaryGrade(loaded.primaryGrade)
+  const rules = { ...loaded, primaryGrade }
+  const gradeOptions = GRADE_OPTIONS.filter((g) => g !== 'raw' || primaryGrade === 'raw' || query.gradeKey === 'raw')
   const stats = await repo.listingStats(result.rows.map((r) => r.card.id))
   const priceMode = result.rows.some((r) => r.population === null)
   const keep = (extra: Record<string, string>) => {
@@ -77,7 +94,10 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
   const sortHref = (key: MarketSort) => keep({ sort: key, ...(key === query.sort && query.order === 'desc' ? { order: 'asc' } : {}) })
   const sortAttr = (key: MarketSort) => (query.sort === key ? (query.order === 'asc' ? 'ascending' : 'descending') : undefined)
   const arrow = (key: MarketSort) => (query.sort === key ? (query.order === 'asc' ? ' ▴' : ' ▾') : '')
-  const gradeCol = query.gradeKey === 'all' ? 'Value' : `${gradeLabel(query.gradeKey)} value`
+  const gradeCol = query.gradeKey === 'raw' ? 'Market price' : query.gradeKey === 'all' ? 'Value' : `${gradeLabel(query.gradeKey)} value`
+  // PSA 10 sits beside the market price; population and market cap only mean something for PSA grades.
+  const showPsa10 = query.gradeKey !== 'psa-10'
+  const showPop = query.gradeKey.startsWith('psa-') || query.gradeKey === 'all'
 
   return (
     <section aria-labelledby="rankings-caption">
@@ -104,7 +124,7 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
           />
           <SegLinks
             label="Grade"
-            options={GRADE_OPTIONS.map((g) => ({ href: g === rules.primaryGrade ? basePath : `${basePath}?grade=${g}`, label: gradeLabel(g), current: query.gradeKey === g, rel: g === rules.primaryGrade ? undefined : 'nofollow' }))}
+            options={gradeOptions.map((g) => ({ href: g === rules.primaryGrade ? basePath : `${basePath}?grade=${g}`, label: viewLabel(g), current: query.gradeKey === g, rel: g === rules.primaryGrade ? undefined : 'nofollow' }))}
           />
           <form action={basePath} role="search" className="w-full sm:ml-auto sm:w-64">
             <label htmlFor="rank-q" className="sr-only">Search the rankings</label>
@@ -125,8 +145,9 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
               <th scope="col" className="n" aria-sort={sortAttr('change_7d')}><Link href={sortHref('change_7d')} rel="nofollow">7d{arrow('change_7d')}</Link></th>
               <th scope="col" className="n hide-sm" aria-sort={sortAttr('change_30d')}><Link href={sortHref('change_30d')} rel="nofollow">30d{arrow('change_30d')}</Link></th>
               <th scope="col" className="hide-md"><span className="sr-only">7-day trend</span></th>
-              <th scope="col" className="n hide-sm" aria-sort={sortAttr('market_cap')}><Link href={sortHref('market_cap')} rel="nofollow">Market cap{arrow('market_cap')}</Link></th>
-              <th scope="col" className="n hide-sm" aria-sort={sortAttr('population')}><Link href={sortHref('population')} rel="nofollow">PSA pop{arrow('population')}</Link></th>
+              {showPsa10 && <th scope="col" className="n hide-sm">PSA 10 (A$)</th>}
+              {showPop && <th scope="col" className="n hide-sm" aria-sort={sortAttr('market_cap')}><Link href={sortHref('market_cap')} rel="nofollow">Market cap{arrow('market_cap')}</Link></th>}
+              {showPop && <th scope="col" className="n hide-sm" aria-sort={sortAttr('population')}><Link href={sortHref('population')} rel="nofollow">PSA pop{arrow('population')}</Link></th>}
               <th scope="col" className="n"><span className="sr-only">Buy</span></th>
             </tr>
           </thead>
@@ -147,13 +168,14 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
                     </div>
                   </div>
                 </th>
-                <td className="n" title={r.basis === 'last_sale' ? 'Last sale' : 'Lowest current ask'}>{fmtAud(r.floorAud).replace('A$', '')}</td>
+                <td className="n" title={r.gradeKey === 'raw' ? 'Market price from recent sales (ungraded, Near Mint)' : r.basis === 'last_sale' ? 'Recent sales' : 'Lowest current ask'}>{fmtAud(r.floorAud).replace('A$', '')}</td>
                 <td className="n hide-md"><Change value={r.change1d} /></td>
                 <td className="n"><Change value={r.change7d} /></td>
                 <td className="n hide-sm"><Change value={r.change30d} /></td>
                 <td className="hide-md"><Sparkline points={r.spark7d} /></td>
-                <td className="n hide-sm">{r.marketCapAud === null ? <span className="subtle" title="Awaiting licensed PSA population data">—</span> : fmtAudShort(r.marketCapAud)}</td>
-                <td className="n hide-sm">{fmtInt(r.population)}</td>
+                {showPsa10 && <td className="n hide-sm" data-col="psa10">{r.psa10Aud === null ? <span className="subtle">—</span> : fmtAud(r.psa10Aud).replace('A$', '')}</td>}
+                {showPop && <td className="n hide-sm">{r.marketCapAud === null ? <span className="subtle" title="Awaiting licensed PSA population data">—</span> : fmtAudShort(r.marketCapAud)}</td>}
+                {showPop && <td className="n hide-sm">{fmtInt(r.population)}</td>}
                 <td className="n"><BuyCell row={r} rules={rules} stats={stats} /></td>
               </tr>
             ))}
@@ -171,8 +193,8 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
       <DataNotice
         asOf={result.asOf}
         demo={repo.isDemo}
-        scope={`${result.total.toLocaleString('en-AU')} cards · ${gradeLabel(query.gradeKey)}${priceMode ? ' · ranked by value until licensed PSA population data is connected' : ''}`}
-        sources="JustTCG (graded sale prices, converted from USD), TCGTracker marketplace asks"
+        scope={`${result.total.toLocaleString('en-AU')} cards · ${query.gradeKey === 'raw' ? 'ranked by market price (ungraded, Near Mint, from recent sales)' : `${gradeLabel(query.gradeKey)}${priceMode ? ' · ranked by value until licensed PSA population data is connected' : ''}`}`}
+        sources="JustTCG market prices from recent sales (raw and graded, converted from USD), TCGTracker marketplace asks"
       />
     </section>
   )

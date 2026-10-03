@@ -112,6 +112,7 @@ class IngestStats:
     price_rows: int = 0
     asks_written: int = 0
     solds_written: int = 0
+    not_linked: int = 0  # raw-only records for cards we don't have (never created or queued)
 
 
 @dataclass(frozen=True)
@@ -224,8 +225,11 @@ class CatalogueIngestor:
         variant: str,
         name: str,
         payload: dict[str, Any],
+        discover: bool = True,
     ) -> str | None:
-        """Link, queue or create the catalogue card for one external record."""
+        """Link, queue or create the catalogue card for one external record.
+        With ``discover=False`` only a confident match links; nothing is
+        queued or created."""
         if ext_id in self.mapped:
             self.stats.already_mapped += 1
             return self.mapped[ext_id]
@@ -251,6 +255,10 @@ class CatalogueIngestor:
                 )
             self.stats.auto_linked += 1
             return decision.card_id
+
+        if not discover:
+            self.stats.not_linked += 1
+            return None
 
         suggested, reasons = decision.card_id, list(decision.reasons)
         if decision.status is Status.UNMATCHED:
@@ -391,7 +399,7 @@ class CatalogueIngestor:
                      fx_rate = excluded.fx_rate, fx_date = excluded.fx_date""",
                 params,
             )
-            self.stats.asks_written = cur.rowcount
+            self.stats.asks_written += cur.rowcount
         if "sold" in self.store_types:
             cur = c.execute(
                 f"""insert into public.price_points (card_id, grader, grade, type, price, currency, fx_rate, fx_date,
@@ -408,7 +416,7 @@ class CatalogueIngestor:
                             and (l.price <> t.price or l.observed_at < %(obs)s - interval '{SOLD_REFRESH_DAYS} days'))""",
                 params,
             )
-            self.stats.solds_written = cur.rowcount
+            self.stats.solds_written += cur.rowcount
 
 
 class PcIngestor(CatalogueIngestor):
