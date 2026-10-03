@@ -1,0 +1,47 @@
+{
+ "data": [
+  {
+   "id": "sv3pt5-199",
+   "name": "Charizard ex",
+   "number": "199",
+   "printed_number": "199/165",
+   "language_code": "EN",
+   "expansion": {
+    "id": "sv3pt5",
+    "name": "151",
+    "language_code": "EN"
+   },
+   "images": [
+    {
+     "type": "front",
+     "small": "https://images.scrydex.com/sv3pt5-199/small",
+     "medium": "https://images.scrydex.com/sv3pt5-199/medium",
+     "large": "https://images.scrydex.com/sv3pt5-199/large"
+    }
+   ]
+  },
+  {
+   "id": "sv3pt5-6",
+   "name": "Charizard ex",
+   "number": "6",
+   "printed_number": "006/165",
+   "language_code": "EN",
+   "expansion": {
+    "id": "sv3pt5",
+    "name": "151",
+    "language_code": "EN"
+   },
+   "images": [
+    {
+     "type": "front",
+     "small": "https://images.scrydex.com/sv3pt5-6/small",
+     "medium": "https://images.scrydex.com/sv3pt5-6/medium",
+     "large": "https://images.scrydex.com/sv3pt5-6/large"
+    }
+   ]
+  }
+ ],
+ "page": 1,
+ "pageSize": 100,
+ "totalCount": 2
+}

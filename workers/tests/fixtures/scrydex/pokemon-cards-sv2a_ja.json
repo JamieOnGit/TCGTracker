@@ -1,0 +1,27 @@
+{
+ "data": [
+  {
+   "id": "sv2a_ja-201",
+   "name": "Charizard ex",
+   "number": "201",
+   "printed_number": "201/165",
+   "language_code": "JA",
+   "expansion": {
+    "id": "sv2a_ja",
+    "name": "Pok\u00e9mon Card 151",
+    "language_code": "JA"
+   },
+   "images": [
+    {
+     "type": "front",
+     "small": "https://images.scrydex.com/sv2a_ja-201/small",
+     "medium": "https://images.scrydex.com/sv2a_ja-201/medium",
+     "large": "https://images.scrydex.com/sv2a_ja-201/large"
+    }
+   ]
+  }
+ ],
+ "page": 1,
+ "pageSize": 100,
+ "totalCount": 1
+}

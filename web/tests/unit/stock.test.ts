@@ -32,7 +32,7 @@ import { inStockPath, productPath, productsPath, storesPath } from '@/lib/seo/ur
 const ev = (over: Partial<DropRow>): Pick<DropRow, 'eventType' | 'priceAud' | 'previousPriceAud' | 'sighting'> => ({ eventType: 'IN_STOCK', priceAud: 89.95, previousPriceAud: null, sighting: null, ...over })
 const offer = (over: Partial<OfferRow>): OfferRow => ({ retailerSlug: 'a', retailerName: 'A', title: 't', url: 'https://example.com/a', availability: 'in_stock_online', priceAud: 90, lastChangeAt: null, imageUrl: null, ...over })
 const product = (over: Partial<SealedProductRow> = {}): SealedProductRow => ({
-  id: 'sp1', game: 'pokemon', lang: 'en', slug: 'demo-etb', name: 'Demo Elite Trainer Box', type: 'etb', rrpAud: 89.95, releaseDate: null, set: null,
+  id: 'sp1', game: 'pokemon', lang: 'en', slug: 'demo-etb', name: 'Demo Elite Trainer Box', type: 'etb', imageUrl: null, rrpAud: 89.95, releaseDate: null, set: null,
   offers: [], inStockCount: 0, lowestInStockAud: null, updatedAt: null, ...over,
 })
 

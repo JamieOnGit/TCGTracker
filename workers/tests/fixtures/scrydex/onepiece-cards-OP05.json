@@ -1,0 +1,51 @@
+{
+ "data": [
+  {
+   "id": "OP05-119",
+   "name": "Monkey.D.Luffy",
+   "number": "OP05-119",
+   "printed_number": "OP05-119",
+   "language_code": "EN",
+   "expansion": {
+    "id": "OP05",
+    "name": "Awakening of the New Era",
+    "language_code": "EN"
+   },
+   "images": [
+    {
+     "type": "front",
+     "small": "https://images.scrydex.com/OP05-119/small",
+     "medium": "https://images.scrydex.com/OP05-119/medium",
+     "large": "https://images.scrydex.com/OP05-119/large"
+    }
+   ],
+   "variants": [
+    {
+     "name": "alternateArt",
+     "images": [
+      {
+       "type": "front",
+       "small": "https://images.scrydex.com/OP05-119-alt/small",
+       "medium": "https://images.scrydex.com/OP05-119-alt/medium",
+       "large": "https://images.scrydex.com/OP05-119-alt/large"
+      }
+     ]
+    },
+    {
+     "name": "mangaArt",
+     "images": [
+      {
+       "type": "front",
+       "small": "https://images.scrydex.com/OP05-119-manga/small",
+       "medium": "https://images.scrydex.com/OP05-119-manga/medium",
+       "large": "https://images.scrydex.com/OP05-119-manga/large"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "page": 1,
+ "pageSize": 100,
+ "totalCount": 1
+}

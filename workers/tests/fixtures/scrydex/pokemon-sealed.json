@@ -1,0 +1,35 @@
+{
+ "data": [
+  {
+   "id": "sv-test-etb",
+   "name": "Test Set Elite Trainer Box",
+   "type": "Elite Trainer Box",
+   "language_code": "EN",
+   "images": [
+    {
+     "type": "front",
+     "small": "https://images.scrydex.com/sv-test-etb/small",
+     "medium": "https://images.scrydex.com/sv-test-etb/medium",
+     "large": "https://images.scrydex.com/sv-test-etb/large"
+    }
+   ]
+  },
+  {
+   "id": "sv-test-bb",
+   "name": "Test Set Booster Box",
+   "type": "Booster Box",
+   "language_code": "EN",
+   "images": [
+    {
+     "type": "front",
+     "small": "https://images.scrydex.com/sv-test-bb/small",
+     "medium": "https://images.scrydex.com/sv-test-bb/medium",
+     "large": "https://images.scrydex.com/sv-test-bb/large"
+    }
+   ]
+  }
+ ],
+ "page": 1,
+ "pageSize": 100,
+ "totalCount": 2
+}

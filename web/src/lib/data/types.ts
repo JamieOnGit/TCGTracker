@@ -204,6 +204,7 @@ export interface OfferRow {
 
 export interface SealedProductRow extends SealedProductRef {
   type: string // booster-box, etb, booster-bundle, tin, ...
+  imageUrl: string | null // catalogue image (Scrydex); store photos are per offer
   rrpAud: number | null
   releaseDate: string | null
   set: { slug: string; name: string } | null

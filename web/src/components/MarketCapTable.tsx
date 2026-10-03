@@ -157,7 +157,7 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
                 <td className="rank num">{r.rank}</td>
                 <th scope="row" className="sticky-col">
                   <div className="card-cell">
-                    <Thumb name={r.card.name} />
+                    <Thumb name={r.card.name} src={r.card.imageUrl} />
                     <div>
                       <Link href={cardPath(r.card)}>{r.card.name}</Link>
                       <div className="card-meta">

@@ -87,6 +87,10 @@ export function CardImage({ src, alt, name, width }: { src: string | null | unde
   )
 }
 
-export function Thumb({ name, size = 28 }: { name: string; size?: 28 | 40 }) {
+export function Thumb({ name, src, size = 28 }: { name: string; src?: string | null; size?: 28 | 40 }) {
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element -- catalogue images from Scrydex's CDN, a few KB each
+    return <img src={src} alt="" className={`thumb thumb-${size}`} width={size} height={Math.round((size * 88) / 63)} loading="lazy" decoding="async" />
+  }
   return <span className={`thumb thumb-${size}`} role="img" aria-label={`${name} (image coming soon)`} />
 }

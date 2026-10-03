@@ -7,6 +7,7 @@
 | prices      | market.floor_refresh_hours (4h)     | JustTCG (needs JUSTTCG_API_KEY)          |
 | floors      | market.floor_refresh_hours (4h)     | ready; needs price data                 |
 | snapshots   | daily                               | ready; needs population + floors        |
+| images      | daily                               | Scrydex (SCRYDEX_API_KEY + SCRYDEX_TEAM_ID) |
 | expiry      | hourly                              | ready                                   |
 | listing_expiring | hourly                         | renewal reminders (listings.expiry_warning_days) |
 | email       | every 20s                           | email_outbox sender (tcgworkers.email)  |
@@ -297,6 +298,12 @@ def prices_job(conn: Conn, env: Env) -> None:
     refresh_prices(conn, env)
 
 
+def images_job(conn: Conn, env: Env) -> None:
+    from tcgworkers.jobs.images import refresh_images
+
+    refresh_images(conn, env)
+
+
 def not_approved(what: str) -> Callable[[Conn, Env], None]:
     def run(conn: Conn, env: Env) -> None:
         raise SourceNotApproved(f"{what} source not approved yet - see docs/research")
@@ -316,6 +323,7 @@ JOBS: tuple[Job, ...] = (
     Job("population", "market.population_refresh_hours", 24, not_approved("population")),
     Job("prices", "market.floor_refresh_hours", 4, prices_job),
     Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors)),
+    Job("images", None, 24, images_job),
     Job("snapshots", None, 24, _ua(snapshot_market_caps)),
     Job("expiry", None, 1, _ua(expire_listings)),
     Job("listing_expiring", None, 1, _ua(warn_expiring_listings)),

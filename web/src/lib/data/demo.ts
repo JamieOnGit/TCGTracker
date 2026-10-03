@@ -110,7 +110,8 @@ const CARDS: CardRow[] = CARD_SPECS.map(([game, lang, setSlug, number, printedTo
     slug,
     variant,
     rarity: variant.toUpperCase(),
-    imageUrl: null,
+    // One preview card with an image (served from public/demo/) so the image paths are exercised.
+    imageUrl: game === 'pokemon' && lang === 'en' && number === '199' ? '/demo/card.webp' : null,
     psaSpecId: null,
     counterpartCardId: null,
     externalIds: [],
@@ -237,7 +238,7 @@ const DROPS: DropRow[] = [
 
 const SEALED: SealedProductRow[] = [
   {
-    id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box', type: 'etb',
+    id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box', type: 'etb', imageUrl: '/demo/sealed.webp',
     rrpAud: 89.95, releaseDate: '2026-09-26', set: null, inStockCount: 2, lowestInStockAud: 79, updatedAt: '2026-09-26T21:02:00Z',
     offers: [
       { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'Pokémon TCG Demo Expansion Elite Trainer Box', url: 'https://example.com/products/demo-etb', availability: 'in_stock_online', priceAud: 79, lastChangeAt: '2026-09-26T10:30:00Z', imageUrl: null },
@@ -246,7 +247,7 @@ const SEALED: SealedProductRow[] = [
     ],
   },
   {
-    id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box', type: 'booster-box',
+    id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box', type: 'booster-box', imageUrl: null,
     rrpAud: 219, releaseDate: null, set: null, inStockCount: 1, lowestInStockAud: 235, updatedAt: '2026-09-25T06:10:00Z',
     offers: [
       { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'One Piece Card Game Demo Premium Booster Box', url: 'https://example.com/products/demo-op-box', availability: 'in_stock_online', priceAud: 235, lastChangeAt: '2026-09-25T06:10:00Z', imageUrl: null },
