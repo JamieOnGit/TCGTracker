@@ -32,6 +32,7 @@ from urllib.parse import quote
 from tcgworkers.drops.adapters.catalogue import CatalogueAdapter, hint_game, https_image, lang_in_text
 from tcgworkers.drops.http import PoliteClient
 from tcgworkers.drops.models import Availability, Observation
+from tcgworkers.drops.release_dates import find_release_date, plain_text
 
 PAGE_LIMIT = 250
 _PREORDER = re.compile(r"\bpre[\s-]?orders?\b|\bpreorders?\b", re.IGNORECASE)
@@ -95,6 +96,9 @@ def parse_product(
     images = [i for i in product.get("images") or [] if isinstance(i, dict)]
     variants = [v for v in product.get("variants") or [] if isinstance(v, dict)]
     category_text = " ".join([product_type, *tags])
+    released = find_release_date(
+        title, plain_text(product.get("body_html")), " ".join(tags), today=observed_at.date()
+    )
     return Observation(
         retailer=retailer,
         sku=str(pid),
@@ -127,6 +131,8 @@ def parse_product(
         game_hint=hint_game(category_text, vendor) or hint_game(collection),
         lang_hint=lang_in_text(category_text) or lang_in_text(collection),
         cart_url=cart_url(base_url, variants),
+        release_date=released[0] if released else None,
+        release_date_precision=released[1] if released else "day",
     )
 
 

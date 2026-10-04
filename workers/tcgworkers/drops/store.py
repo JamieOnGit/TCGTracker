@@ -93,8 +93,8 @@ class PostgresDropStore:
         row = self.conn.execute(
             """insert into public.retail_products
                  (retailer_id, sku, url, title, game, product_type, set_code, is_marketplace_seller, last_seen_at,
-                  image_url, cart_url, release_date)
-               values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                  image_url, cart_url, release_date, release_date_precision)
+               values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                on conflict (retailer_id, sku) do update set
                  url = excluded.url, title = excluded.title,
                  game = coalesce(excluded.game, retail_products.game),
@@ -104,7 +104,10 @@ class PostgresDropStore:
                  last_seen_at = excluded.last_seen_at,
                  image_url = coalesce(excluded.image_url, retail_products.image_url),
                  cart_url = excluded.cart_url,
-                 release_date = coalesce(excluded.release_date, retail_products.release_date)
+                 release_date = coalesce(excluded.release_date, retail_products.release_date),
+                 release_date_precision = case when excluded.release_date is not null
+                                               then excluded.release_date_precision
+                                               else retail_products.release_date_precision end
                returning id""",
             (
                 self.retailer_id,
@@ -119,6 +122,7 @@ class PostgresDropStore:
                 _image(obs.image_url),
                 obs.cart_url if obs.cart_url and obs.cart_url.startswith("https://") else None,
                 obs.release_date,
+                obs.release_date_precision if obs.release_date_precision in ("day", "month") else "day",
             ),
         ).fetchone()
         assert row is not None

@@ -66,6 +66,7 @@ class Observation:
     # The store's own release date for the item (Australian calendar day),
     # e.g. a pre-order's street date. Feeds the release calendar.
     release_date: date | None = None
+    release_date_precision: str = "day"  # 'day' or 'month' ("Releases Dec 2026")
 
 
 @dataclass(frozen=True)
