@@ -6,10 +6,11 @@ import { getRepo } from '@/lib/data'
 import { GRID_PAGE_SIZE, pastLastPage } from '@/lib/paging'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { productsPath } from '@/lib/seo/urls'
+import { isSignedIn } from '@/lib/supabase/server'
 
 export const revalidate = 600
 
-const load = cache(() => getRepo().listSealedProducts({ limit: 500 }))
+const load = cache((live = false) => getRepo().listSealedProducts({ limit: 500, live }))
 
 // Empty until the first store lists a product: noindex,follow until then.
 type Props = { searchParams: Promise<SearchParams> }
@@ -27,7 +28,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 export default async function Products({ searchParams }: Props) {
   const repo = getRepo()
-  const [rows, rules] = await Promise.all([load(), repo.getRules()])
+  const [rows, rules] = await Promise.all([load(await isSignedIn()), repo.getRules()])
   const page = pageNumber(await searchParams)
   if (pastLastPage(page, rows.length, GRID_PAGE_SIZE)) notFound()
   return <ProductIndex rows={rows} page={page} showImages={rules.stockShowRetailerImages} isDemo={repo.isDemo} />

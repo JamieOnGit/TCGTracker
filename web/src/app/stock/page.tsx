@@ -19,6 +19,8 @@ import { GRID_PAGE_SIZE, pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, stockPath, storesPath } from '@/lib/seo/urls'
 import { RetailerMark } from '@/components/RetailerMark'
+import { StockFreshness } from '@/components/StockFreshness'
+import { isSignedIn } from '@/lib/supabase/server'
 
 // Stock pages refresh every minute; the monitor checks most stores every 2–5 minutes.
 export const revalidate = 60
@@ -46,9 +48,11 @@ export default async function StockHub({ searchParams }: Props) {
   const searching = Boolean(query || lang)
   const repo = getRepo()
   const now = new Date()
+  // Members (signed in, Free or Premium) see stock live; visitors see it stock.public_delay_minutes later.
+  const live = await isSignedIn()
   const [overview, products, recent, rules] = await Promise.all([
-    repo.stockOverview({ game }),
-    repo.inStock({ game, limit: searching ? 300 : 60 }),
+    repo.stockOverview({ game, live }),
+    repo.inStock({ game, limit: searching ? 300 : 60, live }),
     repo.drops({ game, source: 'monitor', limit: 8 }),
     repo.getRules(),
   ])
@@ -61,12 +65,13 @@ export default async function StockHub({ searchParams }: Props) {
   if (pastLastPage(page, tracked.length, TABLE_PAGE_SIZE)) notFound()
   const storeRows = slicePage(tracked, page, TABLE_PAGE_SIZE)
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
+  const stockDelay = durationLabel(rules.stockPublicDelayMinutes)
   const gameLabel = game ? GAME_NAMES[game] : 'Pokémon and One Piece'
 
   const faqs = [
     {
       q: 'How live is this stock data?',
-      a: `Stock levels on these pages are live for everyone and refresh every minute. Our monitor checks each online store every 2 to 5 minutes, ${totals.storesLive} stores around the clock. Drop alerts reach Premium members the moment we see a change, and free members ${freeDelay} later.`,
+      a: `Signed-in members, Free or Premium, see stock live: our monitor checks each online store every 2 to 5 minutes, ${totals.storesLive} stores around the clock. Visitors who haven't signed up see the same pages ${stockDelay} behind. Drop alerts reach Premium members the moment we see a change, and free members ${freeDelay} later.`,
     },
     {
       q: 'Which Australian stores have Pokémon cards in stock right now?',
@@ -94,8 +99,9 @@ export default async function StockHub({ searchParams }: Props) {
       <PageIntro
         eyebrow="Live stock · Australia"
         title="Pokémon & One Piece card stock in Australia"
-        lead={`What ${gameLabel} sealed product is in stock and on pre-order right now at the Australian stores we watch, store by store. Live for everyone, refreshed every minute.`}
+        lead={`What ${gameLabel} sealed product is in stock and on pre-order right now at the Australian stores we watch, store by store. Live for signed-in members (free), ${stockDelay} behind for visitors.`}
       >
+        <StockFreshness live={live} delayMinutes={rules.stockPublicDelayMinutes} next={stockPath()} />
         <div className="mt-6">
           <FilterBar
             action={stockPath()}

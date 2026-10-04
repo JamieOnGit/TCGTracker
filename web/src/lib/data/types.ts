@@ -395,15 +395,16 @@ export interface Repository {
   /** Published release calendar entries, soonest first; TBC last. */
   releases(filter?: { game?: Game; from?: string }): Promise<ReleaseRow[]>
   getRelease(game: Game, slug: string): Promise<ReleaseRow | null>
-  /** Per-store stock counts for the /stock/ hub (live, no delay). */
-  stockOverview(filter?: { game?: Game }): Promise<StockOverview>
+  /** Store stock below: `live` for signed-in members; otherwise each listing as it was stock.public_delay_minutes ago. */
+  /** Per-store stock counts for the /stock/ hub. */
+  stockOverview(filter?: { game?: Game; live?: boolean }): Promise<StockOverview>
   /** Every TCG listing we track at one store: in stock first, then pre-order, then the rest; newest change first. */
-  storeListings(slug: string, filter?: { game?: Game; limit?: number }): Promise<StoreListingRow[]>
+  storeListings(slug: string, filter?: { game?: Game; limit?: number; live?: boolean }): Promise<StoreListingRow[]>
   /** Products currently in stock or on pre-order somewhere, most recently changed first. */
-  inStock(filter?: { game?: Game; retailerSlug?: string; limit?: number }): Promise<SealedProductRow[]>
+  inStock(filter?: { game?: Game; retailerSlug?: string; limit?: number; live?: boolean }): Promise<SealedProductRow[]>
   /** Sealed products (product pages), most recently active first. */
-  listSealedProducts(filter?: { game?: Game; lang?: Lang; limit?: number }): Promise<SealedProductRow[]>
-  getSealedProduct(game: Game, lang: Lang, slug: string): Promise<SealedProductRow | null>
+  listSealedProducts(filter?: { game?: Game; lang?: Lang; limit?: number; live?: boolean }): Promise<SealedProductRow[]>
+  getSealedProduct(game: Game, lang: Lang, slug: string, opts?: { live?: boolean }): Promise<SealedProductRow | null>
   productDrops(sealedProductId: string, limit?: number): Promise<DropRow[]>
   productWatchCount(sealedProductId: string): Promise<number>
   /** eBay deals, newest first. Anonymous/Free readers only get deals past their public delay (RLS). */

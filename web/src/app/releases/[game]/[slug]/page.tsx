@@ -28,6 +28,7 @@ import {
 } from '@/lib/seo/urls'
 import { ConfidenceBadge, ReleaseTable } from '../../_components/ReleaseTable'
 import { RemindButton } from '../../_components/RemindButton'
+import { isSignedIn } from '@/lib/supabase/server'
 
 // /releases/{game}/{slug}/ — past releases stay indexable: people search "X release date" long after.
 export const revalidate = 3600
@@ -56,7 +57,7 @@ export default async function ReleaseDetail({ params }: Props) {
   const [retailers, siblings, sealed] = await Promise.all([
     repo.retailers(),
     repo.releases({ game: r.game, from: today }),
-    r.set ? repo.listSealedProducts({ game: r.game, lang: r.lang }) : Promise.resolve([]),
+    r.set ? repo.listSealedProducts({ game: r.game, lang: r.lang, live: await isSignedIn() }) : Promise.resolve([]),
   ])
   // Sealed product pages for this release's set (live stock and prices per store).
   const productPages = r.set ? sealed.filter((p) => p.set?.slug === r.set!.slug) : []

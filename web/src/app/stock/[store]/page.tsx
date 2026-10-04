@@ -7,6 +7,8 @@ import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
 import { CheckoutButton } from '@/components/CheckoutButton'
 import { JsonLd } from '@/components/JsonLd'
+import { StockFreshness } from '@/components/StockFreshness'
+import { isSignedIn } from '@/lib/supabase/server'
 import { Pagination } from '@/components/Pagination'
 import { FilterBar } from '@/components/FilterBar'
 import { Notice, PageIntro, Stat, StatStrip } from '@/components/ui'
@@ -42,12 +44,12 @@ import { accountSightingsPath, dropsPath, GAME_NAMES, GAMES, LANG_NAMES, LANGS, 
 export const revalidate = 60
 type Props = { params: Promise<{ store: string }>; searchParams: Promise<SearchParams> }
 
-const load = cache(async (slug: string, game: Game | undefined) => {
+const load = cache(async (slug: string, game: Game | undefined, live = false) => {
   const repo = getRepo()
   const retailer = (await repo.retailers()).find((r) => r.slug === slug)
   if (!retailer) return null
-  const [rows, recent] = await Promise.all([repo.storeListings(slug, { game }), repo.drops({ retailerSlug: slug, limit: 10 })])
-  return { retailer, rows, recent, isDemo: repo.isDemo }
+  const [rows, recent, rules] = await Promise.all([repo.storeListings(slug, { game, live }), repo.drops({ retailerSlug: slug, limit: 10 }), repo.getRules()])
+  return { retailer, rows, recent, rules, isDemo: repo.isDemo }
 })
 
 const SORTS = { recommended: 'In stock first', 'price-asc': 'Price: low to high', 'price-desc': 'Price: high to low', changed: 'Recently changed', name: 'Name A–Z' } as const
@@ -84,14 +86,16 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   })
 }
 
-/** One store's full Pokémon & One Piece listing, live: status, price, last change. */
+/** One store's full Pokémon & One Piece listing (live for members, delayed for visitors): status, price, last change. */
 export default async function StoreStock({ params, searchParams }: Props) {
   const slug = parseSlug((await params).store)
   const sp = await searchParams
   const game = parseGame(sp.game)
-  const data = slug ? await load(slug, game) : null
+  // Members (signed in, Free or Premium) see stock live; visitors see it stock.public_delay_minutes later.
+  const live = await isSignedIn()
+  const data = slug ? await load(slug, game, live) : null
   if (!data) notFound()
-  const { retailer, rows, recent, isDemo } = data
+  const { retailer, rows, recent, rules, isDemo } = data
   const status = parseListingFilter(sp.status)
   const lang = parseLang(sp.lang)
   const query = parseSearch(sp.q)
@@ -147,8 +151,9 @@ export default async function StoreStock({ params, searchParams }: Props) {
       <PageIntro
         eyebrow={`${retailer.kind ? STORE_KIND_LABEL[retailer.kind] : 'Store'} · live stock`}
         title={`${retailer.name} Pokémon & One Piece stock`}
-        lead={`${storeStockSummary(retailer.name, rows)} ${coverage.status === 'live' ? `Checked ${interval ?? 'around the clock'}; this page refreshes every minute.` : ''}`}
+        lead={`${storeStockSummary(retailer.name, rows)} ${coverage.status === 'live' ? `Checked ${interval ?? 'around the clock'}; live for signed-in members.` : ''}`}
       >
+        <StockFreshness live={live} delayMinutes={rules.stockPublicDelayMinutes} next={stockPath(retailer.slug)} />
         <div className="mt-6">
           <StatStrip cols={4}>
             <Stat label="In stock" value={totals['in-stock']} small />

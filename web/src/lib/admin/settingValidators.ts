@@ -21,6 +21,7 @@ export const SETTING_VALIDATORS: Record<string, z.ZodType> = {
   'justtcg.history_min_aud': z.number().min(0).max(100000),
   'drops.public_delay_minutes': z.number().int().min(0).max(10080),
   'drops.free_delay_minutes': z.number().int().min(0).max(10080),
+  'stock.public_delay_minutes': z.number().int().min(0).max(1440),
   'drops.free_delayed_alerts': z.boolean(),
   'drops.price_drop_pct': z.number().int().min(1).max(90),
   'drops.suppress_above_rrp_pct': z.number().min(0).max(1000),

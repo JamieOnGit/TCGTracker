@@ -13,6 +13,7 @@
 | listing_expiring | hourly                         | renewal reminders (listings.expiry_warning_days) |
 | email       | every 20s                           | email_outbox sender (tcgworkers.email)  |
 | drops_dispatch | every 15s                        | drop alert fan-out (drops.dispatcher)   |
+| public_stock | every 1 min                        | visitors' delayed stock view (members see live) |
 | expire_sightings | every 5 min                     | pending member sightings expire (6h)    |
 | release_reminders | daily 08:00 Australia/Sydney   | "out tomorrow" release reminders        |
 | deals       | every 30 min                        | eBay Browse API deal finder (deals.enabled + EBAY_CLIENT_*) |
@@ -372,6 +373,14 @@ def releases_job(conn: Conn, env: Env) -> None:
     refresh_releases(conn, env)
 
 
+def refresh_public_stock(conn: Conn, env: Env) -> int:
+    """Visitors' (delayed) view of store stock catches up to the cut-off
+    (stock.public_delay_minutes). Members read live stock directly."""
+    row = conn.execute("select public.refresh_public_stock() as n").fetchone()
+    conn.commit()
+    return int(row["n"]) if row else 0
+
+
 def not_approved(what: str) -> Callable[[Conn, Env], None]:
     def run(conn: Conn, env: Env) -> None:
         raise SourceNotApproved(f"{what} source not approved yet - see docs/research")
@@ -403,6 +412,8 @@ JOBS: tuple[Job, ...] = (
         "drops_dispatch", None, 0, dispatch_drops, every_seconds=5, heartbeat_max_age=300, wake=kick.DISPATCH
     ),
     Job("expire_sightings", None, 0, expire_sightings, every_seconds=300),
+    # Visitors see store stock stock.public_delay_minutes late; members see it live.
+    Job("public_stock", None, 0, refresh_public_stock, every_seconds=60),
     Job(
         "release_reminders",
         None,

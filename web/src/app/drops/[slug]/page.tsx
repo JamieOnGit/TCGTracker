@@ -17,6 +17,7 @@ import { Pagination } from '@/components/Pagination'
 import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, inStockPath, stockPath, storesPath } from '@/lib/seo/urls'
+import { isSignedIn } from '@/lib/supabase/server'
 
 export const revalidate = 300
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<SearchParams> }
@@ -40,7 +41,7 @@ const load = cache(async (slug: string): Promise<Page | null> => {
   }
   const retailer = retailers.find((r) => r.slug === slug)
   if (!retailer) return null
-  const [rows, inStock, rules] = await Promise.all([repo.drops({ retailerSlug: retailer.slug, limit: 100 }), repo.inStock({ retailerSlug: retailer.slug, limit: 60 }), repo.getRules()])
+  const [rows, inStock, rules] = await Promise.all([repo.drops({ retailerSlug: retailer.slug, limit: 100 }), repo.inStock({ retailerSlug: retailer.slug, limit: 60, live: await isSignedIn() }), repo.getRules()])
   return { kind: 'retailer', retailer, retailers, rows, inStock, showImages: rules.stockShowRetailerImages, indexable: Boolean(RETAILER_COPY[retailer.slug]) || hasRecentDrops(rows, new Date()) }
 })
 

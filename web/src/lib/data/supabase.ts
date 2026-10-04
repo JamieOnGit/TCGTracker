@@ -79,6 +79,28 @@ function pct(cur: number, prev: number | null): number | null {
   return prev ? Math.round(((cur - prev) / prev) * 1000) / 10 : null
 }
 
+// Store stock: members (signed in, any tier) read it live; visitors read each
+// listing's delayed copy (public_*, stock.public_delay_minutes behind), aliased
+// to the live column names so the mappers don't change.
+const DELAYED_COLUMNS: [RegExp, string][] = [
+  [/\bcurrent_availability\b/g, 'current_availability:public_availability'],
+  [/\bcurrent_price_aud\b/g, 'current_price_aud:public_price_aud'],
+  [/\blast_change_at\b/g, 'last_change_at:public_change_at'],
+]
+export function stockSelect(select: string, live: boolean): string {
+  return live ? select : DELAYED_COLUMNS.reduce((out, [re, to]) => out.replace(re, to), select)
+}
+const delayedCol = (col: 'current_availability' | 'last_change_at', live: boolean) =>
+  live ? col : col === 'current_availability' ? 'public_availability' : 'public_change_at'
+// Until the delayed columns are deployed (the web deploys before Deploy database), fall back to live.
+let delayedReady = true
+function missingDelayed(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false
+  const gone = error.code === '42703' || error.code === 'PGRST202' || /public_(availability|price_aud|change_at)|stock_overview_public/.test(error.message ?? '')
+  if (gone) delayedReady = false
+  return gone
+}
+
 export function supabaseRepository(): Repository {
   const sb = supabasePublic()
   async function loadRetailers(): Promise<RetailerRow[]> {
@@ -266,7 +288,11 @@ export function supabaseRepository(): Repository {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString()
       const [stores, counts, events] = await Promise.all([
         loadRetailers(),
-        sb.rpc('stock_overview', { p_game: filter?.game ?? null }),
+        (async () => {
+          const live = filter?.live || !delayedReady
+          const res = await sb.rpc(live ? 'stock_overview' : 'stock_overview_public', { p_game: filter?.game ?? null })
+          return !live && missingDelayed(res.error) ? sb.rpc('stock_overview', { p_game: filter?.game ?? null }) : res
+        })(),
         sb.from('drop_events').select('id', { count: 'exact', head: true }).gte('occurred_at', since),
       ])
       const bySlug = new Map<string, any>(((counts.data ?? []) as any[]).map((c) => [c.slug, c]))
@@ -279,17 +305,22 @@ export function supabaseRepository(): Repository {
       }
     },
     async storeListings(slug, filter) {
-      let q = sb
-        .from('retail_products')
-        .select(STORE_LISTING_SELECT)
-        .eq('retailers.slug', slug)
-        .not('game', 'is', null)
-        .eq('is_marketplace_seller', false)
-        .gte('last_seen_at', new Date(Date.now() - 14 * 86_400_000).toISOString())
-        .order('last_change_at', { ascending: false, nullsFirst: false })
-        .limit(filter?.limit ?? 1000)
-      if (filter?.game) q = q.eq('game', filter.game)
-      const { data } = await q
+      const run = (live: boolean) => {
+        let q = sb
+          .from('retail_products')
+          .select(stockSelect(STORE_LISTING_SELECT, live))
+          .eq('retailers.slug', slug)
+          .not('game', 'is', null)
+          .eq('is_marketplace_seller', false)
+          .gte('last_seen_at', new Date(Date.now() - 14 * 86_400_000).toISOString())
+          .order(delayedCol('last_change_at', live), { ascending: false, nullsFirst: false })
+          .limit(filter?.limit ?? 1000)
+        if (filter?.game) q = q.eq('game', filter.game)
+        return q
+      }
+      const live = Boolean(filter?.live) || !delayedReady
+      let { data, error } = await run(live)
+      if (!live && missingDelayed(error)) ({ data, error } = await run(true))
       return sortListings((data ?? []).map(toStoreListing))
     },
     async drops(filter) {
@@ -351,26 +382,39 @@ export function supabaseRepository(): Repository {
       }))
     },
     async inStock(filter) {
-      // Products with at least one listing in stock or on pre-order right now.
-      let q = sb
-        .from('sealed_products')
-        .select(SEALED_SELECT.replace('retail_products(', 'retail_products!inner('))
-        .in('retail_products.current_availability', ['in_stock_online', 'in_stock_cnc', 'in_stock_both', 'preorder'])
-        .limit(filter?.limit ?? 100)
-      if (filter?.game) q = q.eq('game', filter.game)
-      if (filter?.retailerSlug) q = q.eq('retail_products.retailers.slug', filter.retailerSlug)
-      const { data } = await q
+      // Products with at least one listing in stock or on pre-order (live for members, delayed for visitors).
+      const run = (live: boolean) => {
+        let q = sb
+          .from('sealed_products')
+          .select(stockSelect(SEALED_SELECT, live).replace('retail_products(', 'retail_products!inner('))
+          .in(`retail_products.${delayedCol('current_availability', live)}`, ['in_stock_online', 'in_stock_cnc', 'in_stock_both', 'preorder'])
+          .limit(filter?.limit ?? 100)
+        if (filter?.game) q = q.eq('game', filter.game)
+        if (filter?.retailerSlug) q = q.eq('retail_products.retailers.slug', filter.retailerSlug)
+        return q
+      }
+      const live = Boolean(filter?.live) || !delayedReady
+      let { data, error } = await run(live)
+      if (!live && missingDelayed(error)) ({ data, error } = await run(true))
       return (data ?? []).map(toSealedProduct).sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
     },
     async listSealedProducts(filter) {
-      let q = sb.from('sealed_products').select(SEALED_SELECT).order('updated_at', { ascending: false }).limit(filter?.limit ?? 500)
-      if (filter?.game) q = q.eq('game', filter.game)
-      if (filter?.lang) q = q.eq('lang', filter.lang)
-      const { data } = await q
+      const run = (live: boolean) => {
+        let q = sb.from('sealed_products').select(stockSelect(SEALED_SELECT, live)).order('updated_at', { ascending: false }).limit(filter?.limit ?? 500)
+        if (filter?.game) q = q.eq('game', filter.game)
+        if (filter?.lang) q = q.eq('lang', filter.lang)
+        return q
+      }
+      const live = Boolean(filter?.live) || !delayedReady
+      let { data, error } = await run(live)
+      if (!live && missingDelayed(error)) ({ data, error } = await run(true))
       return (data ?? []).map(toSealedProduct)
     },
-    async getSealedProduct(game, lang, slug) {
-      const { data } = await sb.from('sealed_products').select(SEALED_SELECT).eq('game', game).eq('lang', lang).eq('slug', slug).maybeSingle()
+    async getSealedProduct(game, lang, slug, opts) {
+      const run = (live: boolean) => sb.from('sealed_products').select(stockSelect(SEALED_SELECT, live)).eq('game', game).eq('lang', lang).eq('slug', slug).maybeSingle()
+      const live = Boolean(opts?.live) || !delayedReady
+      let { data, error } = await run(live)
+      if (!live && missingDelayed(error)) ({ data, error } = await run(true))
       return data ? toSealedProduct(data) : null
     },
     async productDrops(sealedProductId, limit = 50) {

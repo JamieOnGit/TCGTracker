@@ -10,6 +10,7 @@ import { getRepo } from '@/lib/data'
 import { byCardNumber, GRID_PAGE_SIZE, pastLastPage, slicePage } from '@/lib/paging'
 import { buildMetadata, pageNumber, titles, type SearchParams } from '@/lib/seo/metadata'
 import { cardPath, cardsPath, GAME_NAMES, isGame, isLang, LANG_NAMES, marketCapPath, productPath, releasePath, setPath } from '@/lib/seo/urls'
+import { isSignedIn } from '@/lib/supabase/server'
 
 export const revalidate = 3600
 type Props = { params: Promise<{ game: string; lang: string; set: string }>; searchParams: Promise<SearchParams> }
@@ -34,7 +35,7 @@ export default async function SetPage({ params, searchParams }: Props) {
   const set = await load(await params)
   if (!set) notFound()
   const repo = getRepo()
-  const [cards, rules, releases, sealed] = await Promise.all([repo.listCardsInSet(set.id), repo.getRules(), repo.releases({ game: set.game }), repo.listSealedProducts({ game: set.game, lang: set.lang })])
+  const [cards, rules, releases, sealed] = await Promise.all([repo.listCardsInSet(set.id), repo.getRules(), repo.releases({ game: set.game }), repo.listSealedProducts({ game: set.game, lang: set.lang, live: await isSignedIn() })])
   const products = sealed.filter((p) => p.set?.slug === set.slug)
   const release = releases.find((r) => r.set?.slug === set.slug && r.lang === set.lang)
   const sp = await searchParams
