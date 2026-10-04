@@ -46,18 +46,24 @@ export function AccountArea() {
     ;(async () => {
     const sb = (await loadSupabaseBrowser())!
     if (cancelled) return
+    const { data } = await sb.auth.getUser()
+    const user = data.user
+    if (!user) return !cancelled && setState({ signedIn: false, unread: 0, loaded: true })
     const load = async () => {
-      const { data } = await sb.auth.getUser()
-      if (!data.user) return !cancelled && setState({ signedIn: false, unread: 0, loaded: true })
       const { count } = await sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null)
       if (!cancelled) setState({ signedIn: true, unread: count ?? 0, loaded: true })
     }
-    load()
+    await load()
+    if (cancelled) return
+    // Signed-in members only: a visitor's page opens no Realtime connection.
+    const { data: session } = await sb.auth.getSession()
+    if (session.session) sb.realtime.setAuth(session.session.access_token)
     const channel = sb
-      .channel('bell')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => load())
+      .channel(`bell:${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => load())
       .subscribe()
     cleanup = () => sb.removeChannel(channel)
+    if (cancelled) cleanup()
     })()
     return () => {
       cancelled = true

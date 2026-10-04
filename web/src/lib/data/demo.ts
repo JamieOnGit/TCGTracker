@@ -497,6 +497,16 @@ export const demoRepository: Repository = {
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
       .slice(0, filter?.limit ?? 50)
   },
+  async dropPageLastEvents() {
+    const retailers: Record<string, string> = {}
+    const states: Record<string, string> = {}
+    for (const d of DROPS) {
+      if (d.retailerSlug && (retailers[d.retailerSlug] ?? '') < d.occurredAt) retailers[d.retailerSlug] = d.occurredAt
+      const st = d.sighting?.state
+      if (st && (states[st] ?? '') < d.occurredAt) states[st] = d.occurredAt
+    }
+    return { retailers, states }
+  },
   async scoutLeaderboard() {
     return [
       { username: 'demo-scout', confirmed: 12, states: ['VIC'] },

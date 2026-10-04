@@ -16,9 +16,14 @@
  * 70–170 characters, since Google truncates them in results.
  *
  * Usage: BASE_URL=http://localhost:3000 node scripts/seo-check.mjs
+ * Live site: BASE_URL=https://tcgtracker.com.au DEMO_FIXTURES=0 SITEMAP_SAMPLE=30 MAX_PAGES=300 node scripts/seo-check.mjs
+ *   (SITEMAP_SAMPLE checks an even spread of N URLs per sitemap file instead of all of them:
+ *   the card sitemaps list tens of thousands)
  */
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 const MAX_PAGES = Number(process.env.MAX_PAGES ?? 400)
+const SITEMAP_SAMPLE = Number(process.env.SITEMAP_SAMPLE ?? 0) // 0 = every URL
+const sample = (list) => (SITEMAP_SAMPLE > 0 && list.length > SITEMAP_SAMPLE ? list.filter((_, i) => i % Math.ceil(list.length / SITEMAP_SAMPLE) === 0) : list)
 const errors = []
 const warnings = []
 const fail = (msg) => errors.push(msg)
@@ -138,7 +143,7 @@ async function checkSitemaps() {
       fail(`${f}: sitemap did not build (HTTP ${s.status})`)
       continue
     }
-    for (const loc of [...s.body.matchAll(/<url><loc>([^<]+)<\/loc>/g)].map((m) => decode(m[1]).replace(/^https?:\/\/[^/]+/, ''))) {
+    for (const loc of sample([...s.body.matchAll(/<url><loc>([^<]+)<\/loc>/g)].map((m) => decode(m[1]).replace(/^https?:\/\/[^/]+/, '')))) {
       urls++
       const info = pageInfo.get(loc) ?? (await checkPage(loc), pageInfo.get(loc))
       if (!info) fail(`${f}: lists ${loc}, which is not a 200 page`)

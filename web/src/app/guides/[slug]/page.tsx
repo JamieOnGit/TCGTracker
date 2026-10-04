@@ -10,8 +10,10 @@ import { article, faqPage } from '@/lib/seo/jsonld'
 import { buildMetadata } from '@/lib/seo/metadata'
 import { guidesPath } from '@/lib/seo/urls'
 
-// /guides/{slug}/ — static: guides ship with the code.
-export const dynamicParams = false
+// /guides/{slug}/ — guides ship with the code. Pre-rendered at build and
+// rendered on request too: on Cloudflare (OpenNext without an incremental
+// cache) build-time pages aren't served, so `dynamicParams = false` made every
+// guide a 404 in production. Unknown slugs are still a 404 (notFound below).
 type Props = { params: Promise<{ slug: string }> }
 
 export function generateStaticParams() {

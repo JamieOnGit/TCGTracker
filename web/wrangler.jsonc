@@ -6,6 +6,10 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
+  // Run the worker next to the database (Supabase, Sydney) when a page makes
+  // several database calls: a US visitor or Googlebot then waits for one
+  // trip across the Pacific instead of one per query.
+  "placement": { "mode": "smart" },
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://tcgtracker.com.au",
     "NEXT_PUBLIC_SITE_NAME": "TCGTracker"
