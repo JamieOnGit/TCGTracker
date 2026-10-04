@@ -255,3 +255,27 @@ def test_once_processes_volunteer_for_the_oom_killer(tmp_path: Any) -> None:
     prefer_oom_kill(str(path))
     assert path.read_text() == "1000"
     prefer_oom_kill(str(tmp_path / "missing" / "x"))  # no /proc: silently nothing
+
+
+def test_interval_jobs_start_from_their_last_success_not_from_the_restart() -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from tcgworkers.main import CATCH_UP_GAP, CATCH_UP_START, first_runs
+
+    now = datetime(2026, 10, 4, 12, 0, tzinfo=UTC)
+    hours = {"prices": 4.0, "floors": 4.0, "images": 24.0, "snapshots": 24.0, "fx": 24.0}
+    last = {
+        "prices": now - timedelta(hours=1),  # ran an hour ago: next in 3 hours
+        "floors": now - timedelta(days=2),  # two days overdue (deploys kept resetting it)
+        "snapshots": now - timedelta(hours=30),
+        # images and fx never succeeded
+    }
+    runs = first_runs(hours, last, now)
+    assert runs["prices"] == now + timedelta(hours=3)
+    # Overdue jobs start within minutes, a few minutes apart, in registry order.
+    assert runs["floors"] == now + CATCH_UP_START
+    assert runs["images"] == now + CATCH_UP_START + CATCH_UP_GAP
+    assert runs["snapshots"] == now + CATCH_UP_START + 2 * CATCH_UP_GAP
+    assert runs["fx"] == now + CATCH_UP_START + 3 * CATCH_UP_GAP
+    # A restart five minutes later changes nothing for a job that isn't due.
+    assert first_runs(hours, last, now + timedelta(minutes=5))["prices"] == runs["prices"]

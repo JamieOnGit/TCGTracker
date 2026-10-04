@@ -6,10 +6,11 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { CopyIntro, Faq } from '@/components/DropsCopy'
 import { LiveDrops } from '@/components/LiveDrops'
+import { LiveRefresh } from '@/components/LiveRefresh'
 import { ProductCard } from '@/components/ProductCard'
 import { PageIntro } from '@/components/ui'
 import { RETAILER_COPY, STATE_COPY } from '@/content/drops-copy'
-import { getRepo } from '@/lib/data'
+import { getRepo, type Repository, viewerRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES, type AuState, type DropRow, type RetailerRow, type SealedProductRow } from '@/lib/data/types'
 import { hasRecentDrops, stateFromSlug } from '@/lib/domain/drops'
 import { feedHref } from '@/lib/domain/stock'
@@ -31,8 +32,10 @@ type Page =
  * Thin-page guard: a page with no events in 90 days and no evergreen copy is
  * noindex,follow. Deduped per request.
  */
-const load = cache(async (slug: string): Promise<Page | null> => {
-  const repo = getRepo()
+// The search metadata always uses the public view; the page body uses the
+// viewer's (Premium: live, read with their session).
+const load = cache(async (slug: string, viewer?: Repository): Promise<Page | null> => {
+  const repo = viewer ?? getRepo()
   const retailers = await repo.retailers()
   const state = stateFromSlug(slug)
   if (state) {
@@ -72,11 +75,13 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 }
 
 export default async function DropsSlug({ params, searchParams }: Props) {
-  const p = await load((await params).slug)
+  const { repo, tier } = await viewerRepo()
+  const live = tier === 'premium'
+  const p = await load((await params).slug, live ? repo : undefined)
   if (!p) notFound()
   const page = pageNumber(await searchParams)
   if (pastLastPage(page, p.rows.length, TABLE_PAGE_SIZE)) notFound()
-  return p.kind === 'state' ? <StateDrops p={p} page={page} /> : <RetailerDrops p={p} page={page} />
+  return p.kind === 'state' ? <StateDrops p={p} page={page} live={live} /> : <RetailerDrops p={p} page={page} live={live} />
 }
 
 /** One page of the history, with page links back to the top of the list. */
@@ -89,7 +94,7 @@ function History({ rows, page, basePath, empty }: { rows: DropRow[]; page: numbe
   )
 }
 
-function RetailerDrops({ p, page }: { p: Extract<Page, { kind: 'retailer' }>; page: number }) {
+function RetailerDrops({ p, page, live }: { p: Extract<Page, { kind: 'retailer' }>; page: number; live: boolean }) {
   const r = p.retailer
   const copy = RETAILER_COPY[r.slug]
   return (
@@ -100,7 +105,7 @@ function RetailerDrops({ p, page }: { p: Extract<Page, { kind: 'retailer' }>; pa
         <StateNav label={`${r.name} by state`} />
         <ReportCta />
       </PageIntro>
-      <LiveDrops />
+      {live ? <LiveRefresh /> : <LiveDrops />}
       {p.inStock.length > 0 && (
         <section className="section" aria-labelledby="now-h">
           <h2 id="now-h">In stock now at {r.name}</h2>
@@ -122,7 +127,7 @@ function RetailerDrops({ p, page }: { p: Extract<Page, { kind: 'retailer' }>; pa
   )
 }
 
-function StateDrops({ p, page }: { p: Extract<Page, { kind: 'state' }>; page: number }) {
+function StateDrops({ p, page, live }: { p: Extract<Page, { kind: 'state' }>; page: number; live: boolean }) {
   const name = AU_STATE_NAMES[p.state]
   const copy = STATE_COPY[p.state]
   return (
@@ -136,7 +141,7 @@ function StateDrops({ p, page }: { p: Extract<Page, { kind: 'state' }>; page: nu
         <StateNav label="Other states" current={p.state} />
         <ReportCta />
       </PageIntro>
-      <LiveDrops />
+      {live ? <LiveRefresh /> : <LiveDrops />}
       <section className="section scroll-mt-24" aria-labelledby="hist-h" id="history">
         <h2 id="hist-h">Sightings in {name}</h2>
         <History rows={p.rows} page={page} basePath={dropsStatePath(p.state)} empty={`No confirmed sightings in ${name} yet. Seen stock in store? Report it and other members will confirm it.`} />

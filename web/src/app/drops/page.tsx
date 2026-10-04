@@ -4,11 +4,12 @@ import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { LiveDrops } from '@/components/LiveDrops'
+import { LiveRefresh } from '@/components/LiveRefresh'
 import { FilterBar } from '@/components/FilterBar'
 import { Pagination } from '@/components/Pagination'
 import { PageIntro } from '@/components/ui'
 import { UpcomingReleases } from '@/components/UpcomingReleases'
-import { getRepo } from '@/lib/data'
+import { viewerRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES, type AuState } from '@/lib/data/types'
 import { durationLabel, parseDropSource } from '@/lib/domain/drops'
 import { listingLang, parseLang, parseSearch, searchRows, searchText } from '@/lib/domain/search'
@@ -47,7 +48,11 @@ const EMPTY: Record<StatusKey, string | undefined> = {
   sighting: 'No confirmed member sightings in the public history yet. Seen stock in store? Report it.',
 }
 
-/** Public, delayed history (RLS enforces the delay) + the Premium live panel. */
+/**
+ * One feed, as the viewer may see it: Premium members get the live table (read
+ * with their session, kept live by LiveRefresh) with every filter and page;
+ * everyone else gets the public history (RLS enforces the delay) and the upgrade prompt.
+ */
 export default async function Drops({ searchParams }: Props) {
   const sp = await searchParams
   // Legacy ?source=member is the "Member sightings" chip; ?source=monitor still filters at the source.
@@ -60,7 +65,8 @@ export default async function Drops({ searchParams }: Props) {
   const stateParam = typeof sp.state === 'string' ? sp.state.toUpperCase() : undefined
   const state = AU_STATES.find((st) => st === stateParam) as AuState | undefined
   const page = pageNumber(sp)
-  const repo = getRepo()
+  const { repo, tier } = await viewerRepo()
+  const live = tier === 'premium'
   const today = todayAu()
   const [retailers, rules, scouts, releases] = await Promise.all([repo.retailers(), repo.getRules(), repo.scoutLeaderboard(30, 5), repo.releases({ from: today })])
   const retailer = retailers.find((r) => r.slug === parseSlug(sp.retailer))?.slug
@@ -92,11 +98,13 @@ export default async function Drops({ searchParams }: Props) {
           <Link href={productsPath()} className="prose-link text-sm">All products</Link>
         </div>
       </PageIntro>
-      <LiveDrops />
+      {live ? <LiveRefresh /> : <LiveDrops />}
       <div className="grid lg:grid-cols-[1fr_300px] lg:gap-12">
         <section className="section min-w-0 scroll-mt-24" aria-labelledby="hist-h" id="activity">
-          <h2 id="hist-h">Stock activity</h2>
-          <p className="muted mt-2 text-sm">Shown {publicDelay} after each event. Prices in AUD, tagged against RRP. Counts cover the latest {loaded.length} events.</p>
+          <h2 id="hist-h">{live ? 'Live stock activity' : 'Stock activity'}</h2>
+          <p className="muted mt-2 text-sm">
+            {live ? 'Live: each event appears the moment we see it.' : `Shown ${publicDelay} after each event.`} Prices in AUD, tagged against RRP. Counts cover the latest {loaded.length} events.
+          </p>
           <div className="mt-4">
             <FilterBar
               action="/drops/"
