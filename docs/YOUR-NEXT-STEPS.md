@@ -49,6 +49,7 @@ The website is complete, but these parts are switched off until their services a
 | **9g** | **Australian release calendar (automatic) on the Drops page** | ⏭ After the release-calendar PR is merged: **Actions → Deploy database**, `fly deploy` the workers (3 min) |
 | **9h** | **Site scan fixes (guides, live connections, sitemap speed)** | ⏭ After the site-scan PR is merged: **Actions → Deploy database** (1 min). Optional later: page cache (below) |
 | **9i** | **Live stock for members, 10 minutes behind for visitors** | ⏭ After the stock-timing PR is merged: **Actions → Deploy database**, then `fly deploy` the workers (3 min) |
+| **9j** | **Pokémon release dates from every Australian store** | ⏭ After the store-release-dates PR is merged: **Actions → Deploy database**, `fly deploy`, then fill the calendar (5 min) |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -724,6 +725,36 @@ The pages still rank: Google sees full stock pages (10 minutes behind), so nothi
    fly deploy
    ```
 3. **Check:** open `/stock/` in a private window. You should see "You're seeing stock as it was 10 minutes ago". Signed in, you should see a green **Live** badge instead.
+
+## Step 9j · Pokémon release dates from every Australian store (≈5 min) ⏭ after the store-release-dates PR is merged
+**Why Pokémon was missing:** the calendar only read JB Hi-Fi's own date field, and pokemon.com blocks automated access. But the Australian stores we already monitor publish street dates on their pre-orders, for example:
+- Grailborne: *"Delta Reign Booster Box (Releases 6 Nov 2026)"*;
+- Pokesource: *"Delta Reign releases November 6, 2026."*;
+- Gameology: *"Release Date: 06-November-2026"*.
+
+**Now:**
+- The monitor reads those dates from the title, description and tags at every Shopify and WooCommerce store, as well as JB Hi-Fi's date field.
+- For each product, the date most stores give wins. If two stores say 6 Nov and one says 30 Oct, it's 6 Nov.
+- Products of one set out on the same day become one release: e.g. **Delta Reign, 6 Nov 2026**, listing the ETB, booster box, bundle and packs, and which stores have them.
+- Single products stand alone, e.g. *Mega Greninja ex League Battle Deck, 13 Nov*.
+- A month-only date ("Releases Dec 2026") shows as **December 2026**.
+- These are marked **Retailer listing** (stores can move dates). If you add the official date for a set in Admin → Releases, the stores' version of that set is no longer added.
+
+**After merging:**
+1. **GitHub → Actions → Deploy database.**
+2. Deploy the workers, so the monitor starts reading store dates:
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+3. Wait **30 minutes**, so the monitor sees every store's pre-orders at least once, then fill the calendar:
+   ```
+   fly ssh console -C "python -m tcgworkers.main --once releases"
+   ```
+   After that it updates by itself every 6 hours.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

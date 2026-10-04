@@ -52,7 +52,7 @@ export default async function AdminReleases({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <AdminHeader title="Releases" lead="The public release calendar (/releases/ and the Drops page) and its .ics feed. Australian dates fill in automatically every 6 hours from Bandai (One Piece, Oceania) and JB Hi-Fi pre-orders; editing an automatic entry locks it, and deleting one stops it coming back. Pokémon's official dates are added here by hand. Unpublished entries are only visible here. Members with a reminder are told the day before (exact dates only).">
+      <AdminHeader title="Releases" lead="The public release calendar (/releases/ and the Drops page) and its .ics feed. Australian dates fill in automatically every 6 hours from Bandai (One Piece, Oceania) and the street dates every Australian store we monitor publishes (the date most stores agree on wins); editing an automatic entry locks it, and deleting one stops it coming back. Official Pokémon dates can be added here by hand. Unpublished entries are only visible here. Members with a reminder are told the day before (exact dates only).">
         {editing && <Link className="btn btn-secondary btn-sm" href="/admin/releases/">New release</Link>}
       </AdminHeader>
 

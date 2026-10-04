@@ -58,12 +58,32 @@ def _bandai(pages: dict[int, str] | None = None, status: int = 200) -> BandaiCli
     )
 
 
-def _jb_product(c: Conn, sku: str, title: str, when: date | None, *, sealed: str | None = None) -> None:
+def _product(
+    c: Conn,
+    store: str,
+    sku: str,
+    title: str,
+    when: date | None,
+    *,
+    sealed: str | None = None,
+    precision: str = "day",
+) -> None:
     c.execute(
-        """insert into public.retail_products (retailer_id, sku, url, title, game, sealed_product_id, release_date)
-           select id, %s, %s, %s, 'pokemon', %s, %s from public.retailers where slug = 'jb-hi-fi'""",
-        (sku, f"https://www.jbhifi.com.au/products/{sku}", title, sealed, when),
+        """insert into public.retail_products (retailer_id, sku, url, title, game, sealed_product_id, release_date,
+                                               release_date_precision)
+           select id, %s, %s, %s, 'pokemon', %s, %s, %s from public.retailers where slug = %s""",
+        (sku, f"https://example.com.au/products/{sku}", title, sealed, when, precision, store),
     )
+
+
+def _jb_product(c: Conn, sku: str, title: str, when: date | None, *, sealed: str | None = None) -> None:
+    _product(c, "jb-hi-fi", sku, title, when, sealed=sealed)
+
+
+def _by_title(c: Conn, title: str) -> dict[str, Any]:
+    found = [e for e in _auto(c).values() if e["title"] == title]
+    assert len(found) == 1, (title, [e["title"] for e in _auto(c).values()])
+    return found[0]
 
 
 def _sealed(c: Conn, slug: str, ptype: str, rrp: str) -> str:
@@ -109,18 +129,20 @@ def test_official_bandai_and_jb_street_dates_fill_the_calendar(conn: Conn) -> No
     assert op18["source_url"] == "https://en.onepiece-cardgame.com/products/op18.html"
 
     # The set's two JB products are one release, listing both with their AU RRP.
-    set_key = f"jb-hi-fi:pokemon:en:set:{SV3PT5}:{day.isoformat()}"
-    sv = events[set_key]
+    sv = _by_title(conn, "151")
     assert sv["confidence"] == "retailer" and sv["kind"] == "set_release" and str(sv["set_id"]) == SV3PT5
+    assert sv["external_key"].startswith("au:pokemon:en:151:")
     assert (
-        sv["release_date"] == day and sv["retailer_slugs"] == ["jb-hi-fi"] and sv["source_name"] == "JB Hi-Fi"
+        sv["release_date"] == day
+        and sv["retailer_slugs"] == ["jb-hi-fi"]
+        and sv["source_name"] == "Australian stores: JB Hi-Fi"
     )
     assert {(p["name"], p["rrp_aud"]) for p in sv["products"]} == {
-        ("Scarlet & Violet 151 Elite Trainer Box", 89.95),
-        ("Scarlet & Violet 151 Booster Bundle", 54.95),
+        ("151 Elite Trainer Box", 89.95),
+        ("151 Booster Bundle", 54.95),
     }
-    portfolio = events["jb-hi-fi:pokemon:en:sku:rel-test-3"]
-    assert portfolio["title"] == "Mini Portfolio" and portfolio["kind"] == "product_release"
+    portfolio = _by_title(conn, "Mini Portfolio")
+    assert portfolio["kind"] == "product_release"
     assert not any("rel-test-4" in k for k in events)
     assert stats["inserted"] == len(events) and stats["bandai"] >= 4
 
@@ -133,7 +155,7 @@ def test_moved_dates_update_or_retire_and_editors_stay_in_charge(conn: Conn) -> 
     _jb_product(conn, "rel-test-5", "Pokemon TCG: Mini Portfolio", TODAY + timedelta(days=30))
     conn.commit()
     _run(conn)
-    key = "jb-hi-fi:pokemon:en:sku:rel-test-5"
+    key = _by_title(conn, "Mini Portfolio")["external_key"]
 
     # JB moves the date: the same release moves with it.
     conn.execute(
@@ -202,10 +224,65 @@ def test_bandai_down_keeps_its_releases_and_a_set_with_an_editor_release_is_not_
     conn.commit()
     try:
         stats = _run(conn)
-        assert stats["covered"] == 1 and not any(":set:" in k for k in _auto(conn))
+        assert stats["covered"] == 1 and not any(e["title"] == "151" for e in _auto(conn).values())
     finally:
         conn.execute("delete from public.release_events where slug = 'rel-test-151'")
         conn.commit()
+
+
+def test_every_australian_store_counts_and_the_most_common_date_wins(conn: Conn) -> None:
+    """Real titles (Oct 2026): Delta Reign at several stores, one of them with a
+    different date; a 30th Celebration tin known only to the month."""
+    nov6, oct30 = date(2026, 11, 6), date(2026, 10, 30)
+    rows = [
+        (
+            "grailborne",
+            "Pokémon TCG: Mega Evolution - Delta Reign Elite Trainer Box (Releases 6 Nov 2026)",
+            nov6,
+        ),
+        ("pokesource", "Pokémon TCG: Delta Reign Elite Trainer Box (Pre-Order)", nov6),
+        ("collectible-madness", "Pokemon - TCG - Delta Reign Elite Trainer Box", oct30),
+        ("grailborne", "Pokémon TCG: Mega Evolution - Delta Reign Booster Box (Releases 6 Nov 2026)", nov6),
+        ("gameology", "Pokemon TCG Mega Evolution Delta Reign Single Booster Pack", nov6),
+        ("jb-hi-fi", "Pokemon TCG - Mega Greninja ex League Battle Deck", date(2026, 11, 13)),
+    ]
+    for i, (store, title, when) in enumerate(rows):
+        _product(conn, store, f"rel-test-au-{i}", title, when)
+    _product(
+        conn, "grailborne", "rel-test-au-tin", "Pokémon TCG: 30th Celebration 5 Booster Tin (Assorted) (Releases Dec 2026)",
+        date(2026, 12, 1), precision="month",
+    )  # fmt: skip
+    conn.commit()
+    _run(conn)
+
+    dr = _by_title(conn, "Delta Reign")
+    # The ETB: two stores say 6 Nov, one says 30 Oct -> 6 Nov, with the booster box and packs.
+    assert dr["release_date"] == nov6 and dr["date_precision"] == "day" and dr["kind"] == "set_release"
+    assert {p["name"] for p in dr["products"]} == {
+        "Delta Reign Elite Trainer Box", "Delta Reign Booster Box", "Delta Reign Single Booster Pack",
+    }  # fmt: skip
+    assert dr["retailer_slugs"] == ["collectible-madness", "gameology", "grailborne", "pokesource"]
+    assert dr["source_name"].startswith("Australian stores: ") and "Retailer dates can move" in dr["summary"]
+    assert not any(e["release_date"] == oct30 and e["game"] == "pokemon" for e in _auto(conn).values())
+
+    greninja = _by_title(conn, "Mega Greninja ex League Battle Deck")
+    assert greninja["release_date"] == date(2026, 11, 13) and greninja["retailer_slugs"] == ["jb-hi-fi"]
+    tin = _by_title(conn, "30th Celebration 5 Booster Tin")
+    assert tin["date_precision"] == "month" and tin["release_date"] == date(2026, 12, 1)
+
+    # More stores move the ETB to 30 Oct: it becomes its own release that day,
+    # and the 6 Nov release keeps the booster box and packs.
+    _product(conn, "drop-store", "rel-test-au-x1", "Delta Reign Elite Trainer Box | Pokemon TCG", oct30)
+    _product(
+        conn, "good-games", "rel-test-au-x2", "Pokemon TCG - Delta Reign Elite Trainer Box (Preorder)", oct30
+    )
+    conn.commit()
+    _run(conn)
+    published = [e for e in _auto(conn).values() if e["published"] and e["title"].startswith("Delta Reign")]
+    assert {(e["title"], e["release_date"]) for e in published} == {
+        ("Delta Reign Elite Trainer Box", oct30),
+        ("Delta Reign", nov6),
+    }
 
 
 def test_auto_sync_can_be_switched_off(conn: Conn) -> None:

@@ -72,7 +72,7 @@ export const SETTING_GROUPS: SettingGroup[] = [
       { key: 'drops.suppress_above_rrp_pct', label: 'Suppress marketplace sellers above RRP by', kind: { type: 'num', step: 1, unit: '%' } },
       { key: 'stock.show_retailer_images', label: 'Show store product photos', hint: 'Off until image rights are settled; stock pages use a placeholder.', kind: { type: 'bool' } },
       { key: 'stock.default_interval_seconds', label: 'Check interval for new stores', kind: { type: 'int', min: 30, max: 86400, unit: 'seconds' } },
-      { key: 'releases.auto_sync', label: 'Fill the release calendar automatically', hint: 'Australian dates from Bandai (One Piece, Oceania) and JB Hi-Fi pre-orders, every 6 hours. Entries you edit are never overwritten.', kind: { type: 'bool' } },
+      { key: 'releases.auto_sync', label: 'Fill the release calendar automatically', hint: 'Australian dates from Bandai (One Piece, Oceania) and the release dates Australian stores publish on their pre-orders, every 6 hours. Entries you edit are never overwritten.', kind: { type: 'bool' } },
     ],
   },
   {

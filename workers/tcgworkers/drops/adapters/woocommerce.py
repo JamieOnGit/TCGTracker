@@ -31,6 +31,7 @@ from tcgworkers.drops.adapters.catalogue import CatalogueAdapter, hint_game, htt
 from tcgworkers.drops.adapters.shopify import is_preorder
 from tcgworkers.drops.http import PoliteClient
 from tcgworkers.drops.models import Availability, Observation
+from tcgworkers.drops.release_dates import find_release_date, plain_text
 
 PER_PAGE = 100
 STORE_API = "/wp-json/wc/store/v1/products"
@@ -92,6 +93,13 @@ def parse_product(
     tags = _names(product.get("tags"))
     images = [i for i in product.get("images") or [] if isinstance(i, dict)]
     category_text = " ".join([*categories, *tags])
+    released = find_release_date(
+        title,
+        plain_text(str(product.get("short_description") or "")),
+        plain_text(str(product.get("description") or "")),
+        " ".join(tags),
+        today=observed_at.date(),
+    )
     return Observation(
         retailer=retailer,
         sku=str(pid),
@@ -115,6 +123,8 @@ def parse_product(
         image_url=https_image(images[0].get("src")) if images else None,
         game_hint=hint_game(category_text) or hint_game(category),
         lang_hint=lang_in_text(category_text) or lang_in_text(category),
+        release_date=released[0] if released else None,
+        release_date_precision=released[1] if released else "day",
     )
 
 

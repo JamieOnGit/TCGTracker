@@ -115,7 +115,7 @@ def test_retailer_titles_and_languages() -> None:
     assert _clean_title("Pokemon TCG: Mini Portfolio") == "Mini Portfolio"
     assert (
         _clean_title("Pokemon TCG - Mega Evolutions 4: Chaos Rising Display Box")
-        == "Mega Evolutions 4: Chaos Rising Display Box"
+        == "Chaos Rising Display Box"
     )
     assert (
         _lang_of("Pokemon TCG Japanese Booster Box", None) == "jp"
@@ -143,3 +143,90 @@ def test_accessories_are_left_off_and_keys_survive_trailing_slashes() -> None:
     )
     found = parse_page(page)
     assert [r.key for r in found] == ["bandai:op17", "bandai:dp12"]
+
+
+# ------------------------------------------------- dates on store product pages
+from tcgworkers.drops.release_dates import find_release_date, plain_text  # noqa: E402
+
+TODAY = date(2026, 10, 4)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # Seen live on Australian stores, October 2026.
+        (
+            "Pokémon TCG: Mega Evolution - Delta Reign Booster Box (Releases 6 Nov 2026)",
+            (date(2026, 11, 6), "day"),
+        ),
+        (
+            "Pokémon TCG: 30th Celebration 5 Booster Tin (Assorted) (Releases Dec 2026)",
+            (date(2026, 12, 1), "month"),
+        ),
+        ("Delta Reign releases November 6, 2026.", (date(2026, 11, 6), "day")),
+        (
+            "📦 Pre-Order Releases 6 November 2026 Shipping commences 2-5 business days",
+            (date(2026, 11, 6), "day"),
+        ),
+        ("This is a pre-order item releasing 6 November 2026", (date(2026, 11, 6), "day")),
+        ("Pre-order Product Release Date: 06-November-2026 A Legendary Storm", (date(2026, 11, 6), "day")),
+        # Other common wordings; numeric dates are Australian (day first).
+        ("Expected release: 30/10/2026", (date(2026, 10, 30), "day")),
+        ("Street date 2026-10-30", (date(2026, 10, 30), "day")),
+        ("Launches on October 30th, 2026", (date(2026, 10, 30), "day")),
+        # Not release dates.
+        ("Shipping commences 2-5 business days from release date", None),
+        ("Published 6 November 2026", None),
+        ("Release date: TBC", None),
+        ("Releases 6 November 2031", None),  # too far ahead: a typo
+    ],
+)
+def test_store_release_dates(text: str, expected: tuple[date, str] | None) -> None:
+    assert find_release_date(text, today=TODAY) == expected
+
+
+def test_description_text_skips_styles_and_the_title_wins() -> None:
+    body = "<style>.x{content:'Releases 1 Jan 2026'}</style><p>Releases &amp; ships 3 Dec 2026</p>"
+    assert "1 Jan" not in plain_text(body)
+    assert find_release_date("Booster Box (Releases 6 Nov 2026)", "Releases 3 Dec 2026", today=TODAY) == (
+        date(2026, 11, 6),
+        "day",
+    )
+
+
+def test_shopify_and_woocommerce_listings_carry_the_store_release_date() -> None:
+    from datetime import UTC, datetime
+
+    from tcgworkers.drops.adapters.shopify import parse_product as shopify
+    from tcgworkers.drops.adapters.woocommerce import parse_product as woo
+
+    now = datetime(2026, 10, 4, tzinfo=UTC)
+    s = shopify(
+        {
+            "id": 1,
+            "handle": "delta-reign-etb",
+            "title": "Pokémon TCG: Delta Reign Elite Trainer Box (Pre-Order)",
+            "body_html": "<p>Delta Reign releases November 6, 2026.</p>",
+            "tags": ["preorder"],
+            "variants": [{"id": 9, "available": True, "price": "89.95"}],
+        },
+        retailer="pokesource",
+        base_url="https://pokesource.com.au",
+        collection="pokemon",
+        observed_at=now,
+    )
+    assert s is not None and (s.release_date, s.release_date_precision) == (date(2026, 11, 6), "day")
+    w = woo(
+        {
+            "id": 2,
+            "name": "Delta Reign Booster Box",
+            "permalink": "https://shop.example.com.au/p/2",
+            "short_description": "<p>Release Date: 06-November-2026</p>",
+            "is_in_stock": True,
+            "is_purchasable": True,
+        },
+        retailer="example",
+        category="pokemon",
+        observed_at=now,
+    )
+    assert w is not None and w.release_date == date(2026, 11, 6)
