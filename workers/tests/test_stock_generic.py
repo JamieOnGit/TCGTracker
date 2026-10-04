@@ -174,6 +174,61 @@ def test_shopify_pages_until_an_empty_page_and_dedupes_across_collections(fixtur
     ]
 
 
+def _products(base: dict[str, Any], n: int, *, start: int, title: str | None = None) -> list[dict[str, Any]]:
+    out = []
+    for i in range(n):
+        p = copy.deepcopy(base)
+        p["id"], p["handle"] = start + i, f"p-{start + i}"
+        if title:
+            p["title"] = title
+        out.append(p)
+    return out
+
+
+def test_shopify_watch_reads_only_the_first_page_of_each_collection(fixtures: Path) -> None:
+    base = shopify_page(fixtures)["products"][0]
+    full = _products(base, 250, start=9000)
+    rec = Recorder(
+        {
+            page1("pokemon"): json_response({"products": full}),
+            "/collections/pokemon/products.json?limit=250&page=2": json_response({"products": full[:1]}),
+            page1("etbs"): json_response({"products": full[:3]}),
+        }
+    )
+    adapter = shop_adapter(collections=["pokemon", "etbs"])
+    got = list(adapter.watch(client(rec), []))
+    assert len(got) == 250
+    # One request per collection, however big the catalogue: discovery reads the rest.
+    assert rec.paths() == [page1("pokemon"), page1("etbs")]
+
+
+def test_shopify_watch_reads_everything_when_first_pages_hold_nothing_we_track(fixtures: Path) -> None:
+    base = shopify_page(fixtures)["products"][0]
+    page2 = "/collections/all/products.json?limit=250&page=2"
+    rec = Recorder(
+        {
+            page1("all"): json_response(
+                {"products": _products(base, 250, start=1, title="LEGO Star Wars X-Wing")}
+            ),
+            page2: json_response({"products": _products(base, 1, start=5000)}),
+        }
+    )
+    got = list(shop_adapter(collections=["all"]).watch(client(rec), []))
+    # Never "an empty store" from page 1 alone: the full read finds the box on page 2.
+    assert [o.sku for o in got] == ["5000"]
+    assert rec.paths() == [page1("all"), page1("all"), page2]
+
+
+def test_a_503_slows_every_shopify_store_down() -> None:
+    from tcgworkers.drops.http import SharedGate
+
+    gate = SharedGate("shopify", 2.0, floor=1.0, ceiling=60.0)
+    rec = Recorder({page1("pokemon"): httpx.Response(503)})
+    with pytest.raises(BackingOff):
+        list(shop_adapter().discover(client(rec, gate=gate)))
+    assert gate.min_interval == 3.0
+
+
 def test_shopify_page_cap(fixtures: Path) -> None:
     base = shopify_page(fixtures)["products"][0]
 
@@ -544,6 +599,9 @@ def test_shopify_stores_share_one_gate_and_woocommerce_does_not() -> None:
     woo = client_for(_cfg("c", "woocommerce", "woocommerce", {"categories": ["z"]}), "ua")
     assert shop_a.gate is SHOPIFY_GATE and shop_b.gate is SHOPIFY_GATE
     assert woo.gate is None
+    # Different shops may be 1-2 s apart; each shop itself stays 5+ s apart.
+    assert SHOPIFY_GATE.floor == 1.0 and SHOPIFY_GATE.min_interval <= 2.0
+    assert shop_a.min_delay >= 5.0
 
 
 # ------------------------------------------------------------ one-tap checkout

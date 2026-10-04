@@ -756,6 +756,30 @@ The pages still rank: Google sees full stock pages (10 minutes behind), so nothi
    ```
    After that it updates by itself every 6 hours.
 
+## Step 9l · Faster restock detection at Shopify stores (≈5 min) ⏭ after the faster-detection PR is merged
+**Why it was slow:**
+- About 40 of our stores run on Shopify, and Shopify limits how often one computer may ask.
+- All Shopify stores therefore share one queue of requests from our server, spaced 3–10 seconds apart.
+- One round of every store took **3–6 minutes**. So when Trainer Town restocked at 11:29, we didn't look again until 11:35.
+
+**Now:**
+- **Shared queue:** requests to *different* shops go 1–2 seconds apart. Tested: Shopify accepts this. It only refuses two quick requests to the *same* shop, and each shop is still asked at most about once a minute.
+- **Self-adjusting:** if Shopify ever pushes back (429/503), every store slows down by itself.
+- **Each minute:** a quick check of the first page of every store's Pokémon and One Piece collections, where stores list new, featured and best-selling stock.
+- **Every 5 minutes:** a full read of every page.
+- **Result:** a Shopify restock should normally show within **about 1–2 minutes** instead of up to 6.
+
+**After merging:**
+1. **GitHub → Actions → Deploy database** (type `deploy`). This sets the Shopify stores to check every 60 seconds.
+2. Deploy the workers:
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.
 

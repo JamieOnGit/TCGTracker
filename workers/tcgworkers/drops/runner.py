@@ -68,12 +68,16 @@ GENERIC: dict[str, type[CatalogueAdapter]] = {"shopify": ShopifyAdapter, "woocom
 # Generic stores: at most one request per ~5 s per host (robots Crawl-delay can raise it).
 GENERIC_MIN_DELAY = 5.0
 GENERIC_MAX_DELAY = 8.0
-# All Shopify stores share one request budget: Shopify's edge limits per IP
-# across every shop, so 40 stores must not look like 40 separate crawlers.
-# Starts at 10 s between requests (measured on a shared cloud IP: 15-30 s
-# spacing was always accepted) and tunes itself between 3 s and 60 s.
-SHOPIFY_GATE_SECONDS = 10.0
-SHOPIFY_GATE = SharedGate("shopify", SHOPIFY_GATE_SECONDS, floor=3.0, ceiling=60.0)
+# All Shopify stores share one request budget from our one IP, so 40 stores
+# never look like 40 separate crawlers. Measured (Oct 2026): Shopify refuses a
+# second request to the SAME shop within ~3 s (each shop is paced 5-8 s
+# apart below), but requests to different shops 1-2 s apart are accepted.
+# So the shared spacing starts at 2 s and tunes itself between 1 s and 60 s
+# (x1.5 on every 429/503, 3% faster per success). Each shop still sees about
+# one request a minute: a full round of every store's first pages takes
+# ~1.5 minutes instead of ~5 at the old 3-10 s spacing.
+SHOPIFY_GATE_SECONDS = 2.0
+SHOPIFY_GATE = SharedGate("shopify", SHOPIFY_GATE_SECONDS, floor=1.0, ceiling=60.0)
 
 
 @dataclass(frozen=True)

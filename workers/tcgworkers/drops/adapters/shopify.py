@@ -4,7 +4,10 @@
 Source (preference 1, brief 9.2): the storefront's own public collection
 feed, ``GET /collections/<handle>/products.json?limit=250&page=N``, paged
 until an empty or short page (at most ``max_pages`` pages per collection).
-One cheap request per page, so watch and discovery are the same call.
+One cheap request per page. Discovery reads every page; the fast watch pass
+in between reads only the first page of each collection, where stores list
+their new, featured and best-selling stock (a booster box restock), so a
+store with a big catalogue costs one request per collection per minute.
 
 Mapping, per product (the product is the unit; its variants are usually
 editions or quantities of the same thing):
@@ -177,11 +180,22 @@ class ShopifyAdapter(CatalogueAdapter):
     def page_url(self, collection: str, page: int) -> str:
         return f"{self.base_url}/collections/{quote(collection)}/products.json?limit={PAGE_LIMIT}&page={page}"
 
-    def fetch_all(self, client: PoliteClient) -> Iterable[Observation]:
+    def watch(self, client: PoliteClient, urls: Iterable[str]) -> Iterable[Observation]:
+        """The fast pass: first page of each collection. Products it doesn't
+        reach are left as they were (the next discovery reads them). A first
+        page with no TCG product at all reads everything instead, so a store
+        is never counted as empty because of what its first page holds."""
+        self.check_cooldown()
+        seen: dict[str, Observation] = {}
+        for obs in self.fetch_all(client, pages=1):
+            seen.setdefault(obs.sku, obs)
+        return list(seen.values()) or self.discover(client)
+
+    def fetch_all(self, client: PoliteClient, pages: int | None = None) -> Iterable[Observation]:
         if not self.collections:
             raise LookupError(f"{self.slug}: config.collections is empty")
         for collection in self.collections:
-            for page in range(1, self.max_pages + 1):
+            for page in range(1, min(pages or self.max_pages, self.max_pages) + 1):
                 data, _ = self.get_json(client, self.page_url(collection, page))
                 count, parsed = parse_page(
                     data,

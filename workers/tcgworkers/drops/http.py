@@ -95,7 +95,7 @@ class SharedGate:
             self.min_interval = max(self.floor if self.floor is not None else 0.0, self.min_interval * 0.97)
 
     def back_off(self, until: float, host: str = "") -> None:
-        """A 429 from ``host``. One shop refusing is that shop's own limit (it
+        """A 429 (or 503) from ``host``. One shop refusing is that shop's own limit (it
         backs off alone) and everyone slows down a little; two different shops
         refusing in a row is the platform's limit, so every shop pauses."""
         with self._lock:
@@ -213,7 +213,8 @@ class PoliteClient:
                 float(retry_after) if retry_after.isdigit() else self.base_backoff * 2 ** (host.strikes - 1)
             )
             host.backoff_until = host.last_request_at + min(delay, self.max_backoff)
-            if self.gate is not None and response.status_code == 429:
+            if self.gate is not None and response.status_code in (429, 503):
+                # Shopify throttles with 429 and sometimes 503: both slow everyone down.
                 self.gate.back_off(host.backoff_until, origin)
             raise BackingOff(origin, host.backoff_until, response.status_code)
         host.strikes = 0
