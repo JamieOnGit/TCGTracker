@@ -122,9 +122,11 @@ test.describe('admin console', () => {
     try {
       await input.fill('https://images.example.com/hand-set.webp')
       await item.getByRole('button', { name: 'Save' }).click()
-      await expect(item.getByRole('status')).toContainText('Saved')
-      const { data } = await service().from(table).select('image_url,image_source').eq('id', id).single()
-      expect(data).toEqual({ image_url: 'https://images.example.com/hand-set.webp', image_source: 'manual' })
+      // Saved as a hand-set image; the page refreshes and the product leaves the missing list.
+      await expect
+        .poll(async () => (await service().from(table).select('image_url,image_source').eq('id', id).single()).data)
+        .toEqual({ image_url: 'https://images.example.com/hand-set.webp', image_source: 'manual' })
+      await expect(page.locator(`#img-${id}`)).toHaveCount(0)
     } finally {
       await service().from(table).update({ image_url: null, image_source: null }).eq('id', id)
     }
