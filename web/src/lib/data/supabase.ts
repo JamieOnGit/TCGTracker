@@ -117,6 +117,16 @@ export function supabaseRepository(): Repository {
       const { data } = await sb.from('cards').select(CARD_SELECT).eq('set_id', setId).order('number')
       return (data ?? []).map(toCard)
     },
+    async sitemapCardCount() {
+      const { data } = await sb.rpc('sitemap_card_count')
+      return typeof data === 'number' ? data : 0
+    },
+    async sitemapCards(offset, limit) {
+      // One JSON value per call, so the API's row limit doesn't cut a file short.
+      const { data } = await sb.rpc('sitemap_cards', { p_offset: offset, p_limit: limit })
+      type Row = { game: Game; lang: Lang; set: string; slug: string; updated: string; listed: boolean }
+      return ((data ?? []) as Row[]).map((r) => ({ id: `${r.game}/${r.lang}/${r.set}/${r.slug}`, game: r.game, lang: r.lang, setSlug: r.set, slug: r.slug, updatedAt: r.updated, listed: r.listed }))
+    },
     async getCard(game, lang, setSlug, cardSlug) {
       const { data } = await sb.from('cards').select(CARD_SELECT).match({ game, lang, slug: cardSlug }).eq('sets.slug', setSlug).maybeSingle()
       return data ? toCard(data) : null

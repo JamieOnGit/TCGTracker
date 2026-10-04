@@ -25,6 +25,7 @@ import logging
 from collections import Counter
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 import psycopg
@@ -283,6 +284,14 @@ def refresh_justtcg(
     companies = _companies(extra.get("justtcg.companies"))
     # Raw Near Mint prices are the site's main market price (market.primary_grade = raw).
     raw = extra.get("justtcg.raw_prices", True) is not False
+    # Raw records add the cards nobody has graded yet (most of a new set).
+    raw_discover = extra.get("justtcg.raw_discover", True) is not False
+    # A year of daily history for every A$0.20 common would fill the database:
+    # only cards worth at least this get their past prices backfilled.
+    try:
+        history_min = Decimal(str(extra.get("justtcg.history_min_aud", 10)))
+    except ArithmeticError:
+        history_min = Decimal(10)
     window = extra.get("justtcg.history_window", "1y")
     window = window if window in HISTORY_WINDOWS else "1y"
     refresh_hours = _setting_int(extra, "justtcg.refresh_hours", 20)
@@ -317,7 +326,7 @@ def refresh_justtcg(
         stats["sets_listed"] = sum(len(v) for v in listed.values())
         stats["sets_due"] = len(due)
 
-        ingestor = JtIngestor(conn, rules=rules, now=now)
+        ingestor = JtIngestor(conn, rules=rules, now=now, history_min_aud=history_min)
         ingestor.load()
         done = 0
         stopped = None
@@ -362,8 +371,9 @@ def refresh_justtcg(
                     json.dumps(cards[0], default=str)[:1500],
                 )
             ingestor.ingest(records, fx, fx_history=fx_history if backfill else None)
-            # Raw prices only for cards we have (graded records above link or queue new ones).
-            ingestor.ingest(raw_records, fx, fx_history=fx_history if backfill else None, discover=False)
+            ingestor.ingest(
+                raw_records, fx, fx_history=fx_history if backfill else None, discover=raw_discover
+            )
             # History counts as backfilled only once the set produced prices.
             _mark_refreshed(conn, game, s, backfilled=backfill and bool(records or raw_records), now=now)
             conn.commit()

@@ -13,9 +13,11 @@ import pytest
 from psycopg.rows import dict_row
 
 from tcgworkers.config import Env
+from tcgworkers.db import load_rules
 from tcgworkers.jobs.prices import refresh_justtcg, refresh_prices
 from tcgworkers.sources.population.base import SourceNotApproved
 from tcgworkers.sources.pricing.justtcg import JustTcgClient, JustTcgError
+from tcgworkers.sources.pricing.justtcg_ingest import JtIngestor
 
 URL = os.environ.get("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL not set")
@@ -114,11 +116,11 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
     assert stats["no_number"] == 1  # the booster bundle
     assert stats["auto_linked"] == 1  # EN Luffy: same set name, number, variant and name
     assert stats["queued_for_review"] == 3  # EN + JP Charizard (sets named differently), JP Luffy
-    assert stats["auto_created_cards"] == 1  # Umbreon VMAX
+    assert stats["auto_created_cards"] == 2  # Umbreon VMAX (graded) and Nami (raw only)
     # Totals cover every set in the run, not just the last one.
     assert (
-        stats["price_rows"] == 4 and stats["asks_written"] == 4 and stats["solds_written"] == 4
-    )  # 3 graded + 1 raw
+        stats["price_rows"] == 5 and stats["asks_written"] == 5 and stats["solds_written"] == 5
+    )  # 3 graded + 2 raw
 
     # EN Luffy, every grader, converted at today's rate (x1.5).
     assert _price(conn, EN_LUFFY, "psa-10")["price_aud"] == D("4800.00")
@@ -145,16 +147,17 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
     }
     assert keys == {"psa-10", "bgs-10", "raw"}  # only linked/created cards are priced in this run
 
-    # Raw Near Mint (the main market price) for a card we have; other conditions are ignored,
-    # and a raw-only card we don't have is neither created nor queued.
+    # Raw Near Mint (the main market price) for a card we have; other conditions are ignored.
     assert _price(conn, EN_LUFFY, "raw")["price_aud"] == D("1350.00")
-    assert stats["not_linked"] == 1
-    assert (
-        conn.execute(
-            "select count(*) as n from public.mapping_queue where source = 'justtcg' and external_id like 'c0000000-0000-5000-a000-000000000777%'"
-        ).fetchone()["n"]
-        == 0
-    )
+    # A card nobody has graded yet (most of a new set) is added from its raw price.
+    nami = conn.execute(
+        """select c.id::text as id, c.number, c.name, q.status::text as status from public.cards c
+             join public.mapping_queue q on q.resolved_card_id = c.id
+            where q.source = 'justtcg' and q.external_id like 'c0000000-0000-5000-a000-000000000777%%'"""
+    ).fetchone()
+    assert nami["number"] == "OP05-777" and nami["name"] == "Nami" and nami["status"] == "created_card"
+    assert _price(conn, nami["id"], "raw")["price_aud"] == D("0.38")
+    assert stats["not_linked"] == 0
 
     sets = {(r["justtcg_set_id"], r["lang"]): r for r in conn.execute("select * from public.justtcg_sets")}
     assert (
@@ -313,3 +316,99 @@ def test_graded_variants_parse_with_loose_casing_and_other_usd_regions():
     }
     [rec] = parse_card(card, JtGame("pokemon", "pokemon"))
     assert rec.prices["psa-10"].price_usd == D("99.00")
+
+
+def test_raw_discovery_can_be_switched_off(conn, fixtures):
+    conn.execute("update public.site_settings set value = 'false' where key = 'justtcg.raw_discover'")
+    conn.commit()
+    try:
+        client, _ = _mock(fixtures)
+        stats = refresh_justtcg(conn, Env.from_environ({}), client=client, now=NOW)
+        assert stats["auto_created_cards"] == 1 and stats["not_linked"] == 1  # Nami not added
+    finally:
+        conn.execute("update public.site_settings set value = 'true' where key = 'justtcg.raw_discover'")
+        conn.commit()
+
+
+def _ingestor(conn):
+    ing = JtIngestor(conn, rules=load_rules(conn), now=NOW)
+    ing.load()
+    return ing
+
+
+def _match(ing, set_id, code, ext, number, name, variant="standard"):
+    return ing._match_card(
+        ext,
+        game="pokemon",
+        lang="en",
+        set_id=set_id,
+        set_code=code,
+        number=number,
+        variant=variant,
+        name=name,
+        payload={"name": name},
+    )
+
+
+def test_a_new_sets_cards_are_created_even_when_other_sets_share_their_numbers(conn):
+    ing = _ingestor(conn)
+    old_id, old_code = ing._set_for("pokemon", "en", "Base Set Test")
+    assert _match(ing, old_id, old_code, "old:34", "034/102", "Pikachu") is not None
+    new_id, new_code = ing._set_for("pokemon", "en", "30th Celebration")
+    # #034/103 shares its number and name with Base Set's 34/102, but the set sizes differ.
+    pika = _match(ing, new_id, new_code, "new:34", "034/103", "Pikachu")
+    assert pika is not None and pika != ing.mapped["old:34"]
+    # Its reverse holo is another card of ours, not a duplicate to review.
+    rev = _match(ing, new_id, new_code, "new:34:rh", "034/103", "Pikachu", "reverse-holo")
+    assert rev is not None and rev != pika
+    # The same record again links to the same card.
+    assert _match(ing, new_id, new_code, "new:34", "034/103", "Pikachu") == pika
+    assert ing.stats.queued_for_review == 0
+    # A differently named card on the same number and printing in the same set is a data
+    # problem: it goes to an admin, never merged into Pikachu.
+    assert _match(ing, new_id, new_code, "new:34b", "034/103", "Raichu") is None
+    assert ing.stats.queued_for_review == 1
+    conn.commit()
+
+
+def test_a_twin_under_another_set_name_still_goes_to_review(conn):
+    ing = _ingestor(conn)
+    ours_id, ours_code = ing._set_for("pokemon", "en", "Paldean Fates Test")
+    first = _match(ing, ours_id, ours_code, "a:234", "234/091", "Charizard ex")
+    # Another source's name for the same set: same number, same name, same set size.
+    other_id, other_code = ing._set_for("pokemon", "en", "SV: Paldean Fates Test Alt")
+    assert _match(ing, other_id, other_code, "b:234", "234/091", "Charizard ex") is None
+    row = conn.execute(
+        "select status::text as status, suggested_card_id::text as s from public.mapping_queue where source = 'justtcg' and external_id = 'b:234'"
+    ).fetchone()
+    assert row == {"status": "pending", "s": first}
+
+
+def test_a_pending_record_is_created_once_it_has_no_twin(conn):
+    ing = _ingestor(conn)
+    set_id, code = ing._set_for("pokemon", "en", "Queue Test Set")
+    conn.execute(
+        """insert into public.mapping_queue (source, external_id, payload, game, lang, confidence, reasons, status)
+           values ('justtcg', 'q:1', '{}'::jsonb, 'pokemon', 'en', 0.6, '[]'::jsonb, 'pending')"""
+    )
+    ing = _ingestor(conn)
+    card = _match(ing, set_id, code, "q:1", "001/010", "Bulbasaur")
+    assert card is not None
+    row = conn.execute(
+        "select status::text as status, resolved_card_id::text as r from public.mapping_queue where external_id = 'q:1'"
+    ).fetchone()
+    assert row == {"status": "created_card", "r": card}
+
+
+def test_history_is_only_backfilled_for_cards_worth_the_minimum(conn, fixtures):
+    conn.execute("update public.site_settings set value = '5000' where key = 'justtcg.history_min_aud'")
+    conn.commit()
+    try:
+        client, _ = _mock(fixtures)
+        stats = refresh_justtcg(conn, Env.from_environ({}), client=client, now=NOW)
+        assert stats["history"]["written"] == 0 and stats["history"]["skipped_cheap"] > 0
+        # Current prices are still stored.
+        assert _price(conn, EN_LUFFY, "raw")["price_aud"] == D("1350.00")
+    finally:
+        conn.execute("update public.site_settings set value = '10' where key = 'justtcg.history_min_aud'")
+        conn.commit()

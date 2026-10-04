@@ -23,7 +23,11 @@ async function load(p: Params) {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const card = await load(await params)
   if (!card) return {}
+  // Until someone lists this card the page is only an empty shell (and there
+  // is one per card): keep it out of the index. The sitemap applies the same rule.
+  const listed = (await getRepo().listingsForCard(card.id, { status: 'active' })).length > 0
   return buildMetadata({
+    noindex: !listed,
     path: cardMarketplacePath(card),
     title: titles.cardMarketplace({ name: card.name, number: card.number, setName: card.setName, lang: card.lang }),
     description: `${card.name} ${card.number} (${card.setName}, ${card.lang === 'jp' ? 'Japanese' : 'English'}) for sale from Australian sellers, cheapest first, in AUD. Message sellers on TCGTracker.`,
