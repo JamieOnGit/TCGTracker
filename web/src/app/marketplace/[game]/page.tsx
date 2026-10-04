@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { pastLastPage } from '@/lib/paging'
 import { AntiScam } from '@/components/AntiScam'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { ListingTile } from '@/components/ListingTile'
-import { Filters, parseMarketplaceQuery } from '@/components/MarketplaceFilters'
+import { Filters, marketplaceParams, parseMarketplaceQuery } from '@/components/MarketplaceFilters'
 import { Pagination } from '@/components/Pagination'
 import { EmptyState, PageIntro, SegLinks } from '@/components/ui'
 import { getRepo } from '@/lib/data'
@@ -30,6 +31,7 @@ export default async function GameMarketplace({ params, searchParams }: Props) {
   if (!isGame(game)) notFound()
   const query = parseMarketplaceQuery(await searchParams, game)
   const result = await getRepo().marketplace(query)
+  if (pastLastPage(result.page, result.total, result.pageSize)) notFound()
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Marketplace', path: '/marketplace/' }, { name: GAME_NAMES[game], path: marketplacePath(game) }]} /></div>
@@ -39,14 +41,14 @@ export default async function GameMarketplace({ params, searchParams }: Props) {
           <Link href={sellPath()} className="btn btn-primary btn-sm" rel="nofollow">Sell a card</Link>
         </div>
       </PageIntro>
-      <div className="grid gap-10 lg:grid-cols-[264px_1fr]">
+      <div className="grid scroll-mt-24 gap-10 lg:grid-cols-[264px_1fr]" id="listings">
         <aside>
           <details className="lg:hidden"><summary className="btn btn-secondary w-full">Filters</summary><div className="mt-4"><Filters action={marketplacePath(game)} current={query} /></div></details>
           <div className="hidden lg:block"><Filters action={marketplacePath(game)} current={query} /></div>
         </aside>
         <div>
           {result.rows.length === 0 ? <EmptyState title="Nothing listed here yet." body="Be the first: list a card in minutes." action={<Link href={sellPath()} className="btn btn-secondary" rel="nofollow">Sell a card</Link>} /> : <div className="grid-tiles">{result.rows.map((l) => <ListingTile key={l.id} l={l} />)}</div>}
-          <Pagination basePath={marketplacePath(game)} page={result.page} total={result.total} pageSize={result.pageSize} />
+          <Pagination basePath={marketplacePath(game)} page={result.page} total={result.total} pageSize={result.pageSize} params={marketplaceParams(query, { withGame: false })} anchor="listings" noun="listings" />
           <div className="mt-8"><AntiScam /></div>
         </div>
       </div>

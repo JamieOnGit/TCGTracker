@@ -3,12 +3,14 @@ import { expect, test } from '@playwright/test'
 // Runs against demo data (no Supabase needed).
 test('home is server-rendered with ranked rows in the initial HTML', async ({ request }) => {
   const html = await (await request.get('/')).text()
-  expect(html).toContain('data-card-id="card-pokemon-en-199"')
+  expect(html).toMatch(/data-card-id="card-[a-z-]+-\d+"/)
+  // Ten rows a page: a given card is found by searching the rankings.
+  expect(await (await request.get('/?q=charizard')).text()).toContain('data-card-id="card-pokemon-en-199"')
   expect(html).toMatch(/The graded card market, measured/)
 })
 
 test('Buy button routes to the marketplace listings for the same card and grade, cheapest first', async ({ page }) => {
-  await page.goto('/?grade=psa-10')
+  await page.goto('/?grade=psa-10&q=charizard')
   const row = page.locator('tr[data-card-id="card-pokemon-en-199"][data-grade="psa-10"]')
   await row.locator('[data-buy="listings"]').click()
   await expect(page).toHaveURL(/\/marketplace\/pokemon\/en\/151\/199-charizard-ex\/\?sort=price-asc&grade=psa-10$/)
@@ -19,7 +21,7 @@ test('Buy button routes to the marketplace listings for the same card and grade,
 })
 
 test('a card with no listings offers eBay, Alert me and Sell', async ({ page }) => {
-  await page.goto('/?grade=psa-10')
+  await page.goto('/?grade=psa-10&q=charizard')
   const row = page.locator('tr[data-card-id="card-pokemon-jp-201"][data-grade="psa-10"]')
   const cell = row.locator('[data-buy="none"]')
   await expect(cell.getByRole('link', { name: 'Sell' })).toHaveAttribute('href', /card=card-pokemon-jp-201/)

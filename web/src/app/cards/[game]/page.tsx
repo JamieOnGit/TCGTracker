@@ -5,6 +5,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { fmtDate } from '@/components/Format'
 import { PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
+import { TABLE_PAGE_SIZE } from '@/lib/paging'
 import { buildMetadata } from '@/lib/seo/metadata'
 import { cardsPath, GAME_NAMES, isGame, LANGS, LANG_NAMES, marketCapPath, setPath } from '@/lib/seo/urls'
 
@@ -33,12 +34,12 @@ export default async function GameHub({ params }: Props) {
         <section key={l} className="pb-12" aria-labelledby={`h-${l}`}>
           <div className="flex items-baseline justify-between">
             <h2 id={`h-${l}`}>{LANG_NAMES[l]} sets</h2>
-            <Link href={cardsPath(game, l)} className="btn-ghost text-sm">View all</Link>
+            <Link href={cardsPath(game, l)} className="btn-ghost text-sm">View all {sets.filter((s) => s.lang === l).length} sets</Link>
           </div>
           <div className="table-wrap mt-4">
             <table className="dt">
               <thead><tr><th scope="col">Set</th><th scope="col">Code</th><th scope="col" className="n">Released</th></tr></thead>
-              <tbody>{sets.filter((s) => s.lang === l).map((s) => <tr key={s.id}><th scope="row"><Link href={setPath(s)} className="prose-link" style={{ textDecorationColor: 'transparent' }}>{s.name}</Link></th><td className="muted">{s.code}</td><td className="n">{fmtDate(s.releaseDate)}</td></tr>)}</tbody>
+              <tbody>{sets.filter((s) => s.lang === l).slice(0, TABLE_PAGE_SIZE).map((s) => <tr key={s.id}><th scope="row"><Link href={setPath(s)} className="prose-link" style={{ textDecorationColor: 'transparent' }}>{s.name}</Link></th><td className="muted">{s.code}</td><td className="n">{fmtDate(s.releaseDate)}</td></tr>)}</tbody>
             </table>
           </div>
         </section>

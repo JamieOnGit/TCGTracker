@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AccountHead, DemoNotice, QuotaMeter, StatusChip, UpgradePrompt } from '@/components/account/bits'
 import { ListingActions } from '@/components/account/ListingActions'
+import { Pagination } from '@/components/Pagination'
 import { EmptyState } from '@/components/ui'
+import { pageCount, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { pageNumber } from '@/lib/seo/metadata'
 import { fmtAud2, fmtDate, LangBadge } from '@/components/Format'
 import { getAccount, myListings } from '@/lib/account/data'
 import { audFromCents, gradeText, LISTING_TYPE_LABEL, listingActions, listingStatusChip } from '@/lib/account/format'
@@ -32,7 +35,9 @@ export default async function MyListings({ searchParams }: Props) {
   const acct = await getAccount()
   if (!acct) redirect('/login/?next=/account/listings/')
   const all = await myListings(acct.userId)
-  const rows = all.filter((l) => (status === 'all' ? l.status !== 'removed' : l.status === status))
+  const matching = all.filter((l) => (status === 'all' ? l.status !== 'removed' : l.status === status))
+  const page = Math.min(pageNumber(sp), pageCount(matching.length, TABLE_PAGE_SIZE))
+  const rows = slicePage(matching, page, TABLE_PAGE_SIZE)
   const blocked = acct.quota.used >= acct.quota.limit
 
   return (
@@ -115,6 +120,7 @@ export default async function MyListings({ searchParams }: Props) {
           </tbody>
         </table>
       )}
+      <Pagination basePath="/account/listings/" page={page} total={matching.length} pageSize={TABLE_PAGE_SIZE} params={{ status: status !== 'all' ? status : undefined }} noun="listings" />
     </div>
   )
 }

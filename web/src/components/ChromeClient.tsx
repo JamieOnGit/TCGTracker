@@ -67,10 +67,11 @@ export function AccountArea() {
   if (!state.loaded) return <span className="inline-block w-16" aria-hidden="true" />
   if (!state.signedIn)
     return (
-      <>
-        <Link href="/login/" className="nav-link hidden sm:inline">Sign in</Link>
-        <Link href="/premium/" className="btn btn-primary btn-sm hidden sm:inline-flex">Get alerts</Link>
-      </>
+      // The wrapper hides them on phones: .nav-link / .btn set their own display, which beats a utility class on the link.
+      <span className="hidden items-center gap-3 sm:flex">
+        <Link href="/login/" className="nav-link">Sign in</Link>
+        <Link href="/premium/" className="btn btn-primary btn-sm">Get alerts</Link>
+      </span>
     )
   return (
     <>
@@ -78,7 +79,7 @@ export function AccountArea() {
         <Bell size={18} strokeWidth={1.75} />
         {state.unread > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />}
       </Link>
-      <Link href="/account/" className="nav-link hidden sm:inline">Account</Link>
+      <span className="hidden sm:flex"><Link href="/account/" className="nav-link">Account</Link></span>
     </>
   )
 }

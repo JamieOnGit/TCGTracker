@@ -54,7 +54,8 @@ export function buildMetadata(input: PageSeoInput): Metadata {
   const index = !input.noindex && !filtered
   return {
     title: { absolute: title },
-    description: clampDescription(page > 1 ? `${input.description} Page ${page}.` : input.description),
+    // The page number leads so the length clamp can't cut it off (each page's description stays unique).
+    description: clampDescription(page > 1 ? `Page ${page}: ${input.description}` : input.description),
     alternates: { canonical: absoluteUrl(canonicalPath) },
     robots: index ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: {

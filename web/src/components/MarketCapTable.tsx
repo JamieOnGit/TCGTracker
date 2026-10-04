@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { getRepo, type MarketQuery, type MarketRow, type MarketSort } from '@/lib/data'
 import { resolveBuyButton } from '@/lib/domain/buyButton'
@@ -10,6 +11,7 @@ import { Sparkline } from './Charts'
 import { DataNotice } from './DataNotice'
 import { Change, fmtAud, fmtAudShort, fmtInt, gradeLabel, LangBadge } from './Format'
 import { Pagination } from './Pagination'
+import { pastLastPage, TABLE_PAGE_SIZE } from '@/lib/paging'
 import { SegLinks, Thumb } from './ui'
 
 const SORTS: MarketSort[] = ['market_cap', 'population', 'floor', 'change_7d', 'change_30d']
@@ -39,8 +41,8 @@ export function parseMarketQuery(sp: SearchParams, scope: { game?: Game; lang?: 
     gradeKey: grade && GRADE_OPTIONS.includes(grade) ? grade : primaryGrade,
     sort,
     order: one(sp.order) === 'asc' ? 'asc' : 'desc',
-    page: Math.max(1, Math.min(200, Number(one(sp.page)) || 1)),
-    pageSize: 50,
+    page: Math.max(1, Math.min(5000, Number(one(sp.page)) || 1)),
+    pageSize: TABLE_PAGE_SIZE,
     q: one(sp.q)?.trim().slice(0, 80) || undefined,
   }
 }
@@ -75,9 +77,23 @@ function BuyCell({ row, rules, stats }: { row: MarketRow; rules: Rules; stats: P
  * The rankings table (docs/research/06 §2.2, §4.7). Server-rendered so the
  * top rows are in the initial HTML for search engines and AI crawlers.
  */
-export async function MarketCapTable({ query, basePath, caption, showControls = true }: { query: MarketQuery; basePath: string; caption: string; showControls?: boolean }) {
+export async function MarketCapTable({
+  query,
+  basePath,
+  caption,
+  showControls = true,
+  paginate = true,
+}: {
+  query: MarketQuery
+  basePath: string
+  caption: string
+  showControls?: boolean
+  /** false: a top-N preview on a page whose ?page= belongs to another list. */
+  paginate?: boolean
+}) {
   const repo = getRepo()
   const [result, loaded] = await Promise.all([repo.marketCap(query), repo.getRules()])
+  if (paginate && pastLastPage(query.page, result.total, query.pageSize)) notFound()
   const primaryGrade = await effectivePrimaryGrade(loaded.primaryGrade)
   const rules = { ...loaded, primaryGrade }
   const gradeOptions = GRADE_OPTIONS.filter((g) => g !== 'raw' || primaryGrade === 'raw' || query.gradeKey === 'raw')
@@ -100,7 +116,7 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
   const showPop = query.gradeKey.startsWith('psa-') || query.gradeKey === 'all'
 
   return (
-    <section aria-labelledby="rankings-caption">
+    <section aria-labelledby="rankings-caption" id="rankings" className="scroll-mt-24">
       {showControls && (
         <div className="flex flex-wrap items-center gap-3 pb-4">
           <SegLinks
@@ -183,13 +199,20 @@ export async function MarketCapTable({ query, basePath, caption, showControls = 
         </table>
       </div>
       {result.rows.length === 0 && <p className="muted py-10 text-center">No cards match this view yet.</p>}
-      <Pagination
+      {paginate && <Pagination
         basePath={basePath}
         page={result.page}
         total={result.total}
         pageSize={result.pageSize}
-        params={Object.fromEntries(Object.entries({ grade: query.gradeKey !== rules.primaryGrade ? query.gradeKey : '', q: query.q ?? '' }).filter(([, v]) => v))}
-      />
+        params={{
+          grade: query.gradeKey !== rules.primaryGrade ? query.gradeKey : undefined,
+          q: query.q,
+          sort: query.sort !== 'market_cap' ? query.sort : undefined,
+          order: query.order === 'asc' ? 'asc' : undefined,
+        }}
+        anchor="rankings"
+        noun="cards"
+      />}
       <DataNotice
         asOf={result.asOf}
         demo={repo.isDemo}
