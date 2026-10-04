@@ -25,6 +25,7 @@ export const SETTING_VALIDATORS: Record<string, z.ZodType> = {
   'drops.price_drop_pct': z.number().int().min(1).max(90),
   'drops.suppress_above_rrp_pct': z.number().min(0).max(1000),
   'features.external_buy_fallback': z.boolean(),
+  'images.tcgplayer_fallback': z.boolean(),
   'ebay.enabled': z.boolean(),
   'ebay.affiliate_enabled': z.boolean(),
   'ebay.campaign_id': z.string().refine(validCampaignId, 'An EPN campaign id is 10 digits').nullable(),

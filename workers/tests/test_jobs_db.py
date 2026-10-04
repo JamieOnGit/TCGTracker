@@ -16,13 +16,19 @@ URL = os.environ.get("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL not set")
 
 
+def _clean(c):
+    c.rollback()
+    c.execute("delete from public.floor_prices; delete from public.market_cap_snapshots;")
+    c.execute("delete from public.population_snapshots; delete from public.price_points;")
+    c.commit()
+
+
 @pytest.fixture
 def conn():
     with psycopg.connect(URL, row_factory=dict_row) as c:
-        c.execute("delete from public.floor_prices; delete from public.market_cap_snapshots;")
-        c.execute("delete from public.population_snapshots; delete from public.price_points;")
-        c.commit()
+        _clean(c)
         yield c
+        _clean(c)  # leave nothing for the other suites' tests
 
 
 def _seed(conn, cards, *, without_population=()):

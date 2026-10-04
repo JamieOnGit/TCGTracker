@@ -1,0 +1,25 @@
+{
+ "data": [
+  {
+   "id": "sv3pt5",
+   "name": "151",
+   "ptcgoCode": "MEW",
+   "printedTotal": 165
+  },
+  {
+   "id": "sv3",
+   "name": "Obsidian Flames",
+   "ptcgoCode": "OBF",
+   "printedTotal": 197
+  },
+  {
+   "id": "mcd21",
+   "name": "McDonald's Collection 2021",
+   "printedTotal": 25
+  }
+ ],
+ "page": 1,
+ "pageSize": 250,
+ "count": 3,
+ "totalCount": 3
+}

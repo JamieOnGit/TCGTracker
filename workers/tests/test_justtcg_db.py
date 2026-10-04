@@ -41,6 +41,7 @@ def _cleanup(c):
     c.execute("delete from public.justtcg_sets")
     c.execute("delete from public.cards where auto_created")
     c.execute("delete from public.sets where auto_created")
+    c.execute("update public.cards set tcgplayer_id = null")
     c.execute("delete from public.fx_rates where source = 'test'")
     c.execute("delete from public.pipeline_runs where job = 'prices'")
     c.commit()
@@ -158,6 +159,17 @@ def test_a_run_links_matches_queues_and_stores_every_grader(conn, fixtures):
     assert nami["number"] == "OP05-777" and nami["name"] == "Nami" and nami["status"] == "created_card"
     assert _price(conn, nami["id"], "raw")["price_aud"] == D("0.38")
     assert stats["not_linked"] == 0
+
+    # Linked cards keep JustTCG's TCGplayer product id (the images job's exact fallback);
+    # queued records set nothing until an admin decides.
+    ids = {
+        r["id"]: r["tcgplayer_id"]
+        for r in conn.execute(
+            "select id::text as id, tcgplayer_id from public.cards where id in (%s, %s)",
+            (EN_LUFFY, EN_CHARIZARD),
+        )
+    }
+    assert ids == {EN_LUFFY: 512345, EN_CHARIZARD: None}
 
     sets = {(r["justtcg_set_id"], r["lang"]): r for r in conn.execute("select * from public.justtcg_sets")}
     assert (
@@ -412,3 +424,10 @@ def test_history_is_only_backfilled_for_cards_worth_the_minimum(conn, fixtures):
     finally:
         conn.execute("update public.site_settings set value = '10' where key = 'justtcg.history_min_aud'")
         conn.commit()
+
+
+def test_tcgplayer_ids_parse_strictly():
+    from tcgworkers.sources.pricing.justtcg_ingest import tcgplayer_id
+
+    assert tcgplayer_id("517045") == 517045 and tcgplayer_id(512345) == 512345
+    assert [tcgplayer_id(v) for v in (None, "", "0", "abc", "12a", True, "²", "1" * 16)] == [None] * 8
