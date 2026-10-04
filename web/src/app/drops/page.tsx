@@ -7,12 +7,14 @@ import { LiveDrops } from '@/components/LiveDrops'
 import { FilterBar } from '@/components/FilterBar'
 import { Pagination } from '@/components/Pagination'
 import { PageIntro } from '@/components/ui'
+import { UpcomingReleases } from '@/components/UpcomingReleases'
 import { getRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES, type AuState } from '@/lib/data/types'
 import { durationLabel, parseDropSource } from '@/lib/domain/drops'
 import { listingLang, parseLang, parseSearch, searchRows, searchText } from '@/lib/domain/search'
 import { countByStatus, dropStatus, FEED_SORT_LABEL, FEED_SORTS, parseGame, parseSlug, parseSort, parseStatus, sortDrops, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
 import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { todayAu } from '@/lib/releases'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, productsPath, scoutsPath, stockPath, storesPath } from '@/lib/seo/urls'
 
@@ -59,7 +61,8 @@ export default async function Drops({ searchParams }: Props) {
   const state = AU_STATES.find((st) => st === stateParam) as AuState | undefined
   const page = pageNumber(sp)
   const repo = getRepo()
-  const [retailers, rules, scouts] = await Promise.all([repo.retailers(), repo.getRules(), repo.scoutLeaderboard(30, 5)])
+  const today = todayAu()
+  const [retailers, rules, scouts, releases] = await Promise.all([repo.retailers(), repo.getRules(), repo.scoutLeaderboard(30, 5), repo.releases({ from: today })])
   const retailer = retailers.find((r) => r.slug === parseSlug(sp.retailer))?.slug
   const loaded = await repo.drops({ game, retailerSlug: retailer, state, source: legacy === 'monitor' ? 'monitor' : undefined, limit: FEED_LOAD })
   // Search and language narrow the feed first; the status counts are over what's left.
@@ -131,6 +134,7 @@ export default async function Drops({ searchParams }: Props) {
           {repo.isDemo && <p className="provenance">Preview data.</p>}
         </section>
         <aside className="grid content-start gap-10 pb-16 lg:py-24">
+          <UpcomingReleases rows={releases} today={today} />
           <section aria-labelledby="browse-h">
             <h2 id="browse-h" className="text-xl">Browse drops</h2>
             <LinkList label="Checked 24/7" links={monitored.map((r) => ({ href: dropsPath(r.slug), text: r.name }))} />

@@ -45,14 +45,14 @@ export default async function AdminReleases({ searchParams }: { searchParams: Pr
   ])
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST rows */
   const raw = (rows.data ?? []) as any[]
-  const list = raw.map((r) => ({ r: toRelease(r), setId: r.set_id as string | null, published: Boolean(r.published) }))
+  const list = raw.map((r) => ({ r: toRelease(r), setId: r.set_id as string | null, published: Boolean(r.published), auto: (r.external_key as string | null) !== null, locked: Boolean(r.locked) }))
   const editing = edit ? list.find((x) => x.r.id === edit) : null
   const setOptions = ((sets.data ?? []) as { id: string; name: string; code: string; game: string; lang: string }[]).map((s) => ({ id: s.id, game: s.game, label: `${s.name} (${s.code}, ${s.lang.toUpperCase()})` }))
   const retailers = (rets.data ?? []) as { slug: string; name: string }[]
 
   return (
     <>
-      <AdminHeader title="Releases" lead="The public release calendar (/releases/) and its .ics feed. Unpublished entries are only visible here. Members with a reminder are told the day before (exact dates only).">
+      <AdminHeader title="Releases" lead="The public release calendar (/releases/ and the Drops page) and its .ics feed. Australian dates fill in automatically every 6 hours from Bandai (One Piece, Oceania) and JB Hi-Fi pre-orders; editing an automatic entry locks it, and deleting one stops it coming back. Pokémon's official dates are added here by hand. Unpublished entries are only visible here. Members with a reminder are told the day before (exact dates only).">
         {editing && <Link className="btn btn-secondary btn-sm" href="/admin/releases/">New release</Link>}
       </AdminHeader>
 
@@ -77,12 +77,12 @@ export default async function AdminReleases({ searchParams }: { searchParams: Pr
               <caption className="sr-only">Release calendar entries</caption>
               <thead><tr><th scope="col">Date</th><th scope="col">Release</th><th scope="col">Kind</th><th scope="col">Confidence</th><th scope="col">Published</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
-                {list.map(({ r, published }) => (
+                {list.map(({ r, published, auto, locked }) => (
                   <tr key={r.id} aria-current={edit === r.id ? 'true' : undefined}>
                     <td className="nowrap">{dateLabel(r)}</td>
                     <td className="wrap">
                       <Link className="font-medium prose-link" href={`/admin/releases/?edit=${r.id}`}>{r.title}</Link>
-                      <p className="muted text-xs">{r.game === 'one-piece' ? 'One Piece' : 'Pokémon'} · {r.lang.toUpperCase()} · {r.products.length} {r.products.length === 1 ? 'product' : 'products'} · /{r.slug}/</p>
+                      <p className="muted text-xs">{r.game === 'one-piece' ? 'One Piece' : 'Pokémon'} · {r.lang.toUpperCase()} · {r.products.length} {r.products.length === 1 ? 'product' : 'products'} · /{r.slug}/{auto && <> · {locked ? `Edited (was automatic: ${r.sourceName ?? 'sync'})` : `Automatic: ${r.sourceName ?? 'sync'}`}</>}</p>
                     </td>
                     <td className="nowrap">{RELEASE_KINDS.find((k) => k.key === r.kind)?.label ?? r.kind}</td>
                     <td className="nowrap">{r.confidence}</td>
