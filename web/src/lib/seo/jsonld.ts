@@ -4,6 +4,9 @@
  */
 import { absoluteUrl, DEFAULT_OG_IMAGE, siteName, siteUrl } from './urls'
 
+/** Structured data needs absolute image URLs; our own images are site-relative. */
+const imageUrl = (src: string) => (src.startsWith('/') ? absoluteUrl(src) : src)
+
 type Thing = Record<string, unknown>
 const CTX = 'https://schema.org'
 
@@ -73,7 +76,7 @@ export function cardProduct(input: {
     productID: input.cardId,
     sku: input.sku,
     brand: { '@type': 'Brand', name: input.brand },
-    ...(input.image ? { image: input.image } : {}),
+    ...(input.image ? { image: imageUrl(input.image) } : {}),
     ...(input.values?.length
       ? { additionalProperty: input.values.map((v) => ({ '@type': 'PropertyValue', name: v.name, value: v.aud.toFixed(2), unitText: 'AUD' })) }
       : {}),
@@ -105,7 +108,7 @@ export function listingProduct(input: {
     '@type': 'Product',
     name: input.name,
     url: absoluteUrl(input.path),
-    ...(input.image ? { image: input.image } : {}),
+    ...(input.image ? { image: imageUrl(input.image) } : {}),
     offers: {
       '@type': 'Offer',
       priceCurrency: 'AUD',
@@ -200,7 +203,7 @@ export function releaseEvent(input: {
     eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
     location: { '@type': 'Place', name: 'Australian retailers', address: { '@type': 'PostalAddress', addressCountry: 'AU' } },
     organizer: { '@type': 'Organization', name: input.organizer },
-    ...(input.image ? { image: [input.image] } : {}),
+    ...(input.image ? { image: [imageUrl(input.image)] } : {}),
     inLanguage: 'en-AU',
   }
 }
@@ -235,7 +238,7 @@ export function sealedProductLd(input: {
     url: absoluteUrl(input.path),
     brand: { '@type': 'Brand', name: input.brand },
     category: input.category,
-    ...(input.image ? { image: input.image } : {}),
+    ...(input.image ? { image: imageUrl(input.image) } : {}),
     ...(priced.length
       ? {
           offers: {

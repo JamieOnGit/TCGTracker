@@ -18,7 +18,7 @@ The website is complete, but these parts are switched off until their services a
 | Phone and desktop push alerts | Push keys | 6 |
 | Premium A$12.99/month | Stripe | 8 |
 | eBay deal finder | eBay developer keys | 9b |
-| Card images | Scrydex (your decision) | 9c |
+| Card and sealed product images | Scrydex (import built; needs your keys) | 9c |
 | Discord Premium alerts | Discord webhook | 10 |
 | Outage alerts to your phone | Sentry and healthchecks.io | 11 |
 
@@ -42,7 +42,7 @@ The website is complete, but these parts are switched off until their services a
 | 8 | Stripe (Premium) | ☐ |
 | **9** | **JustTCG (card prices and history)** | ⏭ After the JustTCG pull request is merged (10 min) |
 | 9b | eBay developer keys (deal finder) | ☐ |
-| 9c | Card images (Scrydex) | ☐ Your decision |
+| 9c | Product images (Scrydex) | ⏭ Import built: subscribe and add 2 secrets (10 min) |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -539,15 +539,39 @@ This powers **/deals/**: graded cards on eBay Australia listed well under market
 2. Once approved, open **Campaigns** and copy the 10-digit campaign number.
 3. Paste it into **Admin → Settings → eBay** on the site. Deal and fallback links then earn commission.
 
-## Step 9c · Card images: decide, then Scrydex (≈10 min)
-Until this is done, cards show the styled holo placeholder. Neither The Pokémon Company nor Bandai licenses card images to other sites. Most TCG sites show scans anyway, with a "not affiliated" notice (details: `docs/research/03-catalogue-sources.md` §4).
-1. Decide, ideally with your lawyer in Step 14, whether to show card scans.
-2. If yes, subscribe at **https://scrydex.com/pricing**. **Starter** is US$29/month for 5,000 requests; **Growth** is US$99/month for 50,000. Start on Starter: Claude copies each image once to our own storage, so it doesn't use requests on every page view. Scrydex covers Pokémon EN + JP and One Piece (beta). Its docs say you're free to use the provided images in your app.
-3. In the Scrydex dashboard / **Account Hub**, create an **API key** and copy it together with your **Team ID**.
-4. Terminal (`workers` folder): `fly secrets set SCRYDEX_API_KEY='…' SCRYDEX_TEAM_ID='…'`.
-5. ✉️ Tell Claude: **"Scrydex ready"**. Claude then builds the image import: WebP copies in our own storage, an on/off switch per game in Admin, and a takedown process.
-6. One Piece Japanese has no licensable source. It keeps the placeholder and members' own photos.
-7. Sealed product images come from your affiliate feeds once approved (Step 13). They include images you're allowed to use.
+## Step 9c · Product images: Scrydex (≈10 min) ⏭ ready
+The image import is built. Until a product has a picture, it shows the TCGTracker default image (the logo on a soft tile), never a "coming soon" message. The free sources already run without Scrydex keys; Scrydex adds One Piece and fills the gaps.
+
+Where images come from, best first (a better source replaces a weaker one; an image you set by hand is never replaced):
+1. **Scrydex**: Pokémon (English and Japanese) and One Piece cards, and sealed products. Needs the keys below.
+2. **TCGdex** (free, no key): Pokémon cards Scrydex doesn't cover, English and Japanese.
+3. **The product's own store listing**: sealed products, from the photo on the store page we already track for that product.
+4. **A one-credit Scrydex search** for each card still missing, most valuable first (up to 300 a run).
+
+Every run reports coverage, overall and per game and language. **Admin → Images** shows the same figures and lists every product still on the default image, with a box to paste an image address and fix it by hand.
+
+What it fills in, every day:
+- **Cards**: Pokémon (English and Japanese) and One Piece. One Piece manga, parallel and alt-art prints only get an image when Scrydex has that exact print, never the base art.
+- **Sealed products**: booster boxes, packs, bundles, Elite Trainer Boxes and collections for both games.
+- An image you set by hand is never overwritten.
+
+Images load straight from Scrydex's image server, which Scrydex allows and which costs no credits. The import itself uses about 1,200 credits for the first full fill, then small daily top-ups for new sets. Each image shows "Image © The Pokémon Company" or "© Bandai" underneath. Card artwork belongs to those companies; check how you show it with your lawyer in Step 14.
+
+1. Subscribe at **https://scrydex.com/pricing**: **Starter**, US$29/month, 5,000 credits.
+2. In the Scrydex dashboard (**Account Hub**), create an **API key**. Copy it and your **Team ID**. Keep them out of the chat.
+3. In Terminal:
+   ```
+   cd ~/TCGTracker/workers
+   fly secrets set SCRYDEX_API_KEY='paste-key' SCRYDEX_TEAM_ID='paste-team-id'
+   ```
+   Fly restarts the workers by itself.
+4. Fill everything now rather than waiting for the daily run:
+   ```
+   fly ssh console -C "python -m tcgworkers.main --once images"
+   ```
+   It takes a few minutes. The last line starts `images:`; its `coverage` part shows the percentage of cards and sealed products with an image. Send Claude that line. The aim is 95% or more.
+5. If a run stops with `request budget used`, the next daily run carries on where it stopped. The cap per run is `images.scrydex_max_requests_per_run` (1,500).
+6. Store photos stay as a fallback for sealed products Scrydex doesn't have, when **Admin → Settings → Stock → Show retailer images** is on.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

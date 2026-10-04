@@ -4,7 +4,9 @@ import { can, canAccess, sectionsFor } from '@/lib/admin/access'
 describe('admin section access', () => {
   it('admins see every section', () => {
     expect(sectionsFor('admin').map((s) => s.key)).toContain('settings')
-    expect(sectionsFor('admin')).toHaveLength(13)
+    expect(sectionsFor('admin')).toHaveLength(14)
+    expect(canAccess('admin', 'images')).toBe(true)
+    expect(canAccess('moderator', 'images')).toBe(false)
   })
   it('moderators get listings, reports, users and sightings only (plus the overview)', () => {
     expect(sectionsFor('moderator').map((s) => s.key)).toEqual(['overview', 'listings', 'reports', 'users', 'sightings'])

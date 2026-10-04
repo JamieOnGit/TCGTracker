@@ -8,7 +8,7 @@ import { Faq } from '@/components/DropsCopy'
 import { fmtAud2, fmtDate } from '@/components/Format'
 import { JsonLd } from '@/components/JsonLd'
 import { NotifyButton } from '@/components/NotifyButton'
-import { PageIntro } from '@/components/ui'
+import { PageIntro, ProductPlaceholder } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { isInStock } from '@/lib/data/drops'
 import type { OfferRow, SealedProductRow } from '@/lib/data/types'
@@ -55,7 +55,7 @@ export default async function ProductPage({ params }: Props) {
   const [watchers, activity, releases, rules] = await Promise.all([repo.productWatchCount(p.id), repo.productDrops(p.id, 20), repo.releases({ game: p.game }), repo.getRules()])
   // The release calendar entry for this product's set, when we have one.
   const release = p.set ? releases.find((r) => r.set && r.set.slug === p.set!.slug && r.lang === p.lang) ?? null : null
-  const image = rules.stockShowRetailerImages ? p.offers.find((o) => o.imageUrl)?.imageUrl ?? null : null
+  const image = p.imageUrl ?? (rules.stockShowRetailerImages ? p.offers.find((o) => o.imageUrl)?.imageUrl ?? null : null)
   const faqs = productFaqs(p)
   const heading = productHeading(p)
 
@@ -71,12 +71,15 @@ export default async function ProductPage({ params }: Props) {
             <p className="muted mt-2 max-w-[var(--measure)] text-xs">Notify me alerts you when this product is back in stock, opens for pre-order or drops in price at any store we watch: instantly with Premium, 5 minutes later on Free.</p>
           </div>
         </PageIntro>
-        <div className="hidden md:block md:pt-16">
+        <div className={image ? 'mx-auto w-full max-w-[280px] pb-6 md:max-w-none md:pt-16' : 'hidden md:block md:pt-16'}>
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- store product photo, shown only when the setting allows it
-            <img src={image} alt={heading} className="thumb w-full" style={{ aspectRatio: '1 / 1' }} />
+            <figure>
+              {/* eslint-disable-next-line @next/next/no-img-element -- catalogue image (Scrydex) or a store photo */}
+              <img src={image} alt={heading} className="thumb w-full" style={{ aspectRatio: '1 / 1', objectFit: 'contain', background: '#fff' }} data-product-image="" />
+              <figcaption className="subtle mt-2 text-xs">Image © {p.game === 'pokemon' ? 'The Pokémon Company' : 'Bandai'}</figcaption>
+            </figure>
           ) : (
-            <div className="card-placeholder" style={{ aspectRatio: '1 / 1' }} role="img" aria-label={`${heading} (image coming soon)`}>{productTypeLabel(p.type)}</div>
+            <ProductPlaceholder label={heading} ratio="1 / 1" />
           )}
         </div>
       </div>

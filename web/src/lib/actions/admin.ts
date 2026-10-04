@@ -495,3 +495,22 @@ export async function saveStoreSettings(slug: string, form: FormData): Promise<A
   revalidatePath('/drops/stores/')
   return error ? { ok: false, error: friendlyError(error.message) } : { ok: true, message: adapter === 'none' && cur.enabled ? 'Saved. Monitoring is off: this store has no adapter.' : 'Saved.' }
 }
+
+const imageInput = z.object({
+  kind: z.enum(['card', 'sealed']),
+  id: z.string().uuid(),
+  url: z.union([z.literal(''), z.string().url().startsWith('https://').max(1000)]),
+})
+
+/** Sets a product's image by hand (never replaced by the automatic import), or clears it back to automatic. */
+export async function setProductImage(input: unknown): Promise<ActionResult> {
+  const s = await staff([])
+  if (!s) return { ok: false, error: 'Admins only.' }
+  const parsed = imageInput.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'Use an https:// image address.' }
+  const { kind, id, url } = parsed.data
+  const table = kind === 'card' ? 'cards' : 'sealed_products'
+  const { error } = await s.sb.from(table).update(url ? { image_url: url, image_source: 'manual' } : { image_url: null, image_source: null }).eq('id', id)
+  revalidatePath('/admin/images/')
+  return error ? { ok: false, error: friendlyError(error.message) } : { ok: true, message: url ? 'Saved. The import will never replace it.' : 'Cleared: the import fills it next run.' }
+}

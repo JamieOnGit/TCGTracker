@@ -6,28 +6,30 @@ import { GAME_NAMES, productPath } from '@/lib/seo/urls'
 import { LangBadge, fmtAud2 } from './Format'
 import { NotifyButton } from './NotifyButton'
 import { RetailerMark } from '@/components/RetailerMark'
+import { ProductPlaceholder } from '@/components/ui'
 
 /**
  * A sealed product in a stock list: lowest live price against RRP, where it is
  * in stock (store chips link out to the store), last change and Notify me.
- * Store photos only when `stock.show_retailer_images` is on; otherwise the
- * typographic placeholder.
+ * The catalogue image (Scrydex) when we have one, else a store photo when
+ * `stock.show_retailer_images` is on, else the typographic placeholder.
  */
 export function ProductCard({ p, showImages = false, headingLevel = 3 }: { p: SealedProductRow; showImages?: boolean; headingLevel?: 2 | 3 }) {
   const live = p.offers.filter((o) => isInStock(o.availability) || o.availability === 'preorder')
   const low = lowestLivePrice(p)
   const delta = rrpDeltaLabel(low, p.rrpAud)
-  const image = showImages ? p.offers.find((o) => o.imageUrl)?.imageUrl ?? null : null
+  // The catalogue image (Scrydex) first; a store's own photo only when the setting allows it.
+  const image = p.imageUrl ?? (showImages ? p.offers.find((o) => o.imageUrl)?.imageUrl ?? null : null)
   const H = headingLevel === 2 ? 'h2' : 'h3'
   const path = productPath(p)
   return (
     <article className="grid content-start gap-3 border-t pt-4" style={{ borderColor: 'var(--line)' }} data-product={p.slug} aria-labelledby={`p-${p.id}`}>
       <Link href={path} tabIndex={-1} aria-hidden="true" className="block">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- store product photos, shown only when the setting allows it
-          <img src={image} alt="" className="thumb w-full" style={{ aspectRatio: '4 / 3' }} loading="lazy" decoding="async" />
+          // eslint-disable-next-line @next/next/no-img-element -- catalogue images (Scrydex) or store product photos
+          <img src={image} alt="" className="thumb w-full" style={{ aspectRatio: '4 / 3', objectFit: 'contain', background: '#fff' }} loading="lazy" decoding="async" />
         ) : (
-          <div className="card-placeholder" style={{ aspectRatio: '4 / 3', padding: '8%' }}>{productTypeLabel(p.type)}</div>
+          <ProductPlaceholder label={p.name} ratio="4 / 3" />
         )}
       </Link>
       <div>

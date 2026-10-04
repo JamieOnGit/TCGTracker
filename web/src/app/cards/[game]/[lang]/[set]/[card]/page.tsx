@@ -95,6 +95,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           <div className="well lg:sticky lg:top-[calc(var(--header-h)+24px)]" style={{ padding: 48 }}>
             <div className="w-full max-w-[320px]">
               <CardImage src={card.imageUrl} alt={`${card.name} ${number} ${card.setName} ${card.lang === 'jp' ? 'Japanese' : 'English'} card`} name={card.name} />
+              {card.imageUrl && <p className="subtle mt-2 text-xs">Image © {card.game === 'pokemon' ? 'The Pokémon Company' : 'Bandai'}</p>}
             </div>
           </div>
         </div>

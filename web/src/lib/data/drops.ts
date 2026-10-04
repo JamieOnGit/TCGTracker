@@ -96,7 +96,7 @@ export function sortReleases(rows: ReleaseRow[]): ReleaseRow[] {
 
 /** Select for product pages and the in-stock list: a sealed product with every store's listing. */
 export const SEALED_SELECT =
-  'id,game,lang,slug,name,type,rrp_aud,release_date,updated_at,sets(slug,name),' +
+  'id,game,lang,slug,name,type,rrp_aud,release_date,updated_at,image_url,sets(slug,name),' +
   'retail_products(title,url,image_url,current_availability,current_price_aud,last_change_at,is_marketplace_seller,retailers!inner(slug,name,enabled))'
 
 const IN_STOCK: Availability[] = ['in_stock_online', 'in_stock_cnc', 'in_stock_both']
@@ -158,6 +158,7 @@ export function toSealedProduct(r: any): SealedProductRow {
     type: r.type,
     rrpAud: r.rrp_aud === null || r.rrp_aud === undefined ? null : Number(r.rrp_aud),
     releaseDate: r.release_date ?? null,
+    imageUrl: r.image_url ?? null,
     set: r.sets ? { slug: r.sets.slug, name: r.sets.name } : null,
     offers,
     inStockCount: inStock.length,

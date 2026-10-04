@@ -1,0 +1,30 @@
+{
+ "data": [
+  {
+   "id": "sv3pt5",
+   "name": "151",
+   "series": "Scarlet & Violet",
+   "language": "English",
+   "language_code": "EN",
+   "release_date": "2023/09/22"
+  },
+  {
+   "id": "sv2a_ja",
+   "name": "Pok\u00e9mon Card 151",
+   "series": "Scarlet & Violet",
+   "language": "Japanese",
+   "language_code": "JA",
+   "release_date": "2023/06/16"
+  },
+  {
+   "id": "zh1",
+   "name": "Chinese Set",
+   "language": "Chinese",
+   "language_code": "ZH",
+   "release_date": "2023/01/01"
+  }
+ ],
+ "page": 1,
+ "pageSize": 100,
+ "totalCount": 3
+}

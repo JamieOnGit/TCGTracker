@@ -21,6 +21,7 @@ export type SectionKey =
   | 'news'
   | 'sightings'
   | 'releases'
+  | 'images'
 
 export interface Section {
   key: SectionKey
@@ -36,6 +37,7 @@ export const SECTIONS: Section[] = [
   { key: 'users', label: 'Users', href: '/admin/users/', roles: ['admin', 'moderator'] },
   { key: 'sightings', label: 'Sightings', href: '/admin/sightings/', roles: ['admin', 'moderator'] },
   { key: 'mapping', label: 'Card mapping', href: '/admin/mapping/', roles: ['admin'] },
+  { key: 'images', label: 'Images', href: '/admin/images/', roles: ['admin'] },
   { key: 'drops', label: 'Drops', href: '/admin/drops/', roles: ['admin'] },
   { key: 'emails', label: 'Emails', href: '/admin/emails/', roles: ['admin'] },
   { key: 'subscriptions', label: 'Subscriptions', href: '/admin/subscriptions/', roles: ['admin'] },

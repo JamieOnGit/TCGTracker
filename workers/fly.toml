@@ -4,7 +4,7 @@
 #   fly launch --no-deploy --copy-config --name tcgtracker-workers --region syd
 #   fly secrets set DATABASE_URL=... EMAIL_PROVIDER=resend RESEND_API_KEY=... \
 #       ADMIN_ALERT_EMAIL=... HEALTHCHECK_URL=https://hc-ping.com/<uuid> \
-#       DISCORD_DROPS_WEBHOOK_URL=... SENTRY_DSN=... JUSTTCG_API_KEY=... \
+#       DISCORD_DROPS_WEBHOOK_URL=... SENTRY_DSN=... JUSTTCG_API_KEY=... SCRYDEX_API_KEY=... SCRYDEX_TEAM_ID=... \
 #       SUPABASE_URL=https://<ref>.supabase.co VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:hello@tcgtracker.com.au \
 #       EBAY_CLIENT_ID=... EBAY_CLIENT_SECRET=...
 #   (JB Hi-Fi's Algolia key is discovered at runtime; JB_ALGOLIA_* are optional.)

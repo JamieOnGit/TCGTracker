@@ -61,6 +61,9 @@ class Env:
     # PriceCharting (tcgworkers.sources.pricing.pricecharting).
     # JustTCG (tcgworkers.sources.pricing.justtcg): the card price source.
     justtcg_api_key: str | None = None
+    # Scrydex (tcgworkers.sources.images.scrydex): card and sealed-product images.
+    scrydex_api_key: str | None = None
+    scrydex_team_id: str | None = None
     pricecharting_token: str | None = None
     pricecharting_csv_url_template: str | None = None
 
@@ -100,6 +103,8 @@ class Env:
             admin_alert_email=e.get("ADMIN_ALERT_EMAIL") or None,
             healthcheck_url=e.get("HEALTHCHECK_URL") or None,
             justtcg_api_key=e.get("JUSTTCG_API_KEY") or None,
+            scrydex_api_key=e.get("SCRYDEX_API_KEY") or None,
+            scrydex_team_id=e.get("SCRYDEX_TEAM_ID") or None,
             pricecharting_token=e.get("PRICECHARTING_TOKEN") or None,
             pricecharting_csv_url_template=e.get("PRICECHARTING_CSV_URL_TEMPLATE") or None,
         )
