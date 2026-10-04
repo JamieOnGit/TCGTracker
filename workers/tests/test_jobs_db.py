@@ -16,13 +16,19 @@ URL = os.environ.get("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL not set")
 
 
+def _clean(c):
+    c.rollback()
+    c.execute("delete from public.floor_prices; delete from public.market_cap_snapshots;")
+    c.execute("delete from public.population_snapshots; delete from public.price_points;")
+    c.commit()
+
+
 @pytest.fixture
 def conn():
     with psycopg.connect(URL, row_factory=dict_row) as c:
-        c.execute("delete from public.floor_prices; delete from public.market_cap_snapshots;")
-        c.execute("delete from public.population_snapshots; delete from public.price_points;")
-        c.commit()
+        _clean(c)
         yield c
+        _clean(c)  # leave nothing for the other suites' tests
 
 
 def _seed(conn, cards, *, without_population=()):
@@ -160,3 +166,45 @@ def test_listing_expiry_warning_is_queued_once_per_expiry(conn):
         conn.execute("delete from public.email_outbox where template = 'listing_expiring'")
         conn.execute("delete from public.notifications where type = 'listing_expiring'")
         conn.commit()
+
+
+def test_cheap_cards_are_ranked_without_daily_snapshots_and_old_snapshots_thin_to_weekly(conn):
+    cards = _cards(conn)
+    _seed(conn, cards)
+    cheap = cards["jppokemon"]
+    conn.execute("update public.price_points set price_aud = 2 where card_id = %s", (cheap,))
+    # 70 days of daily history for another card: older than 60 days keeps Mondays only.
+    conn.execute(
+        """insert into public.market_cap_snapshots (card_id, grade_key, date, floor_aud, basis)
+           select %s, 'psa-10', d::date, 1000, 'external_ask'
+             from generate_series(current_date - 70, current_date - 1, interval '1 day') d""",
+        (cards["enone-piece"],),
+    )
+    conn.commit()
+
+    refresh_floors(conn, "test")
+    snapshot_market_caps(conn, "test")
+    conn.commit()
+
+    # Under market.snapshot_min_aud (A$5): no snapshot, but still ranked from its current floor.
+    assert not conn.execute(
+        "select 1 from public.market_cap_snapshots where card_id = %s", (cheap,)
+    ).fetchone()
+    ranked = conn.execute(
+        "select floor_aud from public.market_cap_rankings where card_id = %s and grade_key = 'psa-10'",
+        (cheap,),
+    ).fetchone()
+    assert ranked["floor_aud"] == D("2.00")
+
+    old = conn.execute(
+        """select date from public.market_cap_snapshots
+            where card_id = %s and date < (now() at time zone 'Australia/Melbourne')::date - 60""",
+        (cards["enone-piece"],),
+    ).fetchall()
+    assert old and all(r["date"].isoweekday() == 1 for r in old)
+    recent = conn.execute(
+        """select count(*) as n from public.market_cap_snapshots
+            where card_id = %s and date >= (now() at time zone 'Australia/Melbourne')::date - 60""",
+        (cards["enone-piece"],),
+    ).fetchone()
+    assert recent["n"] >= 60  # the last 60 days stay daily

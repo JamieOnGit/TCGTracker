@@ -36,7 +36,7 @@ export interface SitemapEntry {
   lastmod?: string | null
 }
 
-export const SITEMAP_TYPES = ['static', 'drops', 'products', 'releases', 'guides', 'sets', 'cards', 'listings', 'news'] as const
+export const SITEMAP_TYPES = ['static', 'drops', 'products', 'releases', 'guides', 'sets', 'listings', 'news'] as const
 export type SitemapType = (typeof SITEMAP_TYPES)[number]
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -139,14 +139,6 @@ export async function entriesFor(type: SitemapType): Promise<SitemapEntry[]> {
         { path: marketCapPath(s.game, s.lang, s.slug), lastmod: s.updatedAt },
       ])
     }
-    case 'cards': {
-      const sets = await repo.listSets()
-      const cards = (await Promise.all(sets.map((s) => repo.listCardsInSet(s.id)))).flat()
-      return cards.flatMap((c) => [
-        { path: cardPath(c), lastmod: c.updatedAt },
-        { path: cardMarketplacePath(c), lastmod: c.updatedAt },
-      ])
-    }
     case 'listings': {
       const res = await repo.marketplace({ sort: 'newest', page: 1, pageSize: 45000 })
       return res.rows.map((l) => ({ path: listingPath(l.id, l.title), lastmod: l.approvedAt }))
@@ -156,6 +148,32 @@ export async function entriesFor(type: SitemapType): Promise<SitemapEntry[]> {
       return articles.map((a) => ({ path: articlePath(new Date(a.publishedAt), a.slug), lastmod: a.updatedAt }))
     }
   }
+}
+
+/** Cards per sitemap file: each card adds its page, plus its marketplace page
+ * when it has active listings, so a file stays under Google's 50,000 addresses. */
+export const CARDS_PER_SITEMAP = 20_000
+
+/** The card sitemap files (cards-1.xml, cards-2.xml...) for the sitemap index. */
+export async function cardSitemapFiles(): Promise<{ path: string; lastmod: null }[]> {
+  const count = await getRepo().sitemapCardCount()
+  const files = Math.max(1, Math.ceil(count / CARDS_PER_SITEMAP))
+  return Array.from({ length: files }, (_, i) => ({ path: `/sitemaps/cards-${i + 1}.xml`, lastmod: null }))
+}
+
+/** One card sitemap file (1-based), or null past the last one. A card's
+ * marketplace page is only listed while it has active listings: an empty one
+ * is noindex (thin content). */
+export async function cardEntries(file: number): Promise<SitemapEntry[] | null> {
+  const repo = getRepo()
+  if (!Number.isInteger(file) || file < 1) return null
+  const count = await repo.sitemapCardCount()
+  if (file > Math.max(1, Math.ceil(count / CARDS_PER_SITEMAP))) return null
+  const cards = await repo.sitemapCards((file - 1) * CARDS_PER_SITEMAP, CARDS_PER_SITEMAP)
+  return cards.flatMap((c) => [
+    { path: cardPath(c), lastmod: c.updatedAt },
+    ...(c.listed ? [{ path: cardMarketplacePath(c), lastmod: c.updatedAt }] : []),
+  ])
 }
 
 export async function lastmodFor(entries: SitemapEntry[]): Promise<string | null> {

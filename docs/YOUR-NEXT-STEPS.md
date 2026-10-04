@@ -43,6 +43,7 @@ The website is complete, but these parts are switched off until their services a
 | **9** | **JustTCG (card prices and history)** | ⏭ After the JustTCG pull request is merged (10 min) |
 | 9b | eBay developer keys (deal finder) | ☐ |
 | 9c | Product images (free sources, 100% aim) | ⏭ After the image-coverage PR is merged: **Actions → Deploy database**, then run prices and images (5 min) |
+| **9d** | **Every card in every set** | ⏭ After the full-catalogue PR is merged: **Actions → Deploy database**, refresh all sets, run prices (5 min). Move Supabase to Pro before launch. |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -575,6 +576,30 @@ Each image shows "Image © The Pokémon Company" or "© Bandai" underneath. Card
    The last line starts `images:`. Send Claude its `coverage` and `missing_cards` parts.
 
 **Optional: Scrydex.** Only if you want its images ahead of the free ones. Subscribe at **https://scrydex.com/pricing** (Starter, US$29/month). Create an **API key** in its Account Hub and copy your **Team ID**. Keep both out of the chat. Then run `fly secrets set SCRYDEX_API_KEY='paste-key' SCRYDEX_TEAM_ID='paste-team-id'` in the `workers` folder. If a run stops with `request budget used`, the next daily run carries on.
+
+## Step 9d · Every card in every set (≈5 min) ⏭ after the full-catalogue PR is merged
+**Why cards were missing:** the JustTCG import only added a card once it had a *graded* sale (PSA, BGS...). A brand-new set, such as the 30th Celebration with #034/103, has almost none yet. On top of that, a new card that shared its number with any other set's card (nearly all of them do) went to the review queue instead of onto the site.
+
+**Now:** every card JustTCG lists is added, graded or not. Only a real look-alike goes to **Admin → Mapping**: same number, same name and the same set size under another set name. Expect tens of thousands of cards (English, Japanese and One Piece) over the first day of price imports.
+
+**Keeping the database small** (a daily copy of every A$0.20 common would fill it):
+- Every priced card is ranked and has a page.
+- Value charts and 24h/7d/30d change are kept for cards worth **A$5+**.
+- A year of past prices is backfilled for cards worth **A$10+**.
+- History older than 60 days keeps one point a week.
+- All three are in **Admin → Settings → Market**.
+
+**Search engines:** card pages are listed in sitemap files of 20,000 cards each (`/sitemaps/cards-1.xml`, `-2`...). A card's "for sale" page is only indexed once someone lists that card; until then it would be an empty page per card.
+
+**After merging:**
+1. **GitHub → Actions → Deploy database.**
+2. Bring every set in now instead of over the next 20 hours. Paste in the **SQL Editor** (Supabase), then **Run**:
+   ```
+   update public.justtcg_sets set refreshed_at = null;
+   ```
+   Then in Terminal (`workers` folder): `fly ssh console -C "python -m tcgworkers.main --once prices"`. Each run fetches as many sets as its request budget allows (2,500 requests ≈ 1,200 sets). Run it again if the last line shows `sets_remaining` above 0.
+3. Run the images job (Step 9c) so the new cards get pictures. The first full fill can take a few daily runs.
+4. **Supabase plan:** the free plan holds 500 MB. A full catalogue with price history needs more within a few months. Move to **Pro** (US$25/month, 8 GB, daily backups) before launch: Supabase → **Organization → Billing**. Check usage any time under **Reports → Database**.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

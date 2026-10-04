@@ -77,6 +77,7 @@ class HistoryStats:
     written: int = 0
     no_fx: int = 0
     snapshots: int = 0
+    skipped_cheap: int = 0  # prices under justtcg.history_min_aud: no backfill
 
 
 class JtIngestor(CatalogueIngestor):
@@ -84,9 +85,10 @@ class JtIngestor(CatalogueIngestor):
     settings_prefix = "justtcg"
     set_code_prefix = "jt-"
 
-    def __init__(self, conn: Conn, **kw: Any) -> None:
+    def __init__(self, conn: Conn, *, history_min_aud: Decimal = Decimal(0), **kw: Any) -> None:
         super().__init__(conn, **kw)
         self.history = HistoryStats()
+        self.history_min_aud = history_min_aud
 
     def load(self) -> None:
         self.jt_sets: dict[tuple[str, str], _JtSet] = {}
@@ -173,6 +175,9 @@ class JtIngestor(CatalogueIngestor):
                 ref = f"{rec.external_id}:{key}"
                 rows.append((card_id, p.grader, p.grade, p.price_usd, price_aud, ref, None))
                 if fx_history is None:
+                    continue
+                if price_aud < self.history_min_aud:
+                    self.history.skipped_cheap += 1
                     continue
                 for t, usd in p.history:
                     day = t.date()

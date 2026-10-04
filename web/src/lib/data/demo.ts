@@ -316,6 +316,15 @@ export const demoRepository: Repository = {
   async listCardsInSet(setId) {
     return CARDS.filter((c) => c.setId === setId)
   },
+  async sitemapCardCount() {
+    return CARDS.length
+  },
+  async sitemapCards(offset, limit) {
+    return [...CARDS]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .slice(offset, offset + limit)
+      .map((c) => ({ id: c.id, game: c.game, lang: c.lang, setSlug: c.setSlug, slug: c.slug, updatedAt: c.updatedAt, listed: LISTINGS.some((l) => l.cardId === c.id && l.status === 'active') }))
+  },
   async getCard(game, lang, setSlug, cardSlug) {
     return CARDS.find((c) => c.game === game && c.lang === lang && c.setSlug === setSlug && c.slug === cardSlug) ?? null
   },
