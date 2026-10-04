@@ -67,7 +67,7 @@ function ScoutTable({ rows, caption }: { rows: ScoutRow[]; caption: string }) {
 /** How community sightings work, the rules, and the public leaderboards. */
 export default async function Scouts() {
   const repo = getRepo()
-  const [rules, month, year] = await Promise.all([repo.getRules(), repo.scoutLeaderboard(30, 10), repo.scoutLeaderboard(365, 20)])
+  const [rules, month, year] = await Promise.all([repo.getRules(), repo.scoutLeaderboard(30, 10), repo.scoutLeaderboard(365, 10)])
   const s = rules.sightings
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
   return (

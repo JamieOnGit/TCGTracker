@@ -4,17 +4,19 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
 import { JsonLd } from '@/components/JsonLd'
+import { Pagination } from '@/components/Pagination'
 import { ProductCard } from '@/components/ProductCard'
 import { FilterBar } from '@/components/FilterBar'
 import { EmptyState, PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
 import { durationLabel } from '@/lib/domain/drops'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { parseLang, parseSearch, searchRows, searchText, sortProducts } from '@/lib/domain/search'
 import { absoluteTime, feedHref, intervalLabel, parseGame, parseSlug, relativeTime, sortStoresByStock, stockTotals, storeCoverage } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
-import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
+import { GRID_PAGE_SIZE, pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, stockPath, storesPath } from '@/lib/seo/urls'
 import { RetailerMark } from '@/components/RetailerMark'
 
@@ -55,6 +57,9 @@ export default async function StockHub({ searchParams }: Props) {
   const sightingsOnly = overview.stores.filter((s) => s.listings === 0).sort((a, b) => a.name.localeCompare(b.name))
   const matches = searching ? sortProducts(searchRows(products, query, (p) => searchText(p.name, p.set?.name, p.type.replace(/-/g, ' '))).filter((p) => !lang || p.lang === lang), 'recommended') : []
   const mostAvailable = sortProducts(products, 'recommended').slice(0, 9)
+  const page = pageNumber(sp)
+  if (pastLastPage(page, tracked.length, TABLE_PAGE_SIZE)) notFound()
+  const storeRows = slicePage(tracked, page, TABLE_PAGE_SIZE)
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
   const gameLabel = game ? GAME_NAMES[game] : 'Pokémon and One Piece'
 
@@ -122,16 +127,16 @@ export default async function StockHub({ searchParams }: Props) {
             <EmptyState title="Nothing in stock matches" body="Try fewer words, or * as a wildcard (e.g. char*ex). Set a Notify me on a product page and we’ll tell you when it lands." />
           ) : (
             <div className="mt-6 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-              {matches.slice(0, 30).map((p) => <ProductCard key={p.id} p={p} showImages={rules.stockShowRetailerImages} />)}
+              {matches.slice(0, GRID_PAGE_SIZE).map((p) => <ProductCard key={p.id} p={p} showImages={rules.stockShowRetailerImages} />)}
             </div>
           )}
-          {matches.length > 30 && (
+          {matches.length > GRID_PAGE_SIZE && (
             <p className="mt-6 text-sm"><Link href={feedHref(inStockPath(), { q: query, game, lang })} className="prose-link">All {matches.length} matching products</Link></p>
           )}
         </section>
       )}
 
-      <section className="section-tight" aria-labelledby="by-store-h">
+      <section className="section-tight scroll-mt-24" aria-labelledby="by-store-h" id="by-store">
         <h2 id="by-store-h">Stock by store</h2>
         <p className="muted mt-2 text-sm">Pokémon and One Piece listings each store has online, live. Open a store for every listing, its price and when it last changed.</p>
         {tracked.length === 0 ? (
@@ -151,7 +156,7 @@ export default async function StockHub({ searchParams }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {tracked.map((s) => {
+                {storeRows.map((s) => {
                   const c = storeCoverage(s, now)
                   return (
                     <tr key={s.slug} data-in-stock={s.inStock > 0 ? 'yes' : 'no'}>
@@ -173,6 +178,7 @@ export default async function StockHub({ searchParams }: Props) {
             </table>
           </div>
         )}
+        <Pagination basePath={stockPath()} page={page} total={tracked.length} pageSize={TABLE_PAGE_SIZE} params={{ q: query, game, lang }} anchor="by-store" noun="stores" />
         {sightingsOnly.length > 0 && (
           <p className="muted mt-4 text-sm">
             Covered by member sightings:{' '}

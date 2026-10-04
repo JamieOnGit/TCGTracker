@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import type { ReleaseRow, SetRow } from '@/lib/data/types'
+import { TABLE_PAGE_SIZE } from '@/lib/paging'
 import { CONFIDENCE_LABEL, formatReleaseDateShort, KIND_LABEL } from '@/lib/releases'
 import { GAME_NAMES, releasePath, setPath } from '@/lib/seo/urls'
 
@@ -69,5 +71,20 @@ export function SetDateTable({ sets, caption, showGame }: { sets: SetRow[]; capt
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** A long table: the first rows, then the rest behind "Show N more" (still in
+ * the HTML, so every row stays crawlable without a ?page= duplicate). */
+export function Collapsed<T>({ rows, render, noun }: { rows: T[]; render: (rows: T[]) => ReactNode; noun: string }) {
+  if (rows.length <= TABLE_PAGE_SIZE) return <>{render(rows)}</>
+  return (
+    <>
+      {render(rows.slice(0, TABLE_PAGE_SIZE))}
+      <details className="more mt-2">
+        <summary className="btn btn-secondary btn-sm">Show {rows.length - TABLE_PAGE_SIZE} more {noun}</summary>
+        {render(rows.slice(TABLE_PAGE_SIZE))}
+      </details>
+    </>
   )
 }

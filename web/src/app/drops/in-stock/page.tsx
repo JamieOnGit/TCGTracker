@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { Pagination } from '@/components/Pagination'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { JsonLd } from '@/components/JsonLd'
 import { ProductCard } from '@/components/ProductCard'
@@ -10,7 +12,8 @@ import { isInStock } from '@/lib/data/drops'
 import { parseLang, parseProductSort, parseSearch, parseTier, PRODUCT_SORT_LABEL, PRODUCT_SORTS, productTier, searchRows, searchText, sortProducts, TYPE_TIERS } from '@/lib/domain/search'
 import { parseGame, parseSlug } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
-import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
+import { GRID_PAGE_SIZE, pastLastPage, slicePage } from '@/lib/paging'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { dropsPath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, productPath, productsPath, stockPath, storesPath } from '@/lib/seo/urls'
 import type { SealedProductRow } from '@/lib/data/types'
 
@@ -50,6 +53,9 @@ export default async function InStock({ searchParams }: Props) {
       (!retailer || p.offers.some((o) => o.retailerSlug === retailer && live(o))),
   )
   const rows = sortProducts(filtered, sort)
+  const page = pageNumber(sp)
+  if (pastLastPage(page, rows.length, GRID_PAGE_SIZE)) notFound()
+  const shown = slicePage(rows, page, GRID_PAGE_SIZE)
   const storeName = retailer ? stores.get(retailer) : undefined
 
   return (
@@ -82,15 +88,16 @@ export default async function InStock({ searchParams }: Props) {
         </div>
       </PageIntro>
 
-      <section className="pb-16" aria-labelledby="list-h">
+      <section className="scroll-mt-24 pb-16" aria-labelledby="list-h" id="products">
         <h2 id="list-h" className="sr-only">{storeName ? `In stock at ${storeName}` : 'Products in stock'}</h2>
         {rows.length === 0 ? (
           <EmptyState title={query || lang || tier !== undefined || retailer ? 'Nothing matches these filters' : 'Nothing in stock right now'} body="Stock comes and goes within minutes. Set a Notify me on a product, or turn on drop alerts, and we’ll tell you when it lands." action={<Link href={productsPath()} className="btn btn-secondary btn-sm">Browse all products</Link>} />
         ) : (
           <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((p) => <ProductCard key={p.id} p={p} showImages={rules.stockShowRetailerImages} />)}
+            {shown.map((p) => <ProductCard key={p.id} p={p} showImages={rules.stockShowRetailerImages} />)}
           </div>
         )}
+        <Pagination basePath={inStockPath()} page={page} total={rows.length} pageSize={GRID_PAGE_SIZE} params={{ q: query, game, lang, type: tier === undefined ? undefined : TYPE_TIERS[tier]?.slug, retailer, sort: sort === 'recommended' ? undefined : sort }} anchor="products" noun="products" />
         <p className="mt-10 flex flex-wrap gap-4 text-sm">
           <Link href={dropsPath()} className="prose-link">Stock activity feed</Link>
           <Link href={productsPath()} className="prose-link">All products</Link>
@@ -99,7 +106,7 @@ export default async function InStock({ searchParams }: Props) {
         </p>
         {repo.isDemo && <p className="provenance">Preview data.</p>}
       </section>
-      {rows.length > 0 && <JsonLd data={itemList(rows.map((p) => ({ name: p.name, path: productPath(p) })))} />}
+      {shown.length > 0 && <JsonLd data={itemList(shown.map((p) => ({ name: p.name, path: productPath(p) })))} />}
     </div>
   )
 }

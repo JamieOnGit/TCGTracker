@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { pastLastPage } from '@/lib/paging'
 import { AntiScam } from '@/components/AntiScam'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { ListingTile } from '@/components/ListingTile'
-import { Filters, parseMarketplaceQuery } from '@/components/MarketplaceFilters'
+import { Filters, marketplaceParams, parseMarketplaceQuery } from '@/components/MarketplaceFilters'
 import { Pagination } from '@/components/Pagination'
 import { EmptyState, PageIntro, SegLinks } from '@/components/ui'
 import { getRepo } from '@/lib/data'
@@ -26,6 +28,7 @@ export default async function Marketplace({ searchParams }: Props) {
   const sp = await searchParams
   const query = parseMarketplaceQuery(sp)
   const result = await getRepo().marketplace(query)
+  if (pastLastPage(result.page, result.total, result.pageSize)) notFound()
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Marketplace', path: '/marketplace/' }]} /></div>
@@ -35,7 +38,7 @@ export default async function Marketplace({ searchParams }: Props) {
           <Link href={sellPath()} className="btn btn-primary btn-sm" rel="nofollow">Sell a card</Link>
         </div>
       </PageIntro>
-      <div className="grid gap-10 lg:grid-cols-[264px_1fr]">
+      <div className="grid scroll-mt-24 gap-10 lg:grid-cols-[264px_1fr]" id="listings">
         <aside>
           <details className="lg:hidden"><summary className="btn btn-secondary w-full">Filters</summary><div className="mt-4"><Filters action="/marketplace/" current={query} /></div></details>
           <div className="hidden lg:block"><Filters action="/marketplace/" current={query} /></div>
@@ -46,7 +49,7 @@ export default async function Marketplace({ searchParams }: Props) {
           ) : (
             <div className="grid-tiles">{result.rows.map((l) => <ListingTile key={l.id} l={l} />)}</div>
           )}
-          <Pagination basePath="/marketplace/" page={result.page} total={result.total} pageSize={result.pageSize} />
+          <Pagination basePath="/marketplace/" page={result.page} total={result.total} pageSize={result.pageSize} params={marketplaceParams(query)} anchor="listings" noun="listings" />
           <div className="mt-8"><AntiScam /></div>
         </div>
       </div>

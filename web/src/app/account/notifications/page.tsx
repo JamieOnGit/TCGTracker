@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { AccountHead, DemoNotice } from '@/components/account/bits'
+import { Pagination } from '@/components/Pagination'
 import { EmptyState } from '@/components/ui'
+import { pageCount, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { pageNumber } from '@/lib/seo/metadata'
 import { notifications } from '@/lib/account/data'
 import { relativeTime } from '@/lib/account/format'
 import { requireMember } from '@/lib/account/gate'
@@ -20,11 +23,12 @@ const TYPE_LABEL: Record<string, string> = {
   system: 'TCGTracker',
 }
 
-export default async function Notifications() {
+export default async function Notifications({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const m = await requireMember('/account/notifications/')
   if (!m) return <DemoNotice />
   const list = await notifications(100)
   const unread = list.filter((n) => !n.readAt).length
+  const page = Math.min(pageNumber(await searchParams), pageCount(list.length, TABLE_PAGE_SIZE))
   // Viewing the list marks everything read (the bell clears on the next page load).
   if (unread > 0) await markNotificationsRead()
 
@@ -39,8 +43,8 @@ export default async function Notifications() {
       {list.length === 0 ? (
         <EmptyState title="No notifications yet" body="Messages, listing reviews, wishlist matches and drop alerts appear here, and by email if you want them." />
       ) : (
-        <ul className="rows" data-testid="notifications">
-          {list.map((n) => (
+        <ul className="rows scroll-mt-24" data-testid="notifications" id="list">
+          {slicePage(list, page, TABLE_PAGE_SIZE).map((n) => (
             <li key={n.id}>
               <Link href={n.url ?? '/account/'} className="row-link">
                 {n.readAt ? <span className="read-dot" /> : <span className="unread-dot" aria-label="New" />}
@@ -55,6 +59,7 @@ export default async function Notifications() {
           ))}
         </ul>
       )}
+      <Pagination basePath="/account/notifications/" page={page} total={list.length} pageSize={TABLE_PAGE_SIZE} anchor="list" noun="notifications" />
     </div>
   )
 }
