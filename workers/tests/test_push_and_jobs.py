@@ -175,3 +175,83 @@ def test_a_woken_job_runs_at_once_and_still_polls(monkeypatch: pytest.MonkeyPatc
     assert not t.is_alive()
     dispatch = next(j for j in JOBS if j.name == "drops_dispatch")
     assert dispatch.wake is not None and dispatch.every_seconds == 5
+
+
+def test_big_jobs_run_in_their_own_process_and_alerts_stay_in_process() -> None:
+    by_name = {j.name: j for j in JOBS}
+    assert {n for n, j in by_name.items() if j.isolated} == {"prices", "floors", "images"}
+    # The alert path must never wait on a process start-up.
+    assert not by_name["drops_dispatch"].isolated and not by_name["email"].isolated
+
+
+def test_an_isolated_job_runs_as_a_child_and_reports_its_exit(caplog: pytest.LogCaptureFixture) -> None:
+    import sys
+
+    from tcgworkers import main as worker_main
+    from tcgworkers.health import Heartbeat
+
+    job = next(j for j in JOBS if j.name == "floors")
+    calls: list[list[str]] = []
+    hb = Heartbeat()
+    assert worker_main._run_isolated(job, hb, spawn=lambda cmd: calls.append(cmd) or 0)
+    assert calls == [[sys.executable, "-m", "tcgworkers.main", "--once", "floors"]]
+    assert "floors" in hb._beats
+    # Killed for running out of memory: reported, and only the child is gone.
+    assert not worker_main._run_isolated(job, Heartbeat(), spawn=lambda cmd: -9)
+    assert "ran out of memory" in caplog.text
+
+    def boom(cmd: list[str]) -> int:
+        raise OSError("no fork")
+
+    assert not worker_main._run_isolated(job, None, spawn=boom)
+
+
+def test_scheduled_jobs_pick_child_or_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+    from tcgworkers import main as worker_main
+    from tcgworkers.health import Heartbeat
+
+    seen: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        worker_main, "_run_isolated", lambda job, hb: seen.append(("child", job.name)) or True
+    )
+    monkeypatch.setattr(
+        worker_main, "_run", lambda job, env, hb=None: seen.append(("thread", job.name)) or True
+    )
+    for name in ("prices", "email", "snapshots"):
+        worker_main._scheduled(next(j for j in JOBS if j.name == name), Env.from_environ({}), Heartbeat())
+    assert seen == [("child", "prices"), ("thread", "email"), ("thread", "snapshots")]
+
+
+def test_one_big_job_at_a_time(tmp_path: Any) -> None:
+    import threading
+    import time
+
+    from tcgworkers.main import heavy_lock
+
+    path = str(tmp_path / "heavy.lock")
+    order: list[str] = []
+    held = threading.Event()
+
+    def first() -> None:
+        with heavy_lock(path):
+            order.append("first in")
+            held.set()
+            time.sleep(0.2)
+            order.append("first out")
+
+    t = threading.Thread(target=first)
+    t.start()
+    held.wait(2)
+    with heavy_lock(path):
+        order.append("second in")
+    t.join()
+    assert order == ["first in", "first out", "second in"]
+
+
+def test_once_processes_volunteer_for_the_oom_killer(tmp_path: Any) -> None:
+    from tcgworkers.main import prefer_oom_kill
+
+    path = tmp_path / "oom_score_adj"
+    prefer_oom_kill(str(path))
+    assert path.read_text() == "1000"
+    prefer_oom_kill(str(tmp_path / "missing" / "x"))  # no /proc: silently nothing

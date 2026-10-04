@@ -40,6 +40,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, date, datetime, time
 from decimal import ROUND_HALF_UP, Decimal
 from difflib import SequenceMatcher
+from sys import intern
 from typing import Any
 
 import psycopg
@@ -177,9 +178,19 @@ class CatalogueIngestor:
             """select c.id::text as id, c.game, c.lang, c.set_id::text as set_id, s.code, c.number, c.variant, c.name
                  from public.cards c join public.sets s on s.id = c.set_id"""
         ):
+            # Game, language, set code and variant repeat across thousands of
+            # cards: one shared copy of each keeps a full catalogue small.
             self._index(
-                CatalogueCard(r["id"], r["game"], r["lang"], r["code"], r["number"], r["variant"], r["name"]),
-                r["set_id"],
+                CatalogueCard(
+                    r["id"],
+                    intern(r["game"]),
+                    intern(r["lang"]),
+                    intern(r["code"]),
+                    r["number"],
+                    intern(r["variant"]),
+                    r["name"],
+                ),
+                intern(r["set_id"]),
             )
 
     def _index(self, card: CatalogueCard, set_id: str) -> None:

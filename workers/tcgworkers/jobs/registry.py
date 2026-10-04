@@ -60,6 +60,10 @@ class Job:
     cron: dict[str, Any] | None = None
     # Run as soon as this is set (and at least every ``every_seconds``), on its own thread.
     wake: threading.Event | None = None
+    # Big batch jobs run in a child process (see main._run_isolated): their
+    # memory is returned when they finish, and if one ever runs out of memory
+    # only it is killed, never the drop monitor or the alert sender.
+    isolated: bool = False
 
 
 def refresh_fx(conn: Conn, user_agent: str) -> None:
@@ -92,7 +96,12 @@ def refresh_floors(conn: Conn, user_agent: str) -> None:
     """Recompute floor_prices from price_points + active listings.
 
     Marketplace asks come straight from active listings; external points from
-    price_points. See tcgworkers.market.floor for the rules."""
+    price_points. See tcgworkers.market.floor for the rules.
+
+    Streamed one card+grade at a time through a server-side cursor, with
+    writes in batches, so memory stays flat however many cards and prices the
+    catalogue has (loading 120 days of every card's prices at once does not
+    fit a small worker)."""
     from datetime import UTC, datetime
 
     from tcgworkers.db import load_rules
@@ -101,40 +110,21 @@ def refresh_floors(conn: Conn, user_agent: str) -> None:
     rules = load_rules(conn)
     now = datetime.now(UTC)
     with pipeline_run(conn, "floors") as stats:
-        rows = conn.execute(
-            """select card_id::text, grade_key, type::text, price_aud, source, observed_at, is_excluded
-                 from public.price_points where observed_at > now() - interval '120 days'
-               union all
-               select card_id::text, grade_key, 'ask', price_aud, 'marketplace', coalesce(approved_at, now()), false
-                 from public.listings where status = 'active' and card_id is not null"""
-        ).fetchall()
-        grouped: dict[tuple[str, str], list[PricePoint]] = {}
-        for r in rows:
-            grouped.setdefault((r["card_id"], r["grade_key"]), []).append(
-                PricePoint(
-                    r["card_id"],
-                    r["grade_key"],
-                    r["type"],
-                    r["price_aud"],
-                    r["source"],
-                    r["observed_at"],
-                    r["is_excluded"],
-                )
-            )
         written = 0
-        for points in grouped.values():
+        batch: list[tuple[Any, ...]] = []
+
+        def flush() -> None:
+            if batch:
+                with conn.cursor() as w:
+                    w.executemany(FLOOR_UPSERT, batch)
+                batch.clear()
+
+        def add(points: list[PricePoint]) -> None:
+            nonlocal written
             f = compute_floor(points, now=now, rules=rules)
             if f is None:
-                continue
-            conn.execute(
-                """insert into public.floor_prices (card_id, grade_key, floor_aud, basis, source, sample_size,
-                     outliers_ignored, last_sold_aud, last_sold_at, median_sold_30d_aud, observed_at, computed_at)
-                   values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
-                   on conflict (card_id, grade_key) do update set floor_aud=excluded.floor_aud,
-                     basis=excluded.basis, source=excluded.source, sample_size=excluded.sample_size,
-                     outliers_ignored=excluded.outliers_ignored, last_sold_aud=excluded.last_sold_aud,
-                     last_sold_at=excluded.last_sold_at, median_sold_30d_aud=excluded.median_sold_30d_aud,
-                     observed_at=excluded.observed_at, computed_at=now()""",
+                return
+            batch.append(
                 (
                     f.card_id,
                     f.grade_key,
@@ -147,10 +137,59 @@ def refresh_floors(conn: Conn, user_agent: str) -> None:
                     f.last_sold_at,
                     f.median_sold_30d_aud,
                     f.observed_at,
-                ),
+                )
             )
             written += 1
+            if len(batch) >= FLOOR_BATCH:
+                flush()
+
+        key: tuple[str, str] | None = None
+        points: list[PricePoint] = []
+        with conn.cursor(name="floor_points") as cur:
+            cur.itersize = FLOOR_FETCH
+            cur.execute(
+                """select card_id::text as card_id, grade_key, type::text as type, price_aud, source,
+                          observed_at, is_excluded
+                     from public.price_points where observed_at > now() - interval '120 days'
+                   union all
+                   select card_id::text, grade_key, 'ask', price_aud, 'marketplace', coalesce(approved_at, now()),
+                          false
+                     from public.listings where status = 'active' and card_id is not null
+                   order by card_id, grade_key, observed_at"""
+            )
+            for r in cur:
+                k = (r["card_id"], r["grade_key"])
+                if k != key:
+                    if points:
+                        add(points)
+                    key, points = k, []
+                points.append(
+                    PricePoint(
+                        r["card_id"],
+                        r["grade_key"],
+                        r["type"],
+                        r["price_aud"],
+                        r["source"],
+                        r["observed_at"],
+                        r["is_excluded"],
+                    )
+                )
+        if points:
+            add(points)
+        flush()
         stats["floors"] = written
+
+
+FLOOR_FETCH = 5000  # rows per round trip from the server-side cursor
+FLOOR_BATCH = 500  # floors per write
+FLOOR_UPSERT = """insert into public.floor_prices (card_id, grade_key, floor_aud, basis, source, sample_size,
+     outliers_ignored, last_sold_aud, last_sold_at, median_sold_30d_aud, observed_at, computed_at)
+   values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
+   on conflict (card_id, grade_key) do update set floor_aud=excluded.floor_aud,
+     basis=excluded.basis, source=excluded.source, sample_size=excluded.sample_size,
+     outliers_ignored=excluded.outliers_ignored, last_sold_aud=excluded.last_sold_aud,
+     last_sold_at=excluded.last_sold_at, median_sold_30d_aud=excluded.median_sold_30d_aud,
+     observed_at=excluded.observed_at, computed_at=now()"""
 
 
 def snapshot_market_caps(conn: Conn, user_agent: str) -> None:
@@ -343,9 +382,9 @@ def _ua(fn: Callable[[Conn, str], None]) -> Callable[[Conn, Env], None]:
 JOBS: tuple[Job, ...] = (
     Job("fx", "market.fx_refresh_hours", 24, _ua(refresh_fx)),
     Job("population", "market.population_refresh_hours", 24, not_approved("population")),
-    Job("prices", "market.floor_refresh_hours", 4, prices_job),
-    Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors)),
-    Job("images", None, 24, images_job),
+    Job("prices", "market.floor_refresh_hours", 4, prices_job, isolated=True),
+    Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors), isolated=True),
+    Job("images", None, 24, images_job, isolated=True),
     Job("snapshots", None, 24, _ua(snapshot_market_caps)),
     Job("expiry", None, 1, _ua(expire_listings)),
     Job("listing_expiring", None, 1, _ua(warn_expiring_listings)),

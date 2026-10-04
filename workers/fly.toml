@@ -21,6 +21,10 @@ app = "tcgtracker-workers"
 primary_region = "syd"
 kill_signal = "SIGTERM"
 kill_timeout = "30s"
+# Free headroom on the machine's own disk: a memory spike in a batch job
+# slows down instead of running out. (Batch jobs also run in their own
+# process, so one running out could never take the drop monitor with it.)
+swap_size_mb = 512
 
 [build]
   dockerfile = "Dockerfile"

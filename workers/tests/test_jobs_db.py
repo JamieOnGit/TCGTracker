@@ -208,3 +208,25 @@ def test_cheap_cards_are_ranked_without_daily_snapshots_and_old_snapshots_thin_t
         (cards["enone-piece"],),
     ).fetchone()
     assert recent["n"] >= 60  # the last 60 days stay daily
+
+
+def test_floors_stream_in_batches_with_the_same_result(conn, monkeypatch):
+    from tcgworkers.jobs import registry
+
+    cards = _cards(conn)
+    _seed(conn, cards)
+    cols = "card_id, grade_key, floor_aud, basis, source, sample_size, last_sold_aud, median_sold_30d_aud"
+
+    refresh_floors(conn, "test")
+    conn.commit()
+    whole = conn.execute(f"select {cols} from public.floor_prices order by card_id, grade_key").fetchall()
+    conn.execute("delete from public.floor_prices")
+    conn.commit()
+
+    # One row per fetch and one floor per write: every group boundary falls on a batch edge.
+    monkeypatch.setattr(registry, "FLOOR_FETCH", 1)
+    monkeypatch.setattr(registry, "FLOOR_BATCH", 1)
+    refresh_floors(conn, "test")
+    conn.commit()
+    streamed = conn.execute(f"select {cols} from public.floor_prices order by card_id, grade_key").fetchall()
+    assert len(whole) >= 4 and streamed == whole

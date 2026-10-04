@@ -45,6 +45,7 @@ The website is complete, but these parts are switched off until their services a
 | 9c | Product images (free sources, 100% aim) | ⏭ After the image-coverage PR is merged: **Actions → Deploy database**, then run prices and images (5 min) |
 | **9d** | **Every card in every set** | ⏭ After the full-catalogue PR is merged: **Actions → Deploy database**, refresh all sets, run prices (5 min). Move Supabase to Pro before launch. |
 | **9e** | **Drop alerts: interests only, instant, one-tap checkout** | ⏭ After the drop-alerts PR is merged: **Actions → Deploy database**, `fly deploy` the workers, then set your own interests (5 min) |
+| **9f** | **Workers stay within 512 MB** | ⏭ After the worker-memory PR is merged: `fly deploy` the workers (2 min). No database step. |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -623,6 +624,27 @@ Their stores, states, price cap and RRP filters still narrow that. Anyone who re
 2. Deploy the workers so the faster monitor, sender and checkout links go live. In Terminal (`workers` folder): `fly deploy`.
 3. Open **https://tcgtracker.com.au/account/alerts/drops/**. Under **What to alert on**, follow your sets and product types, then **Save**.
 4. Check speed: the next JB Hi-Fi restock should reach your phone within about 30–40 seconds of JB listing it.
+
+## Step 9f · Workers stay within 512 MB (≈2 min) ⏭ after the worker-memory PR is merged
+**Why:** with the full catalogue, the 4-hourly **floors** job (it works out every card's current price) loaded 120 days of every card's prices at once: about 470 MB for 40,000 cards, nearly the whole 512 MB machine. When the machine ran out, the whole worker restarted, drop monitor included.
+
+**Now:**
+- **Floors** reads prices one card at a time: about 50 MB however big the catalogue gets, and roughly twice as fast.
+- **Prices, floors and images run in their own short-lived process**, one at a time. If one of them ever runs out of memory, only that job stops. The drop monitor and the alert sender keep running, so drops are still detected and alerted instantly. They also no longer share the monitor's CPU time, so detection is, if anything, slightly quicker.
+- The price import's in-memory card list is about 30% smaller.
+- The machine gets **512 MB of swap** (spare memory on its own disk, free).
+
+No upgrade to 1 GB is needed. (If you ever do upgrade, change `memory = "512mb"` in `workers/fly.toml` too, or the next `fly deploy` sets it back.)
+
+**After merging:** in Terminal:
+```
+cd ~/TCGTracker
+git checkout main
+git pull
+cd workers
+fly deploy
+```
+A manual run (`fly ssh console -C "python -m tcgworkers.main --once prices"`) still works the same. If a scheduled big job is already running, it prints "another big job ... is running; waiting for it to finish" and starts straight after.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.
