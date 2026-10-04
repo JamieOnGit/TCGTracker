@@ -12,7 +12,9 @@ Same rules as PriceCharting (see ingest.py), with JustTCG's shapes:
 3. **Prices** (USD) -> AUD at the latest RBA rate, stored per grader and
    grade (``psa-10``, ``bgs-9.5``, ``cgc-10``...), as ``sold`` daily snapshots
    and current ``ask`` values, like PriceCharting.
-4. **History** (once per set): JustTCG's ``price_history`` points become
+4. **TCGplayer id**: each linked card keeps JustTCG's ``external_ids.tcgplayer``
+   (``cards.tcgplayer_id``), the images job's exact last-resort image.
+5. **History** (once per set): JustTCG's ``price_history`` points become
    ``sold`` rows dated on their own day, converted at that day's RBA rate
    (or the closest earlier one), and the value-history chart gets a
    ``market_cap_snapshots`` row per past day (population unknown).
@@ -22,6 +24,7 @@ from __future__ import annotations
 
 import bisect
 import logging
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
@@ -33,6 +36,12 @@ from tcgworkers.sources.pricing.justtcg import SOURCE, JtGame, JtRecord
 
 log = logging.getLogger(__name__)
 CENT = Decimal("0.01")
+
+
+def tcgplayer_id(value: Any) -> int | None:
+    """JustTCG's ``external_ids.tcgplayer`` (a number or a numeric string) -> int."""
+    text = str(value).strip() if value is not None and not isinstance(value, bool) else ""
+    return int(text) if re.fullmatch(r"[0-9]{1,15}", text) and int(text) > 0 else None
 
 
 @dataclass(frozen=True)
@@ -148,9 +157,12 @@ class JtIngestor(CatalogueIngestor):
             self.load()
         rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, str | None]] = []
         history: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, date, Decimal, date]] = []
+        tcgplayer: dict[str, int] = {}
         for rec, game in records:
             self.stats.products += 1
             card_id = self.card_for(rec, game, discover=discover)
+            if card_id is not None and (tid := tcgplayer_id(rec.tcgplayer_id)):
+                tcgplayer.setdefault(card_id, tid)
             if card_id is None or not rec.prices:
                 continue
             self.stats.priced_products += 1
@@ -179,7 +191,18 @@ class JtIngestor(CatalogueIngestor):
             self._write_prices(rows, fx)
         if history:
             self._write_history(history)
+        if tcgplayer:
+            self._write_tcgplayer_ids(tcgplayer)
         return self.stats
+
+    def _write_tcgplayer_ids(self, ids: dict[str, int]) -> None:
+        """Each linked card's TCGplayer product id (the images job uses it for
+        cards no open source has an image for). The first id a card gets stays."""
+        with self.conn.cursor() as cur:
+            cur.executemany(
+                "update public.cards set tcgplayer_id = %s where id = %s and tcgplayer_id is null",
+                [(tid, card_id) for card_id, tid in ids.items()],
+            )
 
     def _write_history(
         self, rows: list[tuple[str, str | None, Decimal | None, Decimal, Decimal, str, date, Decimal, date]]

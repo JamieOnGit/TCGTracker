@@ -98,6 +98,14 @@ export const SETTING_GROUPS: SettingGroup[] = [
     ],
   },
   {
+    id: 'images',
+    title: 'Images',
+    intro: 'Card pictures come from TCGdex, pokemontcg.io and Bandai first. Admin → Images lists any still missing.',
+    fields: [
+      { key: 'images.tcgplayer_fallback', label: 'Use TCGplayer pictures as a last resort', hint: 'For cards no open source has a picture for, by the exact TCGplayer id JustTCG gives each card.', kind: { type: 'bool' } },
+    ],
+  },
+  {
     id: 'features',
     title: 'Features',
     fields: [
