@@ -50,6 +50,7 @@ INDEX = "shopify_products_families"
 STOREFRONT = "https://www.jbhifi.com.au"
 COLLECTION_URL = f"{STOREFRONT}/collections/pokemon-trading-cards_1eld66jvxxoxw0ae4rjd36"
 PRODUCT_URL = "https://www.jbhifi.com.au/products/{handle}"
+CART_URL = "https://www.jbhifi.com.au/cart/{variant}:1"  # Shopify cart permalink: straight to checkout
 CONFIG_TTL_SECONDS = 24 * 3600
 WATCH_BATCH = 100
 _BASE_FILTER = '("facets.Game type":"Trading card games" OR "category_hierarchy":"Trading card games")'
@@ -69,6 +70,7 @@ ATTRIBUTES = [
     "availability",
     "release_date",
     "updated_at",
+    "variant_id",
 ]
 _IN = {"InStock", "LimitedStock"}
 
@@ -121,6 +123,15 @@ def availability_of(hit: dict[str, Any]) -> Availability:
     return Availability.UNKNOWN
 
 
+def jb_cart_url(hit: dict[str, Any]) -> str | None:
+    """JB's own one-tap checkout link for an item JB sells itself (marketplace
+    sellers' items check out through their own flow)."""
+    variant = str(hit.get("variant_id") or "")
+    if hit.get("isMarketplace") or not re.fullmatch(r"[0-9]{6,20}", variant):
+        return None
+    return CART_URL.format(variant=variant)
+
+
 def parse_hits(payload: dict[str, Any], *, observed_at: datetime) -> list[Observation]:
     out: list[Observation] = []
     for hit in payload.get("hits", []):
@@ -139,7 +150,11 @@ def parse_hits(payload: dict[str, Any], *, observed_at: datetime) -> list[Observ
                 price_aud=Decimal(str(price)).quantize(Decimal("0.01")) if price not in (None, "") else None,
                 observed_at=observed_at,
                 is_marketplace_seller=bool(hit.get("isMarketplace")),
-                raw={k: hit.get(k) for k in ("sku", "handle", "availability", "release_date", "updated_at")},
+                raw={
+                    k: hit.get(k)
+                    for k in ("sku", "handle", "availability", "release_date", "updated_at", "variant_id")
+                },
+                cart_url=jb_cart_url(hit),
             )
         )
     return out

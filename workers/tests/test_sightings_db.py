@@ -45,6 +45,10 @@ def members(conn: Conn) -> Iterator[dict[str, str]]:
     conn.execute(
         "update public.profile_private set tier_override = 'premium' where user_id = %s", (users["premium"],)
     )
+    # This member wants every drop (new members start on "only what I follow").
+    conn.execute(
+        "update public.drop_alert_filters set mode = 'everything' where user_id = %s", (users["premium"],)
+    )
     conn.execute(
         """insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
            values (%s, %s, 'p256dh', 'auth')""",

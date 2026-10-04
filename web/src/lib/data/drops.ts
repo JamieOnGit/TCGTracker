@@ -6,8 +6,20 @@ import type { Availability, DropRow, OfferRow, ReleaseRow, SealedProductRow, Sto
 /** One select for every drop feed (server history and the Premium live panel). */
 export const DROP_SELECT =
   'id,event_type,price_aud,previous_price_aud,rrp_aud,rrp_tag,rrp_delta_pct,occurred_at,game,' +
-  'retailers(slug,name),retail_products(title,url,image_url),sealed_products(id,game,lang,slug,name),' +
+  'retailers(slug,name),retail_products(title,url,image_url,cart_url),sealed_products(id,game,lang,slug,name),' +
   'sightings!drop_events_sighting_id_fkey(id,channel,state,suburb,store_name,product,quantity,purchase_limit,photo_path,note,url,confirm_count,gone_at)'
+
+const httpsOnly = (v: unknown): string | null => (typeof v === 'string' && v.startsWith('https://') ? v : null)
+
+/** The one-tap checkout link to show: only while the item can be bought (in stock or on pre-order). */
+export function checkoutUrl(availability: Availability, cartUrl: string | null): string | null {
+  return cartUrl && (isInStock(availability) || availability === 'preorder') ? cartUrl : null
+}
+
+/** A drop alert's checkout link: monitor events for something buyable now. */
+export function dropCheckoutUrl(d: Pick<DropRow, 'eventType' | 'cartUrl' | 'source'>): string | null {
+  return d.source === 'monitor' && d.cartUrl && ['IN_STOCK', 'PREORDER_OPEN', 'NEW_LISTING', 'PRICE_CHANGE'].includes(d.eventType) ? d.cartUrl : null
+}
 
 export function sightingPhotoUrl(path: string | null): string | null {
   if (!path) return null
@@ -37,6 +49,7 @@ export function toDrop(r: any): DropRow {
       ? { id: r.sealed_products.id, game: r.sealed_products.game, lang: r.sealed_products.lang, slug: r.sealed_products.slug, name: r.sealed_products.name }
       : null,
     imageUrl: p?.image_url ?? null,
+    cartUrl: httpsOnly(p?.cart_url),
     sighting: s
       ? {
           id: s.id,
@@ -97,7 +110,7 @@ export function sortReleases(rows: ReleaseRow[]): ReleaseRow[] {
 /** Select for product pages and the in-stock list: a sealed product with every store's listing. */
 export const SEALED_SELECT =
   'id,game,lang,slug,name,type,rrp_aud,release_date,updated_at,image_url,sets(slug,name),' +
-  'retail_products(title,url,image_url,current_availability,current_price_aud,last_change_at,is_marketplace_seller,retailers!inner(slug,name,enabled))'
+  'retail_products(title,url,image_url,cart_url,current_availability,current_price_aud,last_change_at,is_marketplace_seller,retailers!inner(slug,name,enabled))'
 
 const IN_STOCK: Availability[] = ['in_stock_online', 'in_stock_cnc', 'in_stock_both']
 export const isInStock = (a: Availability) => IN_STOCK.includes(a)
@@ -115,7 +128,7 @@ export function sortListings<T extends { availability: Availability; lastChangeA
 }
 
 export const STORE_LISTING_SELECT =
-  'title,url,image_url,game,current_availability,current_price_aud,last_change_at,last_seen_at,retailers!inner(slug),sealed_products(id,game,lang,slug,name,rrp_aud)'
+  'title,url,image_url,cart_url,game,current_availability,current_price_aud,last_change_at,last_seen_at,retailers!inner(slug),sealed_products(id,game,lang,slug,name,rrp_aud)'
 
 export function toStoreListing(r: any): StoreListingRow {
   const sp = r.sealed_products ?? null
@@ -127,6 +140,7 @@ export function toStoreListing(r: any): StoreListingRow {
     lastChangeAt: r.last_change_at ?? null,
     lastSeenAt: r.last_seen_at ?? null,
     imageUrl: r.image_url ?? null,
+    cartUrl: httpsOnly(r.cart_url),
     game: r.game ?? null,
     product: sp ? { id: sp.id, game: sp.game, lang: sp.lang, slug: sp.slug, name: sp.name, rrpAud: sp.rrp_aud === null || sp.rrp_aud === undefined ? null : Number(sp.rrp_aud) } : null,
   }
@@ -145,6 +159,7 @@ export function toSealedProduct(r: any): SealedProductRow {
         priceAud: p.current_price_aud === null || p.current_price_aud === undefined ? null : Number(p.current_price_aud),
         lastChangeAt: p.last_change_at ?? null,
         imageUrl: p.image_url ?? null,
+        cartUrl: httpsOnly(p.cart_url),
       })),
   )
   const inStock = offers.filter((o) => isInStock(o.availability))

@@ -110,3 +110,68 @@ def test_release_cron_schedules_at_8am_sydney() -> None:
     nxt = trigger.get_next_fire_time(None, datetime(2026, 10, 1, 9, 0, tzinfo=sydney))
     assert nxt is not None
     assert nxt.astimezone(sydney).replace(tzinfo=None) == datetime(2026, 10, 2, 8, 0)
+
+
+def test_pushes_go_to_every_device_at_once() -> None:
+    import threading
+    import time
+
+    from tcgworkers.drops.dispatcher import send_pushes
+    from tcgworkers.drops.push import PushGone, PushSubscription
+
+    lock = threading.Lock()
+    in_flight = peak = 0
+
+    def sender(sub: PushSubscription, payload: dict) -> None:
+        nonlocal in_flight, peak
+        with lock:
+            in_flight += 1
+            peak = max(peak, in_flight)
+        time.sleep(0.2)  # a slow push service
+        with lock:
+            in_flight -= 1
+        if sub.id == 3:
+            raise PushGone("410")
+        if sub.id == 4:
+            raise RuntimeError("503")
+
+    subs = [PushSubscription(i, f"u{i}", f"https://fcm.googleapis.com/x{i}", "k", "a") for i in range(40)]
+    started = time.monotonic()
+    out = send_pushes(sender, [((100 + s.id, s.id), s, {"title": "t"}) for s in subs])
+    elapsed = time.monotonic() - started
+    assert elapsed < 1.0, f"40 devices took {elapsed:.2f}s: not sent in parallel"
+    assert peak > 1
+    assert isinstance(out[(103, 3)], PushGone) and isinstance(out[(104, 4)], RuntimeError)
+    assert sum(e is None for e in out.values()) == 38
+
+
+def test_a_woken_job_runs_at_once_and_still_polls(monkeypatch: pytest.MonkeyPatch) -> None:
+    import threading
+    import time
+
+    from tcgworkers import main as worker_main
+    from tcgworkers.config import Env
+    from tcgworkers.health import Heartbeat
+    from tcgworkers.jobs.registry import JOBS, Job
+
+    runs: list[float] = []
+    monkeypatch.setattr(worker_main, "_run", lambda job, env, hb=None: runs.append(time.monotonic()) or True)
+    wake, stop = threading.Event(), threading.Event()
+    job = Job("t", None, 0, lambda c, e: None, every_seconds=0.5, wake=wake)
+    t = threading.Thread(
+        target=worker_main._wakeable, args=(job, Env.from_environ({}), Heartbeat(), stop), daemon=True
+    )
+    t.start()
+    time.sleep(0.05)
+    woke = time.monotonic()
+    wake.set()
+    time.sleep(0.1)
+    assert runs and runs[0] - woke < 0.1  # ran immediately, not after the 0.5 s poll
+    time.sleep(0.6)
+    assert len(runs) >= 2  # ...and keeps polling
+    stop.set()
+    wake.set()
+    t.join(timeout=2)
+    assert not t.is_alive()
+    dispatch = next(j for j in JOBS if j.name == "drops_dispatch")
+    assert dispatch.wake is not None and dispatch.every_seconds == 5

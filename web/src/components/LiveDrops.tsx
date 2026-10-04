@@ -36,10 +36,24 @@ export function LiveDrops() {
       if (active) setState({ status: 'premium', rows: (data ?? []).map(toDrop) })
     }
     load()
-    const t = setInterval(load, 30_000)
+    const t = setInterval(load, 30_000) // fallback; Realtime below is the instant path
+    let unsubscribe = () => {}
+    ;(async () => {
+      const sb = await loadSupabaseBrowser()
+      if (!sb || !active) return
+      // A new drop reloads the feed at once (RLS decides who receives fresh events).
+      const channel = sb
+        .channel('live-drops')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drop_events' }, () => {
+          if (premium) load()
+        })
+        .subscribe()
+      unsubscribe = () => sb.removeChannel(channel)
+    })()
     return () => {
       active = false
       clearInterval(t)
+      unsubscribe()
     }
   }, [])
 
@@ -47,7 +61,7 @@ export function LiveDrops() {
     <section aria-labelledby="live-h" className="notice" style={{ borderLeftColor: 'var(--accent)', background: 'var(--accent-soft)', padding: 24 }}>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 id="live-h" className="text-xl">Live feed <span className="badge badge-premium ml-2">◆ Premium</span></h2>
-        {state.status === 'premium' && <span className="muted text-xs">Updates every 30 seconds · last 24 hours</span>}
+        {state.status === 'premium' && <span className="muted text-xs">Live · last 24 hours</span>}
       </div>
       {state.status === 'loading' && <p className="muted mt-3 text-sm">Loading…</p>}
       {(state.status === 'anon' || state.status === 'free') && (

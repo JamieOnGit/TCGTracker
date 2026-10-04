@@ -214,26 +214,26 @@ const RETAILERS: RetailerRow[] = [
 ]
 
 const DROPS: DropRow[] = [
-  { id: 1, source: 'monitor', retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Mega Evolutions Elite Trainer Box', url: 'https://www.jbhifi.com.au/', eventType: 'IN_STOCK', priceAud: 89.95, rrpAud: 89.95, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T21:02:00Z', sighting: null, previousPriceAud: null, product: { id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box' }, imageUrl: null },
+  { id: 1, source: 'monitor', retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Mega Evolutions Elite Trainer Box', url: 'https://www.jbhifi.com.au/', eventType: 'IN_STOCK', priceAud: 89.95, rrpAud: 89.95, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T21:02:00Z', sighting: null, previousPriceAud: null, product: { id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box' }, imageUrl: null, cartUrl: 'https://www.jbhifi.com.au/cart/40429703233737:1' },
   {
     id: 3, source: 'member', retailerSlug: 'kmart', retailerName: 'Kmart', title: 'Pokémon TCG booster bundles (demo sighting)', url: null, eventType: 'IN_STOCK', priceAud: 39, rrpAud: 39, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'pokemon', occurredAt: '2026-09-26T08:40:00Z',
-    previousPriceAud: null, product: null, imageUrl: null,
+    previousPriceAud: null, product: null, imageUrl: null, cartUrl: null,
     sighting: { id: 1, channel: 'in_store', state: 'VIC', suburb: 'Chadstone', storeName: null, quantity: 'some', purchaseLimit: 2, photoUrl: null, note: 'Restocked in the toy aisle end cap.', confirmations: 3, goneAt: null, reporter: null },
   },
   {
     id: 4, source: 'member', retailerSlug: 'big-w', retailerName: 'BIG W', title: 'One Piece Card Game booster box (demo sighting)', url: null, eventType: 'IN_STOCK', priceAud: 199, rrpAud: 199, rrpTag: 'AT_RRP', rrpDeltaPct: 0, game: 'one-piece', occurredAt: '2026-09-25T23:15:00Z',
-    previousPriceAud: null, product: null, imageUrl: null,
+    previousPriceAud: null, product: null, imageUrl: null, cartUrl: null,
     sighting: { id: 2, channel: 'in_store', state: 'NSW', suburb: 'Parramatta', storeName: 'Westfield Parramatta', quantity: 'few', purchaseLimit: 1, photoUrl: null, note: null, confirmations: 2, goneAt: '2026-09-26T02:00:00Z', reporter: null },
   },
   {
     id: 5, source: 'monitor', retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'Pokémon TCG Demo Expansion Elite Trainer Box', url: 'https://example.com/products/demo-etb', eventType: 'PRICE_CHANGE', priceAud: 79, rrpAud: 89.95, rrpTag: 'BELOW_RRP', rrpDeltaPct: -12.2, game: 'pokemon', occurredAt: '2026-09-26T10:30:00Z',
-    sighting: null, previousPriceAud: 89.95, product: { id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box' }, imageUrl: null,
+    sighting: null, previousPriceAud: 89.95, product: { id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box' }, imageUrl: null, cartUrl: null,
   },
   {
     id: 6, source: 'monitor', retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'One Piece Card Game Demo Premium Booster Box', url: 'https://example.com/products/demo-op-box', eventType: 'NEW_LISTING', priceAud: 235, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 7.3, game: 'one-piece', occurredAt: '2026-09-25T06:10:00Z',
-    sighting: null, previousPriceAud: null, product: { id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box' }, imageUrl: null,
+    sighting: null, previousPriceAud: null, product: { id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box' }, imageUrl: null, cartUrl: null,
   },
-  { id: 2, source: 'monitor', retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster PRB-02', url: 'https://p-bandai.com/au', eventType: 'PREORDER_OPEN', priceAud: 229, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 4.6, game: 'one-piece', occurredAt: '2026-09-25T01:00:00Z', sighting: null, previousPriceAud: null, product: null, imageUrl: null },
+  { id: 2, source: 'monitor', retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster PRB-02', url: 'https://p-bandai.com/au', eventType: 'PREORDER_OPEN', priceAud: 229, rrpAud: 219, rrpTag: 'ABOVE_RRP', rrpDeltaPct: 4.6, game: 'one-piece', occurredAt: '2026-09-25T01:00:00Z', sighting: null, previousPriceAud: null, product: null, imageUrl: null, cartUrl: null },
 ]
 
 const SEALED: SealedProductRow[] = [
@@ -241,17 +241,17 @@ const SEALED: SealedProductRow[] = [
     id: 'sp-demo-1', game: 'pokemon', lang: 'en', slug: 'demo-expansion-elite-trainer-box', name: 'Demo expansion Elite Trainer Box', type: 'etb', imageUrl: '/demo/sealed.webp',
     rrpAud: 89.95, releaseDate: '2026-09-26', set: null, inStockCount: 2, lowestInStockAud: 79, updatedAt: '2026-09-26T21:02:00Z',
     offers: [
-      { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'Pokémon TCG Demo Expansion Elite Trainer Box', url: 'https://example.com/products/demo-etb', availability: 'in_stock_online', priceAud: 79, lastChangeAt: '2026-09-26T10:30:00Z', imageUrl: null },
-      { retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Demo Expansion Elite Trainer Box', url: 'https://www.jbhifi.com.au/', availability: 'in_stock_online', priceAud: 89.95, lastChangeAt: '2026-09-26T21:02:00Z', imageUrl: null },
-      { retailerSlug: 'big-w', retailerName: 'BIG W', title: 'Pokemon TCG Demo Expansion ETB', url: 'https://www.bigw.com.au/', availability: 'out_of_stock', priceAud: 89, lastChangeAt: '2026-09-24T03:00:00Z', imageUrl: null },
+      { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'Pokémon TCG Demo Expansion Elite Trainer Box', url: 'https://example.com/products/demo-etb', availability: 'in_stock_online', priceAud: 79, lastChangeAt: '2026-09-26T10:30:00Z', imageUrl: null, cartUrl: null },
+      { retailerSlug: 'jb-hi-fi', retailerName: 'JB Hi-Fi', title: 'Pokémon TCG: Demo Expansion Elite Trainer Box', url: 'https://www.jbhifi.com.au/', availability: 'in_stock_online', priceAud: 89.95, lastChangeAt: '2026-09-26T21:02:00Z', imageUrl: null, cartUrl: 'https://www.jbhifi.com.au/cart/40429703233737:1' },
+      { retailerSlug: 'big-w', retailerName: 'BIG W', title: 'Pokemon TCG Demo Expansion ETB', url: 'https://www.bigw.com.au/', availability: 'out_of_stock', priceAud: 89, lastChangeAt: '2026-09-24T03:00:00Z', imageUrl: null, cartUrl: null },
     ],
   },
   {
     id: 'sp-demo-2', game: 'one-piece', lang: 'en', slug: 'demo-premium-booster-box', name: 'Demo One Piece premium booster box', type: 'booster-box', imageUrl: null,
     rrpAud: 219, releaseDate: null, set: null, inStockCount: 1, lowestInStockAud: 235, updatedAt: '2026-09-25T06:10:00Z',
     offers: [
-      { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'One Piece Card Game Demo Premium Booster Box', url: 'https://example.com/products/demo-op-box', availability: 'in_stock_online', priceAud: 235, lastChangeAt: '2026-09-25T06:10:00Z', imageUrl: null },
-      { retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster (demo)', url: 'https://p-bandai.com/au', availability: 'preorder', priceAud: 229, lastChangeAt: '2026-09-25T01:00:00Z', imageUrl: null },
+      { retailerSlug: 'demo-card-shop', retailerName: 'Demo Card Shop', title: 'One Piece Card Game Demo Premium Booster Box', url: 'https://example.com/products/demo-op-box', availability: 'in_stock_online', priceAud: 235, lastChangeAt: '2026-09-25T06:10:00Z', imageUrl: null, cartUrl: null },
+      { retailerSlug: 'premium-bandai-au', retailerName: 'Premium Bandai AU', title: 'One Piece Card Game Premium Booster (demo)', url: 'https://p-bandai.com/au', availability: 'preorder', priceAud: 229, lastChangeAt: '2026-09-25T01:00:00Z', imageUrl: null, cartUrl: null },
     ],
   },
 ]
@@ -477,6 +477,7 @@ export const demoRepository: Repository = {
             availability: o.availability,
             priceAud: o.priceAud,
             lastChangeAt: o.lastChangeAt,
+            cartUrl: o.cartUrl,
             lastSeenAt: o.lastChangeAt,
             imageUrl: o.imageUrl,
             game: p.game,

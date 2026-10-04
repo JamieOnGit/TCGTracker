@@ -333,3 +333,16 @@ def test_polite_client_revalidates_with_etag():
     assert c.get("https://shop.test/a").text == "body"
     assert c.get("https://shop.test/a").text == "body"
     assert seen_headers == [None, '"v1"']
+
+
+def test_jb_hi_fi_checkout_links_for_items_jb_sells():
+    from tcgworkers.drops.adapters.jb_hi_fi import jb_cart_url
+
+    hit = {"sku": "880545", "handle": "x", "variant_id": 40427672174793, "isMarketplace": False}
+    assert jb_cart_url(hit) == "https://www.jbhifi.com.au/cart/40427672174793:1"
+    assert jb_cart_url({**hit, "isMarketplace": True}) is None  # marketplace sellers check out their own way
+    assert jb_cart_url({**hit, "variant_id": None}) is None
+    assert jb_cart_url({**hit, "variant_id": "abc"}) is None
+    payload = {"hits": [{**hit, "title": "ETB", "price": 89.0, "availability": {"canBuyOnline": True}}]}
+    [obs] = parse_hits(payload, observed_at=T0)
+    assert obs.cart_url == "https://www.jbhifi.com.au/cart/40427672174793:1"

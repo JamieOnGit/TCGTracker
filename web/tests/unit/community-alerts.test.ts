@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { needsHomeScreen, pushSubscriptionSchema, urlBase64ToUint8Array } from '@/lib/account/push'
 import {
-  dropSetupSchema, isOnRetailerSite, outcomeOf, parseKeywords, rewardProgress, seenMinutes, sightingError, sightingSchema, SEEN_OPTIONS,
+  dropSetupSchema,
+  groupsForTypes,
+  PRODUCT_TYPE_GROUPS,
+  typesForGroups, isOnRetailerSite, outcomeOf, parseKeywords, rewardProgress, seenMinutes, sightingError, sightingSchema, SEEN_OPTIONS,
 } from '@/lib/account/sightings'
 import { parseProductLines, productsToLines, releaseSchema } from '@/lib/admin/releases'
 import { discountLabel, endsIn, isLive } from '@/lib/domain/deals'
@@ -85,6 +88,7 @@ describe('drop alert setup', () => {
 
   it('validates the wizard', () => {
     const ok = {
+      mode: 'interests', productTypes: ['etb', 'booster-box'],
       games: ['pokemon'], retailerSlugs: null, states: ['VIC'], keywords: [], maxPriceAud: null, onlyAtOrBelowRrp: true, includeSightings: true,
       channels: { email: true, onsite: true, push: false, discord: false },
     }
@@ -94,6 +98,19 @@ describe('drop alert setup', () => {
     expect(dropSetupSchema.safeParse({ ...ok, states: ['XYZ'] }).success).toBe(false)
     expect(dropSetupSchema.safeParse({ ...ok, retailerSlugs: [] }).success).toBe(false)
     expect(dropSetupSchema.safeParse({ ...ok, maxPriceAud: -1 }).success).toBe(false)
+    expect(dropSetupSchema.safeParse({ ...ok, mode: 'all' }).success).toBe(false)
+    expect(dropSetupSchema.safeParse({ ...ok, productTypes: ['plushies'] }).success).toBe(false)
+    expect(dropSetupSchema.safeParse({ ...ok, mode: 'everything', productTypes: [] }).success).toBe(true)
+  })
+
+  it('maps followed product types to the catalogue types and back', () => {
+    expect(typesForGroups(['etb', 'tins'])).toEqual(['etb', 'tin', 'mini-tin'])
+    expect(typesForGroups(['nope'])).toEqual([])
+    expect(groupsForTypes(['mini-tin', 'premium-collection'])).toEqual(['premium', 'tins'])
+    expect(groupsForTypes(null)).toEqual([])
+    // Every product type the stock monitor assigns is followable.
+    const monitorTypes = ['etb', 'ultra-premium-collection', 'super-premium-collection', 'booster-bundle', 'build-and-battle-stadium', 'premium-collection', 'mini-tin', 'tin', 'double-pack', 'blister', 'battle-deck', 'starter-deck', 'booster-box', 'collection']
+    expect(monitorTypes.filter((t) => !PRODUCT_TYPE_GROUPS.some((g) => (g.types as readonly string[]).includes(t)))).toEqual([])
   })
 })
 

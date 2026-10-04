@@ -93,8 +93,8 @@ class PostgresDropStore:
         row = self.conn.execute(
             """insert into public.retail_products
                  (retailer_id, sku, url, title, game, product_type, set_code, is_marketplace_seller, last_seen_at,
-                  image_url)
-               values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                  image_url, cart_url)
+               values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                on conflict (retailer_id, sku) do update set
                  url = excluded.url, title = excluded.title,
                  game = coalesce(excluded.game, retail_products.game),
@@ -102,7 +102,8 @@ class PostgresDropStore:
                  set_code = coalesce(excluded.set_code, retail_products.set_code),
                  is_marketplace_seller = excluded.is_marketplace_seller,
                  last_seen_at = excluded.last_seen_at,
-                 image_url = coalesce(excluded.image_url, retail_products.image_url)
+                 image_url = coalesce(excluded.image_url, retail_products.image_url),
+                 cart_url = excluded.cart_url
                returning id""",
             (
                 self.retailer_id,
@@ -115,6 +116,7 @@ class PostgresDropStore:
                 obs.is_marketplace_seller,
                 obs.observed_at,
                 _image(obs.image_url),
+                obs.cart_url if obs.cart_url and obs.cart_url.startswith("https://") else None,
             ),
         ).fetchone()
         assert row is not None

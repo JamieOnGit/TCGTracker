@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { groupsForTypes, PRODUCT_TYPE_GROUPS } from '@/lib/account/sightings'
 import { redirect } from 'next/navigation'
 import { AccountHead, DemoNotice } from '@/components/account/bits'
 import { RemoveAlertButton } from '@/components/account/AlertForms'
@@ -19,13 +20,16 @@ export default async function Alerts() {
   const [wish, searches, { data: f }, rets] = await Promise.all([
     wishlist(),
     savedSearches(),
-    (await db()).from('drop_alert_filters').select('games,retailer_slugs,states,keywords,max_price_aud,only_at_or_below_rrp,onboarded_at').maybeSingle(),
+    (await db()).from('drop_alert_filters').select('mode,product_types,games,retailer_slugs,states,keywords,max_price_aud,only_at_or_below_rrp,onboarded_at').maybeSingle(),
     retailers(),
   ])
   const games = ((f?.games as string[] | null) ?? ['pokemon', 'one-piece']).map((g) => (g === 'one-piece' ? 'One Piece' : 'Pokémon'))
   const slugs = (f?.retailer_slugs as string[] | null) ?? null
   const states = (f?.states as string[] | null) ?? null
   const keywords = (f?.keywords as string[] | null) ?? []
+  const everything = f?.mode === 'everything'
+  const followedTypes = groupsForTypes(f?.product_types as string[] | null).map((k) => PRODUCT_TYPE_GROUPS.find((g) => g.key === k)!.label)
+  const following = [...followedTypes, ...keywords]
 
   return (
     <div className="container-x pb-16">
@@ -92,16 +96,19 @@ export default async function Alerts() {
           </div>
           {!f?.onboarded_at ? (
             <div className="notice notice-up" data-testid="drop-setup-cta">
-              <strong>Finish setting up your drop alerts.</strong> Pick your games, stores, states and keywords, and turn on push — takes a minute.
+              <strong>Finish setting up your drop alerts.</strong> Follow the sets and product types you collect, pick your stores, and turn on push — takes a minute.
               <div className="mt-3"><Link href={accountDropAlertsPath()} className="btn btn-primary btn-sm">Set up drop alerts</Link></div>
             </div>
           ) : (
             <>
               <dl className="review-list">
+                <dt>Alert me about</dt>
+                <dd data-testid="drop-following">
+                  {everything ? 'Every drop at my stores' : following.length ? `Only what I follow: ${following.join(', ')}` : 'Only products I tap “Notify me” on (I don’t follow any sets or types yet)'}
+                </dd>
                 <dt>Games</dt><dd>{games.join(', ')}</dd>
                 <dt>Retailers</dt><dd>{slugs === null ? 'All retailers' : rets.filter((r) => slugs.includes(r.slug)).map((r) => r.name).join(', ') || '—'}</dd>
                 <dt>In-store states</dt><dd>{states === null ? 'All of Australia' : states.join(', ')}</dd>
-                <dt>Keywords</dt><dd>{keywords.length ? keywords.join(', ') : 'Everything'}</dd>
                 <dt>Price</dt><dd>{f?.only_at_or_below_rrp ? 'RRP or below' : 'Any'}{f?.max_price_aud ? ` · up to ${fmtAud(Number(f.max_price_aud))}` : ''}</dd>
               </dl>
               <div className="mt-4 flex flex-wrap gap-3">

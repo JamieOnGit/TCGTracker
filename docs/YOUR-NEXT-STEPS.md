@@ -44,6 +44,7 @@ The website is complete, but these parts are switched off until their services a
 | 9b | eBay developer keys (deal finder) | ☐ |
 | 9c | Product images (free sources, 100% aim) | ⏭ After the image-coverage PR is merged: **Actions → Deploy database**, then run prices and images (5 min) |
 | **9d** | **Every card in every set** | ⏭ After the full-catalogue PR is merged: **Actions → Deploy database**, refresh all sets, run prices (5 min). Move Supabase to Pro before launch. |
+| **9e** | **Drop alerts: interests only, instant, one-tap checkout** | ⏭ After the drop-alerts PR is merged: **Actions → Deploy database**, `fly deploy` the workers, then set your own interests (5 min) |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -600,6 +601,28 @@ Each image shows "Image © The Pokémon Company" or "© Bandai" underneath. Card
    Then in Terminal (`workers` folder): `fly ssh console -C "python -m tcgworkers.main --once prices"`. Each run fetches as many sets as its request budget allows (2,500 requests ≈ 1,200 sets). Run it again if the last line shows `sets_remaining` above 0.
 3. Run the images job (Step 9c) so the new cards get pictures. The first full fill can take a few daily runs.
 4. **Supabase plan:** the free plan holds 500 MB. A full catalogue with price history needs more within a few months. Move to **Pro** (US$25/month, 8 GB, daily backups) before launch: Supabase → **Organization → Billing**. Check usage any time under **Reports → Database**.
+
+## Step 9e · Drop alerts: interests only, instant, one-tap checkout (≈5 min)
+**Only what each member follows.** Members no longer get every drop. By default ("Only what I follow") a member hears about:
+- products they tap **Notify me** on;
+- sets or words they follow (e.g. "prismatic", "charizard");
+- product types they follow (booster boxes, Elite Trainer Boxes, premium collections and so on).
+
+Their stores, states, price cap and RRP filters still narrow that. Anyone who really wants everything can pick **Every drop**. Every member, you included, gets a one-off on-site notice asking them to choose their interests.
+
+**Faster.** What used to add up to ~2 minutes:
+- **JB Hi-Fi** is re-checked every **30 s** (was 90 s). One search request covers every JB product we know.
+- The **alert sender wakes the instant** the monitor saves a drop (it used to poll every 15 s).
+- **Push notifications go to every phone at once** (they used to go one by one, so with 1,000 subscribers the last one waited minutes).
+- The Premium **live feed on /drops/ updates the moment** a drop is saved.
+
+**One-tap checkout.** For JB Hi-Fi and every Shopify store we watch, alerts carry the store's own **Add to cart & check out** link. Tapping a push notification opens the store's checkout with the item already in the cart; the member enters their own address and payment. The same button appears on product pages, store stock pages and fresh drops. A link is only made when it's certain which item it adds: a product with two buyable options (e.g. pack or box) gets no link. Kmart, Target, BIG W and WooCommerce shops have no such public link, so they keep "View at store".
+
+**After merging:**
+1. **GitHub → Actions → Deploy database.**
+2. Deploy the workers so the faster monitor, sender and checkout links go live. In Terminal (`workers` folder): `fly deploy`.
+3. Open **https://tcgtracker.com.au/account/alerts/drops/**. Under **What to alert on**, follow your sets and product types, then **Save**.
+4. Check speed: the next JB Hi-Fi restock should reach your phone within about 30–40 seconds of JB listing it.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

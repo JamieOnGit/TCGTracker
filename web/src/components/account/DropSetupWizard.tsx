@@ -4,7 +4,7 @@ import { startTransition, useActionState, useId, useState, useSyncExternalStore 
 import { X } from 'lucide-react'
 import { saveDropSetup } from '@/lib/actions/dropSetup'
 import type { ActionResult } from '@/lib/actions/result'
-import { GAME_OPTIONS, parseKeywords, type DropChannel } from '@/lib/account/sightings'
+import { GAME_OPTIONS, parseKeywords, PRODUCT_TYPE_GROUPS, type AlertMode, type DropChannel, type ProductTypeGroup } from '@/lib/account/sightings'
 import { AU_STATES, AU_STATE_NAMES } from '@/lib/data/types'
 import { PushToggle } from './PushToggle'
 import { TestAlertButton } from './TestAlertButton'
@@ -13,6 +13,8 @@ const STEP = { borderColor: 'var(--line)' }
 const noop = () => () => undefined
 
 export interface DropSetupInitial {
+  mode: AlertMode
+  productTypes: ProductTypeGroup[]
   games: string[]
   retailerSlugs: string[] | null
   states: string[] | null
@@ -40,6 +42,8 @@ export function DropSetupWizard({ initial, retailers, sets, tier, vapidKey }: {
   const [state, formAction, pending] = useActionState(saveDropSetup, null as ActionResult | null)
   // False while server-rendering (and without JS), true once hydrated.
   const mounted = useSyncExternalStore(noop, () => true, () => false)
+  const [mode, setMode] = useState<AlertMode>(initial.mode)
+  const [types, setTypes] = useState<string[]>(initial.productTypes)
   const [games, setGames] = useState(initial.games)
   const [allRetailers, setAllRetailers] = useState(initial.retailerSlugs === null)
   const [slugs, setSlugs] = useState(initial.retailerSlugs ?? retailers.map((r) => r.slug))
@@ -139,6 +143,36 @@ export function DropSetupWizard({ initial, retailers, sets, tier, vapidKey }: {
 
       <section className="border-t pt-6" style={STEP} aria-labelledby={id('s4')}>
         <h2 id={id('s4')} className="text-lg"><span className="num muted mr-2">4</span>What to alert on</h2>
+        <fieldset className="fs mt-3">
+          <legend className="sr-only">Alert me about</legend>
+          <div className="grid gap-3">
+            <label className="check">
+              <input type="radio" name="mode" value="interests" checked={mode === 'interests'} onChange={() => setMode('interests')} />
+              <span><strong>Only what I follow</strong> <span className="tag-quiet">Recommended</span><span className="muted block text-sm">The sets and product types you pick below, plus any product you tap “Notify me” on.</span></span>
+            </label>
+            <label className="check">
+              <input type="radio" name="mode" value="everything" checked={mode === 'everything'} onChange={() => setMode('everything')} />
+              <span><strong>Every drop</strong><span className="muted block text-sm">Every restock and sighting at your stores. Busy: dozens a day in a big release week.</span></span>
+            </label>
+          </div>
+        </fieldset>
+        {mode === 'interests' && mounted && keywords.length === 0 && types.length === 0 && (
+          <p className="notice mt-3 text-sm" data-testid="follow-nothing">You aren’t following anything yet, so you’ll only hear about products you tap “Notify me” on. Pick a set or a product type below.</p>
+        )}
+        <fieldset className="fs mt-4">
+          <legend>Follow product types</legend>
+          <div className="flex flex-wrap gap-2">
+            {PRODUCT_TYPE_GROUPS.map((g) => {
+              const on = types.includes(g.key)
+              return (
+                <label key={g.key} className="chip-filter" aria-pressed={on} style={{ cursor: 'pointer', minHeight: 36 }}>
+                  <input type="checkbox" className="sr-only" name="product_type" value={g.key} checked={on} onChange={() => setTypes((l) => toggle(l, g.key))} />
+                  {on ? '✓ ' : '+ '}{g.label}
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
         {sets.length > 0 && (
           <fieldset className="fs mt-3">
             <legend>Follow sets <span className="muted">(upcoming releases and recent sets)</span></legend>
@@ -163,7 +197,7 @@ export function DropSetupWizard({ initial, retailers, sets, tier, vapidKey }: {
           </fieldset>
         )}
         <div className="field mt-4">
-          <label htmlFor={id('kw')}>Keywords <span className="muted">(optional — alert only when the product name contains one)</span></label>
+          <label htmlFor={id('kw')}>{mode === 'interests' ? 'Also follow these words' : 'Keywords'} <span className="muted">{mode === 'interests' ? '(a set, character or product, e.g. prismatic or charizard)' : '(optional — alert only when the product name contains one)'}</span></label>
           {mounted ? (
             <>
               {keywords.length > 0 && (
@@ -203,7 +237,7 @@ export function DropSetupWizard({ initial, retailers, sets, tier, vapidKey }: {
           ) : (
             <input id={id('kw')} name="keywords_text" className="input" defaultValue={keywords.filter((k) => !setKeys.includes(k)).join(', ')} placeholder="e.g. elite trainer box, prismatic" aria-describedby={id('kw-hint')} />
           )}
-          <p id={id('kw-hint')} className="hint">Leave empty to hear about everything. Separate keywords with commas; up to 20.</p>
+          <p id={id('kw-hint')} className="hint">{mode === 'interests' ? 'You’re alerted when a product name contains one of these. Separate with commas; up to 20.' : 'Leave empty to hear about everything. Separate keywords with commas; up to 20.'}</p>
           {errField === 'keywords' && <p className="field-error">{state && !state.ok && state.error}</p>}
         </div>
         <div className="field mt-4" style={{ maxWidth: 280 }}>

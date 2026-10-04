@@ -64,6 +64,8 @@ def members(conn):
             conn.execute(
                 "update public.profile_private set tier_override = 'premium' where user_id = %s", (uid,)
             )
+        # These members want every drop (the default is only what they follow).
+        conn.execute("update public.drop_alert_filters set mode = 'everything' where user_id = %s", (uid,))
     conn.commit()
     yield users
     conn.rollback()

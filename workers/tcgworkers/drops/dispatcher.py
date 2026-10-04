@@ -33,6 +33,7 @@ import json
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -78,6 +79,8 @@ EVENT_COLOURS: dict[str, int] = {
     "QUEUE_LIVE": 0xFF6AD5,
 }
 DEFAULT_COLOUR = 0x9D8CFF
+# Alerts for something buyable now lead with the store's checkout link.
+CHECKOUT_EVENTS = {"IN_STOCK", "PREORDER_OPEN", "NEW_LISTING", "PRICE_CHANGE"}
 
 _push_warned = False
 
@@ -124,6 +127,15 @@ class EventInfo:
     photo_url: str | None = None
     note: str | None = None
     confirm_count: int = 0
+    # The store's one-tap checkout link (adds the item, opens checkout).
+    cart_url: str | None = None
+
+    @property
+    def checkout_url(self) -> str | None:
+        """The checkout link to lead with: monitor alerts for something buyable now."""
+        if self.is_sighting or self.event_type not in CHECKOUT_EVENTS:
+            return None
+        return self.cart_url if self.cart_url and self.cart_url.startswith("https://") else None
 
     @property
     def is_sighting(self) -> bool:
@@ -247,6 +259,7 @@ def email_data(event: EventInfo, tier: str) -> dict[str, Any]:
         "rrp_tag": event.rrp_tag,
         "rrp_delta_pct": _dec(event.rrp_delta_pct),
         "url": event.url,
+        "checkout_url": event.checkout_url,
         "occurred_at": event.occurred_at.isoformat(),
         "game": event.game,
         "tier": tier,
@@ -301,6 +314,7 @@ def notification(event: EventInfo, tier: str, site_url: str) -> tuple[str, str, 
     data: dict[str, Any] = {
         "drop_event_id": event.id,
         "retailer_url": event.url,
+        "checkout_url": event.checkout_url,
         "event_type": event.event_type,
         "tier": tier,
     }
@@ -316,7 +330,8 @@ def push_message(event: EventInfo, tier: str) -> dict[str, Any]:
         body = f"{body} · Member sighting"
     if tier != "premium":
         body += " · Premium members got this 5 minutes earlier"
-    return push_payload(headline(event), body, event.site_path, f"drop-{event.id}")
+    # Tapping a restock alert goes straight to the store's checkout with the item in the cart.
+    return push_payload(headline(event), body, event.checkout_url or event.site_path, f"drop-{event.id}")
 
 
 def discord_payload(event: EventInfo, site_url: str = DEFAULT_SITE_URL) -> dict[str, Any]:
@@ -348,9 +363,18 @@ def discord_payload(event: EventInfo, site_url: str = DEFAULT_SITE_URL) -> dict[
     )
     fields.append({"name": "Source", "value": source, "inline": True})
     fields.append({"name": "Seen", "value": f"<t:{int(event.occurred_at.timestamp())}:R>", "inline": True})
+    if event.checkout_url:
+        fields.insert(
+            0,
+            {
+                "name": "Checkout",
+                "value": f"[Add to cart & check out]({event.checkout_url})",
+                "inline": False,
+            },
+        )
     embed: dict[str, Any] = {
         "title": headline(event)[:256] if event.is_sighting else event.product_title[:256],
-        "url": event.url or absolute_url(site_url, event.site_path),
+        "url": event.checkout_url or event.url or absolute_url(site_url, event.site_path),
         "color": EVENT_COLOURS.get(event.event_type, DEFAULT_COLOUR),
         "fields": fields,
         "timestamp": event.occurred_at.isoformat(),
@@ -524,6 +548,25 @@ def _dispatch_event(
         else:
             skipped[f"unknown channel {d.channel}"].append(d)
 
+    # Push first: it reaches phones in seconds; email and the bell can follow.
+    if pushes and push_sender is not None:
+        subs = store.push_subscriptions(sorted({d.user_id for d, _ in pushes}))
+        messages = {tier: push_message(event, tier) for tier in {t for _, t in pushes}}
+        # Every device at once: one at a time, the 1,000th member would wait minutes.
+        outcomes = send_pushes(
+            push_sender,
+            [((d.id, sub.id), sub, messages[tier]) for d, tier in pushes for sub in subs.get(d.user_id, [])],
+        )
+        for d, _tier in pushes:
+            outcome = _push_outcome(store, d, subs.get(d.user_id, []), outcomes)
+            if outcome is None:
+                sent.append(d)
+                result.pushes += 1
+            elif outcome.startswith("skip:"):
+                skipped[outcome.removeprefix("skip:")].append(d)
+            else:
+                _retry_or_fail(store, result, d, outcome, now)
+
     if emails:
         store.enqueue_emails(emails)
         result.emails_queued += len(emails)
@@ -545,18 +588,6 @@ def _dispatch_event(
                 store.mark_discord_posted(event.id)
                 result.discord_posts += 1
                 sent.extend(discord_premium)
-    if pushes and push_sender is not None:
-        subs = store.push_subscriptions(sorted({d.user_id for d, _ in pushes}))
-        for d, tier in pushes:
-            outcome = _push(store, push_sender, subs.get(d.user_id, []), push_message(event, tier))
-            if outcome is None:
-                sent.append(d)
-                result.pushes += 1
-            elif outcome.startswith("skip:"):
-                skipped[outcome.removeprefix("skip:")].append(d)
-            else:
-                _retry_or_fail(store, result, d, outcome, now)
-
     if sent:
         store.mark(sent, "sent")
         result.sent += len(sent)
@@ -576,22 +607,45 @@ def _warn_push_not_configured() -> None:
         log.warning("drop dispatch: push deliveries skipped: set VAPID_PRIVATE_KEY and VAPID_SUBJECT")
 
 
-def _push(
-    store: DispatchStore, sender: PushSender, subs: list[PushSubscription], payload: dict[str, Any]
+PUSH_CONCURRENCY = 32
+PushKey = tuple[int, int]  # (delivery id, push subscription id)
+
+
+def send_pushes(
+    sender: PushSender, jobs: list[tuple[PushKey, PushSubscription, dict[str, Any]]]
+) -> dict[PushKey, Exception | None]:
+    """Sends every (device, message) at once and returns each one's error
+    (None = delivered). No database work happens here: the caller records the
+    results on its own connection (psycopg connections are not thread-safe)."""
+
+    def one(job: tuple[PushKey, PushSubscription, dict[str, Any]]) -> Exception | None:
+        try:
+            sender(job[1], job[2])
+        except Exception as exc:
+            return exc
+        return None
+
+    if len(jobs) <= 1:
+        return {job[0]: one(job) for job in jobs}
+    with ThreadPoolExecutor(max_workers=min(PUSH_CONCURRENCY, len(jobs)), thread_name_prefix="push") as pool:
+        return dict(zip((job[0] for job in jobs), pool.map(one, jobs), strict=True))
+
+
+def _push_outcome(
+    store: DispatchStore, d: Delivery, subs: list[PushSubscription], outcomes: dict[PushKey, Exception | None]
 ) -> str | None:
-    """Sends one push delivery to every device of the member. None = sent to
-    at least one; 'skip:<reason>' = nothing left to send to; otherwise the
-    error to retry with."""
+    """One push delivery's result over every device of the member. None =
+    sent to at least one; 'skip:<reason>' = nothing left to send to;
+    otherwise the error to retry with."""
     delivered = 0
     errors: list[str] = []
     for sub in subs:
-        try:
-            sender(sub, payload)
-        except PushGone:
+        err = outcomes.get((d.id, sub.id))
+        if isinstance(err, PushGone):
             store.delete_push_subscription(sub)  # unsubscribed / expired in the browser
-        except Exception as exc:
+        elif err is not None:
             store.push_result(sub, ok=False)
-            errors.append(f"{type(exc).__name__}: {exc}")
+            errors.append(f"{type(err).__name__}: {err}")
         else:
             store.push_result(sub, ok=True)
             delivered += 1
@@ -634,7 +688,7 @@ class PostgresDispatchStore:
             """select e.id, e.event_type::text as event_type, e.price_aud, e.previous_price_aud, e.rrp_aud,
                       e.rrp_tag::text as rrp_tag, e.rrp_delta_pct, e.occurred_at, e.suppressed,
                       e.discord_posted_at is not null as discord_posted,
-                      coalesce(p.title, s.product) as title, coalesce(p.url, s.url) as url,
+                      coalesce(p.title, s.product) as title, coalesce(p.url, s.url) as url, p.cart_url,
                       coalesce(e.game, p.game, s.game) as game, r.name as retailer, r.slug as retailer_slug,
                       s.id as sighting_id, s.channel, s.state::text as state, s.suburb, s.store_name,
                       s.quantity, s.purchase_limit, s.photo_path, s.note, s.confirm_count
@@ -673,6 +727,7 @@ class PostgresDispatchStore:
                 photo_url=sighting_photo_url(self.supabase_url, r["photo_path"]),
                 note=r["note"],
                 confirm_count=r["confirm_count"] or 0,
+                cart_url=r["cart_url"],
             )
             for r in rows
         }

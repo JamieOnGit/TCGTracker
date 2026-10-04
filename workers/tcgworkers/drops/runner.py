@@ -47,6 +47,7 @@ from tcgworkers.drops.adapters.woocommerce import WooCommerceAdapter
 from tcgworkers.drops.base import REGISTRY, AdapterBlocked, RetailerAdapter
 from tcgworkers.drops.engine import CycleResult, run_cycle
 from tcgworkers.drops.http import BackingOff, Disallowed, PoliteClient, SharedGate
+from tcgworkers.drops.kick import wake_dispatcher
 from tcgworkers.drops.models import Observation
 from tcgworkers.drops.products import Catalogue, load_catalogue
 from tcgworkers.drops.store import (
@@ -233,6 +234,8 @@ class PostgresCycle:
                     now=now,
                 )
                 conn.commit()
+                if result.new_events and not baseline:
+                    wake_dispatcher()  # alert members now, not on the next dispatcher poll
                 if baseline and result.new_events:
                     log.info(
                         "drops %s: first scan stored %d products as a baseline (%d events suppressed)",

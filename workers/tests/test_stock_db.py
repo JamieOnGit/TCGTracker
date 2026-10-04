@@ -24,6 +24,7 @@ import psycopg
 import pytest
 from psycopg.rows import dict_row
 
+from tcgworkers.drops import kick
 from tcgworkers.drops.adapters.shopify import ShopifyAdapter
 from tcgworkers.drops.http import PoliteClient
 from tcgworkers.drops.products import rematch
@@ -140,9 +141,11 @@ def test_generic_store_cycle_end_to_end(conn: Conn, shop: dict[str, str]) -> Non
     assert isinstance(adapter, ShopifyAdapter)
     store = Store()
 
-    # 1. First scan: a silent baseline.
+    # 1. First scan: a silent baseline (nothing to alert, so the dispatcher isn't woken).
+    kick.DISPATCH.clear()
     first = cycle(cfg, "discovery", adapter, store.client())
     assert first.error is None and first.tcg == 7
+    assert not kick.DISPATCH.is_set()
     assert all(e["suppressed"] for e in _events(conn, shop["id"]))
     rows = _products(conn, shop["id"])
     etb = rows["8101"]
@@ -158,6 +161,16 @@ def test_generic_store_cycle_end_to_end(conn: Conn, shop: dict[str, str]) -> Non
     assert op["lang"] == "jp" and op["availability"] == "unknown"
     assert op["slug"] == "op-09-emperors-in-the-new-world-booster-box"
     assert rows["8102"]["availability"] == "out_of_stock"
+    carts = {
+        r["sku"]: r["cart_url"]
+        for r in conn.execute(
+            "select sku, cart_url from public.retail_products where retailer_id = %s", (shop["id"],)
+        )
+    }
+    # One-tap checkout links: only when it is clear which item the link adds.
+    assert carts["8101"] == "https://shop.example/cart/81011:1"
+    assert carts["8111"] == "https://shop.example/cart/81112:1"  # the only buyable choice
+    assert carts["8104"] is None and carts["8102"] is None  # two buyable / all sold out: no guess
     checked = conn.execute(
         "select last_checked_at, blocked_reason from public.retailers where id = %s", (shop["id"],)
     ).fetchone()
@@ -176,6 +189,8 @@ def test_generic_store_cycle_end_to_end(conn: Conn, shop: dict[str, str]) -> Non
     conn.commit()
     second = cycle(cfg, "watch", adapter, store.client())
     assert second.error is None
+    assert kick.DISPATCH.is_set()  # alerts go out now, not on the next dispatcher poll
+    kick.DISPATCH.clear()
     fresh = {(e.sku, e.event_type.value) for e in second.new_events}
     assert fresh == {
         ("8102", "IN_STOCK"),
@@ -189,6 +204,12 @@ def test_generic_store_cycle_end_to_end(conn: Conn, shop: dict[str, str]) -> Non
     drop = next(e for e in events if e["type"] == "PRICE_CHANGE")
     assert (drop["price_aud"], drop["previous_price_aud"]) == (D("79.95"), D("89.95"))
     assert rows["8102"]["availability"] == "in_stock_online"
+    cart = conn.execute(
+        "select cart_url from public.retail_products where retailer_id = %s and sku = '8102'", (shop["id"],)
+    ).fetchone()
+    assert (
+        cart and cart["cart_url"] == "https://shop.example/cart/81021:1"
+    )  # restocked: now the one buyable variant
     assert rows["8101"]["current_price_aud"] == D("79.95")
     assert rows["8110"]["current_price_aud"] == D("58.95")
     assert rows["8120"]["slug"] == "journey-together-booster-bundle"
