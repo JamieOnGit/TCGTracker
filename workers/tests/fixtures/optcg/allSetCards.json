@@ -1,0 +1,83 @@
+[
+ {
+  "card_name": "Monkey.D.Luffy (119)",
+  "set_name": "Awakening of the New Era",
+  "set_id": "OP-05",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (119) (Alternate Art)",
+  "set_name": "Awakening of the New Era",
+  "set_id": "OP-05",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_p1",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_p1.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (119) (Alternate Art) (Manga)",
+  "set_name": "Awakening of the New Era",
+  "set_id": "OP-05",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_p2",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_p2.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (Wanted Poster)",
+  "set_name": "Emperors in the New World",
+  "set_id": "OP-09",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_p6",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_p6.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (119) (SP)",
+  "set_name": "A Fist of Divine Speed",
+  "set_id": "OP-11",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_p7",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_p7.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (119) (SP) (Gold)",
+  "set_name": "A Fist of Divine Speed",
+  "set_id": "OP-11",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_p8",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_p8.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (OP05-119) (Reprint)",
+  "set_name": "Premium Booster -The Best-",
+  "set_id": "PRB-01",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_r1",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_r1.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (OP05-119) (Alternate Art)",
+  "set_name": "Premium Booster -The Best-",
+  "set_id": "PRB-01",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_p4",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_p4.jpg",
+  "rarity": "SEC"
+ },
+ {
+  "card_name": "Monkey.D.Luffy (OP05-119) (Manga)",
+  "set_name": "Premium Booster -The Best-",
+  "set_id": "PRB-01",
+  "card_set_id": "OP05-119",
+  "card_image_id": "OP05-119_r2",
+  "card_image": "https://optcgapi.com/media/static/Card_Images/OP05-119_r2.jpg",
+  "rarity": "SEC"
+ }
+]

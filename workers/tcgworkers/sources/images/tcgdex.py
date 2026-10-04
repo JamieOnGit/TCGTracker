@@ -2,9 +2,11 @@
 for English and Japanese sets. No key. Used for Pokémon cards Scrydex
 doesn't give us an image for.
 
-* ``GET /v2/{lang}/sets`` lists sets (``id``, ``name``);
-* ``GET /v2/{lang}/sets/{id}`` returns the set with every card
-  (``localId``, ``name``, ``image``). A card image is ``{image}/high.webp``.
+* ``GET /v2/{lang}/sets`` lists sets (``id``, ``name``, ``cardCount.official``:
+  the printed set size);
+* ``GET /v2/{lang}/cards`` lists every card in the language (``id`` =
+  ``{set id}-{localId}``, ``name``, ``image``): one request for the lot.
+  A card image is ``{image}/high.webp``; cards without ``image`` have none yet.
 
 TCG Pocket (the mobile game) sets are listed too; they are not physical
 cards and are skipped.
@@ -82,6 +84,16 @@ class TcgdexClient:
         body = self._get(f"/v2/{lang}/sets") or []
         return [s for s in body if isinstance(s, dict) and s.get("id") and not is_pocket(str(s["id"]))]
 
-    def set_cards(self, lang: str, set_id: str) -> list[dict[str, Any]]:
-        body = self._get(f"/v2/{lang}/sets/{set_id}") or {}
-        return [c for c in body.get("cards") or [] if isinstance(c, dict)]
+    def all_cards(self, lang: str) -> list[dict[str, Any]]:
+        """Every card in a language, briefly (``id``, ``localId``, ``name``, ``image``): one request."""
+        body = self._get(f"/v2/{lang}/cards") or []
+        return [c for c in body if isinstance(c, dict) and c.get("id")]
+
+
+def set_of(card_id: str, local_id: str, set_ids: set[str]) -> str | None:
+    """The set a card belongs to: its id is ``{set id}-{localId}``."""
+    suffix = f"-{local_id}"
+    if local_id and card_id.endswith(suffix) and card_id[: -len(suffix)] in set_ids:
+        return card_id[: -len(suffix)]
+    head = card_id.rsplit("-", 1)[0]
+    return head if head in set_ids else None
