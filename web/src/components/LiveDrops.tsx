@@ -18,42 +18,42 @@ export function LiveDrops() {
   useEffect(() => {
     if (!supabaseAvailable()) return
     let active = true
-    let premium = false
-    const load = async () => {
-      // Don't poll a background tab; the next visible tick catches up.
-      if (premium && document.visibilityState === 'hidden') return
-      const sb = await loadSupabaseBrowser()
-      if (!sb || !active) return
-      if (!premium) {
-        const { data: auth } = await sb.auth.getUser()
-        if (!auth.user) return active && setState({ status: 'anon', rows: [] })
-        const { data: isPremium } = await sb.rpc('is_premium', { p_user: auth.user.id })
-        if (!isPremium) return active && setState({ status: 'free', rows: [] })
-        premium = true
-      }
-      const since = new Date(Date.now() - 86_400_000).toISOString()
-      const { data } = await sb.from('drop_events').select(DROP_SELECT).gte('occurred_at', since).order('occurred_at', { ascending: false }).limit(50)
-      if (active) setState({ status: 'premium', rows: (data ?? []).map(toDrop) })
-    }
-    load()
-    const t = setInterval(load, 30_000) // fallback; Realtime below is the instant path
-    let unsubscribe = () => {}
+    let stop = () => {}
     ;(async () => {
       const sb = await loadSupabaseBrowser()
       if (!sb || !active) return
-      // A new drop reloads the feed at once (RLS decides who receives fresh events).
+      // Only Premium members get a feed (and a Realtime connection): visitors
+      // and Free members see the upgrade prompt and open nothing else.
+      const { data: auth } = await sb.auth.getUser()
+      if (!auth.user) return active && setState({ status: 'anon', rows: [] })
+      const { data: isPremium } = await sb.rpc('is_premium', { p_user: auth.user.id })
+      if (!isPremium) return active && setState({ status: 'free', rows: [] })
+      const load = async (force = false) => {
+        // Don't poll a background tab; the next visible tick catches up.
+        if (!force && document.visibilityState === 'hidden') return
+        const since = new Date(Date.now() - 86_400_000).toISOString()
+        const { data } = await sb.from('drop_events').select(DROP_SELECT).gte('occurred_at', since).order('occurred_at', { ascending: false }).limit(50)
+        if (active) setState({ status: 'premium', rows: (data ?? []).map(toDrop) })
+      }
+      await load(true)
+      if (!active) return
+      const t = setInterval(load, 30_000) // fallback; Realtime below is the instant path
+      // Realtime checks RLS with the member's own token: fresh events reach Premium members only.
+      const { data: session } = await sb.auth.getSession()
+      if (session.session) sb.realtime.setAuth(session.session.access_token)
       const channel = sb
         .channel('live-drops')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drop_events' }, () => {
-          if (premium) load()
-        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drop_events' }, () => load())
         .subscribe()
-      unsubscribe = () => sb.removeChannel(channel)
+      stop = () => {
+        clearInterval(t)
+        sb.removeChannel(channel)
+      }
+      if (!active) stop()
     })()
     return () => {
       active = false
-      clearInterval(t)
-      unsubscribe()
+      stop()
     }
   }, [])
 

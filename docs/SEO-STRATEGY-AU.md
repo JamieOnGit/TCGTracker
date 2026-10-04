@@ -139,6 +139,8 @@ Every week: publish or update **release pages as soon as a date is announced** (
 - Server-rendered HTML: tables, dates and prices are in the initial response. Checked in CI.
 - Core Web Vitals: Cloudflare's Australian edge, minimal client JS (Supabase is lazy-loaded), `next/font` (no font layout shift), lazy images with explicit sizes.
 - `robots.txt` blocks account, messaging, admin, login and internal search. `llms.txt` describes the site (market data, drops, deals, releases, guides) for AI assistants.
+- **Production runtime:** the site runs on Cloudflare Workers (OpenNext) without a page cache, so build-time-only pages (`dynamicParams = false`) are 404s and `revalidate` doesn't cache. CI runs the real worker locally (`wrangler dev`) and crawls it, because this broke every guide once while `next start` looked fine. Smart Placement runs the worker next to Supabase (Sydney) for remote visitors and Googlebot.
+- **Browser scan** (`npm run site:scan`, in CI against the worker): JavaScript and console errors, failed requests (images, scripts, API), exactly one `<h1>`, `alt` on every image, no `http://` resources, no sideways scroll at 375 px, pages over the slow threshold.
 - The CI crawl (`BASE_URL=… npm run seo:check`) fails on duplicate titles/descriptions, missing canonicals or breadcrumbs, indexable filter pages, broken or redirecting internal links, sitemap URLs that aren't indexable 200s, wrong `.ics` content type or redirects, missing Event/Article JSON-LD on releases/guides, and soft 404s. It warns on long titles/descriptions.
 
 ## 9. Off-page and local signals
@@ -149,3 +151,14 @@ Every week: publish or update **release pages as soon as a date is announced** (
 ## 10. Measuring it
 - Weekly: GSC coverage by sitemap (indexed vs submitted), queries containing "australia" / "aud" / "release date" / retailer names, CTR on guides and release pages, CWV.
 - Monthly: guides and release pages with impressions but low CTR get title/description rewrites; pages with no impressions after 90 days get merged or improved.
+
+## 11. Rules for every change
+The short version lives in `CLAUDE.md` at the repo root, which every Claude Code session reads. For a new page or page type:
+1. **URL:** add it to `urls.ts` and to the URL map above, with an index decision and a sitemap type.
+2. **Metadata:** use `buildMetadata()`. The title follows the patterns in §3; it's unique, and the description is 120–160 characters with the Australian angle.
+3. **Structured data:** BreadcrumbList plus the right type from §4, only for what's visible.
+4. **Content:** server-rendered, prices in AUD with the FX date, "Last updated", Australian dates. Lists page at about ten with `<Pagination>`.
+5. **Links:** up via breadcrumbs, across to siblings, down to detail pages. At least one existing hub links to it, so it's never an orphan.
+6. **Status codes:** unknown → 404, gone → 410, renamed → 301. Facets → noindex,follow.
+7. **Tests:** an e2e for the page's key content. `seo:check` and `site:scan` pass on both `next start` and the Cloudflare worker.
+8. **After deploy:** run both against the live site, submit new sitemaps in Search Console, and check coverage a week later.

@@ -47,6 +47,7 @@ The website is complete, but these parts are switched off until their services a
 | **9e** | **Drop alerts: interests only, instant, one-tap checkout** | ⏭ After the drop-alerts PR is merged: **Actions → Deploy database**, `fly deploy` the workers, then set your own interests (5 min) |
 | **9f** | **Workers stay within 512 MB** | ⏭ After the worker-memory PR is merged: `fly deploy` the workers (2 min). No database step. |
 | **9g** | **Australian release calendar (automatic) on the Drops page** | ⏭ After the release-calendar PR is merged: **Actions → Deploy database**, `fly deploy` the workers (3 min) |
+| **9h** | **Site scan fixes (guides, live connections, sitemap speed)** | ⏭ After the site-scan PR is merged: **Actions → Deploy database** (1 min). Optional later: page cache (below) |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -677,6 +678,28 @@ A manual run (`fly ssh console -C "python -m tcgworkers.main --once prices"`) st
    fly ssh console -C "python -m tcgworkers.main --once releases"
    ```
    The last line shows how many releases were added. JB Hi-Fi's dates appear after the drop monitor has seen each product once more (within minutes), so run it again after about 30 minutes for the full Pokémon list.
+
+## Step 9h · Site scan fixes (≈1 min) ⏭ after the site-scan PR is merged
+A full scan of the live site (every page type, desktop and phone, plus the sitemaps) found:
+
+| Found | Fixed |
+|---|---|
+| **All 8 guides were 404s in production**, though linked from the menu, the release pages and the sitemap. Cloudflare doesn't serve build-time pages without a page cache, and guides were set to build-time only. | Guides render on request too. Checked on a local Cloudflare build: 200, and unknown guides still 404. |
+| **Every visitor opened a live (Realtime) connection** to Supabase, from the notification bell and the Drops live feed, even when not signed in. The free plan allows about 200 at once, so a busy day could have cut off Premium's live feed. The live feed also skipped the member's sign-in on that connection, so Premium only got the 30-second refresh. | Visitors and Free members open none. Signed-in members get the bell, and Premium gets the instant live feed, using their own sign-in. |
+| The **drops sitemap took 11 seconds** (about 60 database requests). Google can give up on slow sitemaps. | One database query; the same 26 pages are listed. |
+| Pages from overseas (and Googlebot, which crawls from the US) waited for one trip to Sydney **per database query**: 1.5–3 s per page. | Cloudflare **Smart Placement** runs the site next to the database when that's faster. |
+
+Everything else checked clean on the live site: no JavaScript errors, broken images, missing alt text, heading problems or sideways scrolling on phones.
+
+**After merging:** **GitHub → Actions → Deploy database**. Until then the sitemap uses its old, slower method, so nothing breaks in the meantime. The website redeploys by itself.
+
+**Run the scan yourself any time** (in the `web` folder, needs Chromium: `npx playwright install chromium` once):
+```
+BASE_URL=https://tcgtracker.com.au npm run site:scan
+BASE_URL=https://tcgtracker.com.au npm run seo:check
+```
+
+**Optional, later: page cache (faster pages, less database load).** Pages are meant to refresh every 5 minutes, but on Cloudflare every visit currently rebuilds the page from the database. That's fine at today's traffic. Before a big launch, ask Claude to "set up the OpenNext R2 page cache". It needs a free Cloudflare R2 bucket, which you create in Cloudflare (**R2 → Create bucket**, about 2 minutes).
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

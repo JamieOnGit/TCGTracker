@@ -89,11 +89,15 @@ export async function entriesFor(type: SitemapType): Promise<SitemapEntry[]> {
     }
     case 'drops': {
       const now = new Date()
-      const [all, retailers, states] = await Promise.all([
-        lastDrop({}),
-        Promise.all((await repo.retailers()).map(async (r) => ({ path: dropsPath(r.slug), last: await lastDrop({ retailerSlug: r.slug }), copy: r.slug in RETAILER_COPY }))),
-        Promise.all(AU_STATES.map(async (st) => ({ path: dropsStatePath(st), last: await lastDrop({ state: st }), copy: st in STATE_COPY }))),
-      ])
+      // One query for every store's and state's last public drop (was one request each).
+      const [all, stores, last] = await Promise.all([lastDrop({}), repo.retailers(), repo.dropPageLastEvents()])
+      // Fallback (one request per page) only if that query is unavailable.
+      const retailers = await Promise.all(
+        stores.map(async (r) => ({ path: dropsPath(r.slug), last: last ? (last.retailers[r.slug] ?? null) : await lastDrop({ retailerSlug: r.slug }), copy: r.slug in RETAILER_COPY })),
+      )
+      const states = await Promise.all(
+        AU_STATES.map(async (st) => ({ path: dropsStatePath(st), last: last ? (last.states[st] ?? null) : await lastDrop({ state: st }), copy: st in STATE_COPY })),
+      )
       return [
         { path: dropsPath(), lastmod: all },
         { path: inStockPath(), lastmod: latest((await repo.inStock({ limit: 1 })).map((p) => p.updatedAt)) },

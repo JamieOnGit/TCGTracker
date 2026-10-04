@@ -388,6 +388,8 @@ export interface Repository {
   retailers(): Promise<RetailerRow[]>
   /** Public, delayed drop history (monitors + confirmed member sightings). Instant events need a Premium session (RLS). */
   drops(filter?: DropFilter): Promise<DropRow[]>
+  /** When each store's and each state's last public drop happened (one query, for the drops sitemap); null if unavailable. */
+  dropPageLastEvents(): Promise<{ retailers: Record<string, string>; states: Record<string, string> } | null>
   /** Top scouts by confirmed sightings over the last N days. */
   scoutLeaderboard(days: number, limit?: number): Promise<ScoutRow[]>
   /** Published release calendar entries, soonest first; TBC last. */

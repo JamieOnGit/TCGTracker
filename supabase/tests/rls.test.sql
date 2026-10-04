@@ -788,4 +788,20 @@ update public.drop_alert_filters f set mode = b.mode, keywords = b.keywords, pro
        retailer_slugs = b.retailer_slugs, states = b.states, include_sightings = b.include_sightings, max_price_aud = b.max_price_aud
   from filters_before b where b.user_id = f.user_id;
 
+-- Drops sitemap: one call gives each store's last *public* drop (fresh, delayed events stay hidden).
+reset role;
+create temp table jb_last as
+  select max(d.occurred_at) filter (where not d.suppressed and d.public_at <= now()) as public_last,
+         max(d.occurred_at) as any_last
+    from public.drop_events d join public.retailers r on r.id = d.retailer_id where r.slug = 'jb-hi-fi';
+grant select on jb_last to anon;
+set role anon;
+select set_config('request.jwt.claims', '', false);
+select tests.ok((select last_at from public.drop_page_last_events() where kind = 'retailer' and key = 'jb-hi-fi')
+                  is not distinct from (select public_last from jb_last),
+  'drop_page_last_events: anon sees the last public drop per store');
+select tests.ok((select any_last from jb_last) > coalesce((select public_last from jb_last), '-infinity'),
+  'drop_page_last_events: the test has a fresh event the public must not see yet');
+reset role;
+
 \echo 'All database tests passed'

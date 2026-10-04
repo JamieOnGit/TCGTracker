@@ -305,6 +305,14 @@ export function supabaseRepository(): Repository {
       const { data } = await q
       return (data ?? []).map(toDrop)
     },
+    async dropPageLastEvents() {
+      const { data, error } = await sb.rpc('drop_page_last_events')
+      if (error) return null // e.g. the database function isn't deployed yet: callers fall back
+      const retailers: Record<string, string> = {}
+      const states: Record<string, string> = {}
+      for (const r of (data ?? []) as { kind: string; key: string; last_at: string }[]) (r.kind === 'state' ? states : retailers)[r.key] = r.last_at
+      return { retailers, states }
+    },
     async scoutLeaderboard(days, limit = 20) {
       const { data } = await sb.rpc('scout_leaderboard', { p_days: days, p_limit: limit })
       return (data ?? []).map((r: any) => ({ username: r.username, confirmed: r.confirmed, states: r.states ?? [] }))
