@@ -8,7 +8,7 @@
 | floors      | market.floor_refresh_hours (4h)     | ready; needs price data                 |
 | snapshots   | daily                               | ready; needs population + floors        |
 | releases    | every 6h                            | release calendar: Bandai OC + AU retailer dates |
-| images      | daily                               | Scrydex (SCRYDEX_API_KEY + SCRYDEX_TEAM_ID) |
+| images      | every 6h                            | Scrydex (SCRYDEX_API_KEY + SCRYDEX_TEAM_ID) |
 | expiry      | hourly                              | ready                                   |
 | listing_expiring | hourly                         | renewal reminders (listings.expiry_warning_days) |
 | email       | every 20s                           | email_outbox sender (tcgworkers.email)  |
@@ -180,6 +180,8 @@ def refresh_floors(conn: Conn, user_agent: str) -> None:
             add(points)
         flush()
         stats["floors"] = written
+        # Rankings read these floors: refresh them now, not only with the daily snapshot.
+        conn.execute("refresh materialized view concurrently public.market_cap_rankings")
 
 
 FLOOR_FETCH = 5000  # rows per round trip from the server-side cursor
@@ -400,7 +402,7 @@ JOBS: tuple[Job, ...] = (
     Job("population", "market.population_refresh_hours", 24, not_approved("population")),
     Job("prices", "market.floor_refresh_hours", 4, prices_job, isolated=True),
     Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors), isolated=True),
-    Job("images", None, 24, images_job, isolated=True),
+    Job("images", None, 6, images_job, isolated=True),
     Job("snapshots", None, 24, _ua(snapshot_market_caps)),
     # Release calendar: Bandai (One Piece, Oceania) + Australian retailer street dates.
     Job("releases", None, 6, releases_job),

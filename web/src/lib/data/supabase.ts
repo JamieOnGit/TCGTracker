@@ -1,5 +1,6 @@
 import 'server-only'
 import { rulesFromSettings } from '@/lib/domain/rules'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabasePublic } from '@/lib/supabase/server'
 import type { Game, Lang } from '@/lib/seo/urls'
 import { DROP_SELECT, RELEASE_SELECT, SEALED_SELECT, sortListings, sortReleases, STORE_LISTING_SELECT, toDrop, toRelease, toSealedProduct, toStoreListing } from './drops'
@@ -101,8 +102,8 @@ function missingDelayed(error: { code?: string; message?: string } | null): bool
   return gone
 }
 
-export function supabaseRepository(): Repository {
-  const sb = supabasePublic()
+/** The site's data. Public (anonymous) by default; pass a member's own client to read what RLS shows them (Premium: live drops). */
+export function supabaseRepository(sb: SupabaseClient = supabasePublic()): Repository {
   async function loadRetailers(): Promise<RetailerRow[]> {
     const { data } = await sb.from('retailers').select('slug,name,base_url,enabled,monitored,platform,kind,state,blocked_reason,last_checked_at,watch_interval_seconds').order('name')
     return (data ?? []).map((r: any) => ({
