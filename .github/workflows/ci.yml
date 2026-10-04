@@ -88,6 +88,16 @@ jobs:
         run: npx -y @lhci/cli@0.15 autorun
       - name: Cloudflare Workers build (OpenNext)
         run: npx opennextjs-cloudflare build
+      # The production runtime, locally: what Cloudflare serves can differ from
+      # `next start` (e.g. build-time-only pages 404 without a page cache).
+      - name: Production runtime checks (Cloudflare worker via wrangler, SEO crawl + browser scan)
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          npx wrangler dev --port 8788 --local > /tmp/wrangler.log 2>&1 &
+          npx wait-on -t 120000 http://localhost:8788/
+          BASE_URL=http://localhost:8788 npm run seo:check
+          BASE_URL=http://localhost:8788 SLOW_MS=15000 npm run site:scan
 
   full-stack:
     name: Full stack e2e (local Supabase, marketplace, messaging, alerts, admin)
