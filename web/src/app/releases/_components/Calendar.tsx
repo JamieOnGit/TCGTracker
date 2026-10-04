@@ -5,7 +5,7 @@ import { getRepo } from '@/lib/data'
 import { addDays, groupReleases, periodEnd, todayAu } from '@/lib/releases'
 import { itemList } from '@/lib/seo/jsonld'
 import { dropsPath, releasePath, type Game } from '@/lib/seo/urls'
-import { ReleaseTable, SetDateTable } from './ReleaseTable'
+import { Collapsed, ReleaseTable, SetDateTable } from './ReleaseTable'
 
 /**
  * The calendar body shared by /releases/ and /releases/{game}/: upcoming by
@@ -27,7 +27,7 @@ export async function Calendar({ game }: { game?: Game }) {
     return sets.length > 0 ? (
       <section className="section-tight" aria-labelledby="sets-h">
         <h2 id="sets-h">Set release dates</h2>
-        <SetDateTable sets={sets} caption="Set release dates, newest first" showGame={showGame} />
+        <Collapsed rows={sets} noun="sets" render={(part) => <SetDateTable sets={part} caption="Set release dates, newest first" showGame={showGame} />} />
       </section>
     ) : (
       <EmptyState title="No release dates yet" body="Dates are added as soon as they are announced." />
@@ -59,7 +59,7 @@ export async function Calendar({ game }: { game?: Game }) {
       {earlier.length > 0 && (
         <section className="section-tight" aria-labelledby="earlier-h">
           <h2 id="earlier-h">Earlier releases</h2>
-          <ReleaseTable rows={earlier} caption="Earlier releases, newest first" showGame={showGame} />
+          <Collapsed rows={earlier} noun="releases" render={(part) => <ReleaseTable rows={part} caption="Earlier releases, newest first" showGame={showGame} />} />
         </section>
       )}
       <JsonLd data={itemList(listed.map((r) => ({ name: r.title, path: releasePath(r.game, r.slug) })))} />

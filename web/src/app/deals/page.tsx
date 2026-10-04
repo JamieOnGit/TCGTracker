@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { Pagination } from '@/components/Pagination'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DealCard } from '@/components/DealCard'
 import { JsonLd } from '@/components/JsonLd'
@@ -8,17 +10,26 @@ import { PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { isLive } from '@/lib/domain/deals'
 import { EBAY_DISCLOSURE } from '@/lib/domain/ebay'
-import { buildMetadata } from '@/lib/seo/metadata'
+import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { faqPage } from '@/lib/seo/jsonld'
 
 export const revalidate = 300
 
-export const metadata: Metadata = buildMetadata({
-  path: '/deals/',
-  title: 'Pokémon Card Deals on eBay Australia (Under Market Value)',
-  description:
-    'Graded Pokémon and One Piece cards listed on eBay Australia well under their market value in AUD, plus auctions ending soon. Checked against TCGTracker’s price data through the day.',
-})
+type Props = { searchParams: Promise<SearchParams> }
+
+// Deals expire within hours: page 2+ is noindex,follow (the list shifts constantly).
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const sp = await searchParams
+  return buildMetadata({
+    path: '/deals/',
+    title: 'Pokémon Card Deals on eBay Australia (Under Market Value)',
+    description:
+      'Graded Pokémon and One Piece cards listed on eBay Australia well under their market value in AUD, plus auctions ending soon. Checked against TCGTracker’s price data through the day.',
+    searchParams: sp,
+    noindex: pageNumber(sp) > 1,
+  })
+}
 
 const FAQS = [
   {
@@ -36,9 +47,12 @@ const FAQS = [
 ]
 
 /** Public, delayed deals (RLS hides fresh ones) + the Premium live list. */
-export default async function Deals() {
+export default async function Deals({ searchParams }: Props) {
   const repo = getRepo()
-  const rows = (await repo.deals({ limit: 60 })).filter((d) => isLive(d))
+  const all = (await repo.deals({ limit: 200 })).filter((d) => isLive(d))
+  const page = pageNumber(await searchParams)
+  if (pastLastPage(page, all.length, TABLE_PAGE_SIZE)) notFound()
+  const rows = slicePage(all, page, TABLE_PAGE_SIZE)
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'eBay deals', path: '/deals/' }]} /></div>
@@ -49,7 +63,7 @@ export default async function Deals() {
       />
       <LiveDeals />
       <div className="grid lg:grid-cols-[1fr_300px] lg:gap-12">
-        <section className="section min-w-0" aria-labelledby="deals-h">
+        <section className="section min-w-0 scroll-mt-24" aria-labelledby="deals-h" id="deals">
           <h2 id="deals-h">Recent deals</h2>
           <p className="muted mt-2 text-sm">
             Shown 24 hours after we find them, so many will have sold. Prices in AUD. <span title={EBAY_DISCLOSURE}>{EBAY_DISCLOSURE}</span>
@@ -62,6 +76,7 @@ export default async function Deals() {
           ) : (
             <div className="mt-4">{rows.map((d) => <DealCard key={d.id} deal={d} />)}</div>
           )}
+          <Pagination basePath="/deals/" page={page} total={all.length} pageSize={TABLE_PAGE_SIZE} anchor="deals" noun="deals" />
           {repo.isDemo && <p className="provenance">Preview data.</p>}
         </section>
         <aside className="grid content-start gap-10 pb-16 lg:py-24">

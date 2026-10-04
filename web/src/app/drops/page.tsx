@@ -1,15 +1,18 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { LiveDrops } from '@/components/LiveDrops'
 import { FilterBar } from '@/components/FilterBar'
+import { Pagination } from '@/components/Pagination'
 import { PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES, type AuState } from '@/lib/data/types'
 import { durationLabel, parseDropSource } from '@/lib/domain/drops'
 import { listingLang, parseLang, parseSearch, searchRows, searchText } from '@/lib/domain/search'
-import { countByStatus, dropStatus, FEED_SORT_LABEL, FEED_SORTS, feedHref, parseGame, parseSlug, parseSort, parseStatus, sortDrops, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
+import { countByStatus, dropStatus, FEED_SORT_LABEL, FEED_SORTS, parseGame, parseSlug, parseSort, parseStatus, sortDrops, STATUS_CHIP_LABEL, STATUS_KEYS, type StatusKey } from '@/lib/domain/stock'
+import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, GAME_NAMES, GAMES, inStockPath, LANG_NAMES, LANGS, productsPath, scoutsPath, stockPath, storesPath } from '@/lib/seo/urls'
 
@@ -31,7 +34,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 /** Events loaded per view (counts are over these); the first page is server-rendered. */
 const FEED_LOAD = 300
-const PAGE_SIZE = 50
+const PAGE_SIZE = TABLE_PAGE_SIZE
 
 const EMPTY: Record<StatusKey, string | undefined> = {
   all: undefined,
@@ -54,7 +57,7 @@ export default async function Drops({ searchParams }: Props) {
   const sort = parseSort(sp.sort)
   const stateParam = typeof sp.state === 'string' ? sp.state.toUpperCase() : undefined
   const state = AU_STATES.find((st) => st === stateParam) as AuState | undefined
-  const page = Math.min(pageNumber(sp), Math.ceil(FEED_LOAD / PAGE_SIZE))
+  const page = pageNumber(sp)
   const repo = getRepo()
   const [retailers, rules, scouts] = await Promise.all([repo.retailers(), repo.getRules(), repo.scoutLeaderboard(30, 5)])
   const retailer = retailers.find((r) => r.slug === parseSlug(sp.retailer))?.slug
@@ -66,8 +69,8 @@ export default async function Drops({ searchParams }: Props) {
     searched.filter((d) => status === 'all' || dropStatus(d).key === status),
     sort,
   )
-  const rows = matching.slice(0, page * PAGE_SIZE)
-  const q = { q: query, status, game, lang, retailer, state, sort }
+  if (pastLastPage(page, matching.length, PAGE_SIZE)) notFound()
+  const rows = slicePage(matching, page, PAGE_SIZE)
   const publicDelay = durationLabel(rules.dropsPublicDelayMinutes)
   const freeDelay = durationLabel(rules.freeDropDelayMinutes)
   const s = rules.sightings
@@ -88,7 +91,7 @@ export default async function Drops({ searchParams }: Props) {
       </PageIntro>
       <LiveDrops />
       <div className="grid lg:grid-cols-[1fr_300px] lg:gap-12">
-        <section className="section min-w-0" aria-labelledby="hist-h">
+        <section className="section min-w-0 scroll-mt-24" aria-labelledby="hist-h" id="activity">
           <h2 id="hist-h">Stock activity</h2>
           <p className="muted mt-2 text-sm">Shown {publicDelay} after each event. Prices in AUD, tagged against RRP. Counts cover the latest {loaded.length} events.</p>
           <div className="mt-4">
@@ -116,12 +119,15 @@ export default async function Drops({ searchParams }: Props) {
             />
           </div>
           <div className="mt-6"><DropFeed rows={rows} empty={query || lang || retailer || state ? 'Nothing matches these filters. Try fewer words, or * as a wildcard (e.g. char*ex).' : EMPTY[status]} /></div>
-          {matching.length > rows.length && (
-            <p className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href={feedHref('/drops/', { ...q, page: page + 1 })} className="btn btn-secondary btn-sm" scroll={false}>Load more</Link>
-              <span className="muted text-xs">Showing {rows.length} of {matching.length}</span>
-            </p>
-          )}
+          <Pagination
+            basePath="/drops/"
+            page={page}
+            total={matching.length}
+            pageSize={PAGE_SIZE}
+            params={{ q: query, status: status === 'all' ? undefined : status, game, lang, retailer, state, sort: sort === 'recommended' ? undefined : sort }}
+            anchor="activity"
+            noun="events"
+          />
           {repo.isDemo && <p className="provenance">Preview data.</p>}
         </section>
         <aside className="grid content-start gap-10 pb-16 lg:py-24">

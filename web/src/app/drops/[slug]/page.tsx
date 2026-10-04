@@ -13,11 +13,13 @@ import { getRepo } from '@/lib/data'
 import { AU_STATES, AU_STATE_NAMES, type AuState, type DropRow, type RetailerRow, type SealedProductRow } from '@/lib/data/types'
 import { hasRecentDrops, stateFromSlug } from '@/lib/domain/drops'
 import { feedHref } from '@/lib/domain/stock'
-import { buildMetadata } from '@/lib/seo/metadata'
+import { Pagination } from '@/components/Pagination'
+import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, dropsStatePath, inStockPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 300
-type Props = { params: Promise<{ slug: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<SearchParams> }
 
 type Page =
   | { kind: 'retailer'; retailer: RetailerRow; retailers: RetailerRow[]; rows: DropRow[]; inStock: SealedProductRow[]; showImages: boolean; indexable: boolean }
@@ -42,9 +44,10 @@ const load = cache(async (slug: string): Promise<Page | null> => {
   return { kind: 'retailer', retailer, retailers, rows, inStock, showImages: rules.stockShowRetailerImages, indexable: Boolean(RETAILER_COPY[retailer.slug]) || hasRecentDrops(rows, new Date()) }
 })
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const p = await load((await params).slug)
   if (!p) return {}
+  const sp = await searchParams
   if (p.kind === 'state') {
     const name = AU_STATE_NAMES[p.state]
     return buildMetadata({
@@ -52,6 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `Pokémon & One Piece Restocks in ${name} (${p.state})`,
       description: `Member-confirmed Pokémon and One Piece stock sightings at Kmart, BIG W, Target and more in ${name}, with store, quantity and limits.`,
       noindex: !p.indexable,
+      searchParams: sp,
     })
   }
   const r = p.retailer
@@ -62,16 +66,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `Pokémon TCG and One Piece Card Game restocks, pre-orders and member sightings at ${r.name} Australia, checked around the clock and tagged against RRP in AUD.`
       : `Pokémon TCG and One Piece Card Game stock at ${r.name} in Australia, reported and confirmed by members who saw it in store.`,
     noindex: !p.indexable,
+    searchParams: sp,
   })
 }
 
-export default async function DropsSlug({ params }: Props) {
+export default async function DropsSlug({ params, searchParams }: Props) {
   const p = await load((await params).slug)
   if (!p) notFound()
-  return p.kind === 'state' ? <StateDrops p={p} /> : <RetailerDrops p={p} />
+  const page = pageNumber(await searchParams)
+  if (pastLastPage(page, p.rows.length, TABLE_PAGE_SIZE)) notFound()
+  return p.kind === 'state' ? <StateDrops p={p} page={page} /> : <RetailerDrops p={p} page={page} />
 }
 
-function RetailerDrops({ p }: { p: Extract<Page, { kind: 'retailer' }> }) {
+/** One page of the history, with page links back to the top of the list. */
+function History({ rows, page, basePath, empty }: { rows: DropRow[]; page: number; basePath: string; empty?: string }) {
+  return (
+    <>
+      <div className="mt-6"><DropFeed rows={slicePage(rows, page, TABLE_PAGE_SIZE)} empty={empty} /></div>
+      <Pagination basePath={basePath} page={page} total={rows.length} pageSize={TABLE_PAGE_SIZE} anchor="history" noun="events" />
+    </>
+  )
+}
+
+function RetailerDrops({ p, page }: { p: Extract<Page, { kind: 'retailer' }>; page: number }) {
   const r = p.retailer
   const copy = RETAILER_COPY[r.slug]
   return (
@@ -98,13 +115,13 @@ function RetailerDrops({ p }: { p: Extract<Page, { kind: 'retailer' }> }) {
           </p>
         </section>
       )}
-      <section className="section" aria-labelledby="hist-h"><h2 id="hist-h">History</h2><div className="mt-6"><DropFeed rows={p.rows} empty={r.monitored ? undefined : `No confirmed sightings at ${r.name} yet. Seen stock in store? Report it and other members will confirm it.`} /></div></section>
+      <section className="section scroll-mt-24" aria-labelledby="hist-h" id="history"><h2 id="hist-h">History</h2><History rows={p.rows} page={page} basePath={dropsPath(r.slug)} empty={r.monitored ? undefined : `No confirmed sightings at ${r.name} yet. Seen stock in store? Report it and other members will confirm it.`} /></section>
       <Faq faqs={copy?.faqs} title={`${r.name} restock questions`} />
     </div>
   )
 }
 
-function StateDrops({ p }: { p: Extract<Page, { kind: 'state' }> }) {
+function StateDrops({ p, page }: { p: Extract<Page, { kind: 'state' }>; page: number }) {
   const name = AU_STATE_NAMES[p.state]
   const copy = STATE_COPY[p.state]
   return (
@@ -119,9 +136,9 @@ function StateDrops({ p }: { p: Extract<Page, { kind: 'state' }> }) {
         <ReportCta />
       </PageIntro>
       <LiveDrops />
-      <section className="section" aria-labelledby="hist-h">
+      <section className="section scroll-mt-24" aria-labelledby="hist-h" id="history">
         <h2 id="hist-h">Sightings in {name}</h2>
-        <div className="mt-6"><DropFeed rows={p.rows} empty={`No confirmed sightings in ${name} yet. Seen stock in store? Report it and other members will confirm it.`} /></div>
+        <History rows={p.rows} page={page} basePath={dropsStatePath(p.state)} empty={`No confirmed sightings in ${name} yet. Seen stock in store? Report it and other members will confirm it.`} />
       </section>
       <Faq faqs={copy?.faqs} title={`Restock questions in ${name}`} />
     </div>

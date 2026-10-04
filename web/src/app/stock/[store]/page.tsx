@@ -6,6 +6,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
 import { JsonLd } from '@/components/JsonLd'
+import { Pagination } from '@/components/Pagination'
 import { FilterBar } from '@/components/FilterBar'
 import { Notice, PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
@@ -33,7 +34,8 @@ import {
   storeStockTitle,
 } from '@/lib/domain/stock'
 import { itemList } from '@/lib/seo/jsonld'
-import { buildMetadata, type SearchParams } from '@/lib/seo/metadata'
+import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, GAME_NAMES, GAMES, LANG_NAMES, LANGS, productPath, stockPath, storesPath } from '@/lib/seo/urls'
 
 export const revalidate = 60
@@ -105,6 +107,9 @@ export default async function StoreStock({ params, searchParams }: Props) {
     sort,
   )
   const filtered = Boolean(query || lang || tier !== undefined || status !== 'all')
+  const page = pageNumber(sp)
+  if (pastLastPage(page, shown.length, TABLE_PAGE_SIZE)) notFound()
+  const pageRows = slicePage(shown, page, TABLE_PAGE_SIZE)
   const now = new Date()
   const coverage = storeCoverage(retailer, now)
   const interval = intervalLabel(retailer.watchIntervalSeconds)
@@ -176,7 +181,7 @@ export default async function StoreStock({ params, searchParams }: Props) {
         </div>
       )}
 
-      <section className="section-tight" aria-labelledby="listings-h">
+      <section className="section-tight scroll-mt-24" aria-labelledby="listings-h" id="listings">
         <h2 id="listings-h">{!filtered ? `Every listing at ${retailer.name}` : status !== 'all' ? `${LISTING_FILTER_LABEL[status]} at ${retailer.name}` : `Matching listings at ${retailer.name}`}</h2>
         {shown.length === 0 ? (
           <p className="muted py-8">{rows.length ? 'Nothing matches these filters right now. Try fewer words, or * as a wildcard.' : 'No listings tracked here yet.'}</p>
@@ -194,7 +199,7 @@ export default async function StoreStock({ params, searchParams }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((r) => {
+                {pageRows.map((r) => {
                   const delta = r.product ? rrpDeltaLabel(r.priceAud, r.product.rrpAud) : null
                   return (
                     <tr key={r.url} data-availability={r.availability}>
@@ -226,6 +231,15 @@ export default async function StoreStock({ params, searchParams }: Props) {
             </table>
           </div>
         )}
+        <Pagination
+          basePath={stockPath(retailer.slug)}
+          page={page}
+          total={shown.length}
+          pageSize={TABLE_PAGE_SIZE}
+          params={{ q: query, status: status === 'all' ? undefined : status, game, lang, type: tier === undefined ? undefined : TYPE_TIERS[tier]?.slug, sort: sort === 'recommended' ? undefined : sort }}
+          anchor="listings"
+          noun="listings"
+        />
         <p className="muted mt-4 text-sm">Prices in AUD as listed by {retailer.name}. Stock can sell out between checks.</p>
         {isDemo && <p className="provenance">Preview data.</p>}
       </section>
@@ -244,8 +258,8 @@ export default async function StoreStock({ params, searchParams }: Props) {
       </p>
       <Faq faqs={faqs} title={`${retailer.name} stock questions`} />
       <div className="pb-16" />
-      {rows.some((r) => r.product) && (
-        <JsonLd data={itemList([...new Map(rows.filter((r) => r.product).map((r) => [r.product!.id, { name: r.product!.name, path: productPath(r.product!) }])).values()])} />
+      {pageRows.some((r) => r.product) && (
+        <JsonLd data={itemList([...new Map(pageRows.filter((r) => r.product).map((r) => [r.product!.id, { name: r.product!.name, path: productPath(r.product!) }])).values()])} />
       )}
     </div>
   )

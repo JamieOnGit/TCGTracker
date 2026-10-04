@@ -1,4 +1,5 @@
 import type { MarketplaceQuery } from '@/lib/data'
+import { GRID_PAGE_SIZE } from '@/lib/paging'
 import type { SearchParams } from '@/lib/seo/metadata'
 import { isGame, isLang, type Game } from '@/lib/seo/urls'
 
@@ -21,7 +22,22 @@ export function parseMarketplaceQuery(sp: SearchParams, game?: Game): Marketplac
     q: one(sp.q)?.slice(0, 80),
     sort: sort === 'price-asc' || sort === 'price-desc' ? sort : 'newest',
     page: Math.max(1, Number(one(sp.page)) || 1),
-    pageSize: 48,
+    pageSize: GRID_PAGE_SIZE,
+  }
+}
+
+/** The filters as query parameters, so page 2 keeps them (game is in the path on /marketplace/{game}/). */
+export function marketplaceParams(q: MarketplaceQuery, { withGame = true } = {}): Record<string, string | undefined> {
+  return {
+    game: withGame ? q.game : undefined,
+    lang: q.lang,
+    grade: q.gradeKey,
+    type: q.listingType,
+    state: q.state,
+    price_min: q.priceMin?.toString(),
+    price_max: q.priceMax?.toString(),
+    q: q.q,
+    sort: q.sort !== 'newest' ? q.sort : undefined,
   }
 }
 

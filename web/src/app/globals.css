@@ -400,6 +400,9 @@ article[data-product] .card-placeholder, article[data-product] .thumb { border-r
 .check input { width: 16px; height: 16px; accent-color: var(--accent-strong); }
 .dl-rows { display: grid; grid-template-columns: auto 1fr; } .dl-rows > dt, .dl-rows > dd { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: var(--text-sm); } .dl-rows > dt { color: var(--ink-muted); padding-right: 24px; } .dl-rows > dd { text-align: right; font-weight: 500; font-feature-settings: var(--num-features); }
 details > summary { border-radius: 4px; }
+details.more > summary { list-style: none; cursor: pointer; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more[open] > summary { display: none; }
 
 /* Breadcrumbs */
 .crumbs ol { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--text-xs); color: var(--ink-muted); list-style: none; padding: 0; margin: 0; }
@@ -407,8 +410,15 @@ details > summary { border-radius: 4px; }
 .crumbs li + li::before { content: "›"; margin-right: 6px; color: var(--ink-subtle); }
 
 /* Pagination */
-.pager { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 24px; font-size: var(--text-sm); color: var(--ink-muted); }
-.pager a { color: var(--accent); font-weight: 600; }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding-block: 20px; font-size: var(--text-sm); color: var(--ink-muted); }
+.pager-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.pager-num, .pager-step { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; padding: 0 10px; border-radius: var(--radius-sm, 8px); border: 1px solid var(--line); color: var(--ink); font-weight: 600; text-decoration: none; }
+a.pager-num:hover, a.pager-step:hover { border-color: var(--accent); color: var(--accent); }
+.pager-num[aria-current="page"] { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+span.pager-step { opacity: .4; }
+.pager-gap { padding: 0 4px; }
+.pager-count { font-variant-numeric: tabular-nums; }
+@media (max-width: 480px) { .pager { justify-content: center; } .pager-step { padding: 0 8px; } }
 
 /* Footer */
 .site-footer { border-top: 1px solid var(--line); background: var(--surface); padding-top: 56px; padding-bottom: 32px; margin-top: 96px; font-size: var(--text-sm); }

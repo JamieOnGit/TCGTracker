@@ -49,7 +49,10 @@ Sitemap types (`web/src/lib/seo/sitemap.ts`): `static`, `drops`, `releases`, `gu
 ### Canonical rules
 - Every indexable page is **self-canonical** via `buildMetadata({ path })`, using the absolute `NEXT_PUBLIC_SITE_URL`.
 - Filters and sorts (`?grade=`, `?sort=`, `?state=`, `?q=` … anything except `page`) are `noindex,follow` with a canonical to the clean page.
-- Pagination (`?page=2`) is self-canonical, indexable and gets " – Page 2" in the title and description.
+- Pagination (`?page=2`) is self-canonical, indexable and gets " – Page 2" in the title and "Page 2:" leading the description (so the length clamp never makes it a duplicate).
+- **Every list pages at about ten** (`TABLE_PAGE_SIZE` = 10 rows; `GRID_PAGE_SIZE` = 12 tiles, which fills 2/3/4-column grids), with the shared `<Pagination>`: plain `<a href>` page links (first, last, two either side of the current page), `rel="prev"`/`"next"`, filters kept in the links, and an `#anchor` back to the top of the list. A `?page=` past the last page is a 404, never an empty indexable page. Never "Load more" or infinite scroll: crawlers don't click or scroll.
+- One `?page=` per URL: where a page has two lists, the secondary one is a top-ten preview that links to its own paginated page (e.g. a set's "Most valuable cards" → set rankings), or uses the "Show N more" `<details>` pattern (rows stay in the HTML) for secondary archive lists such as earlier releases.
+- Feeds whose order changes constantly (drops activity, eBay deals) keep page 2+ noindex,follow; ItemList JSON-LD lists the items on the page shown.
 - JP and EN printings are **separate pages with no hreflang** between them. They are different products, not translations, and link to each other with a visible "Japanese version" link.
 - Renamed slugs get a 301 from the `redirects` table (cards, sets, marketplace, market cap; add releases, see audit).
 

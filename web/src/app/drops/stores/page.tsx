@@ -1,22 +1,30 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { Pagination } from '@/components/Pagination'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { Faq } from '@/components/DropsCopy'
 import { PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { AU_STATE_NAMES } from '@/lib/data/types'
 import { intervalLabel, storeCoverage, STORE_KIND_LABEL, type CoverageStatus } from '@/lib/domain/stock'
-import { buildMetadata } from '@/lib/seo/metadata'
+import { pastLastPage, slicePage, TABLE_PAGE_SIZE } from '@/lib/paging'
+import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { accountSightingsPath, dropsPath, inStockPath, scoutsPath, storesPath } from '@/lib/seo/urls'
 import { RetailerMark } from '@/components/RetailerMark'
 
 export const revalidate = 300
 
-export const metadata: Metadata = buildMetadata({
-  path: storesPath(),
-  title: 'Australian TCG Stores We Watch for Restocks',
-  description: 'Every Australian store TCGTracker watches for Pokémon and One Piece restocks: which are checked live, how often, and which are covered by member sightings.',
-})
+type Props = { searchParams: Promise<SearchParams> }
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  return buildMetadata({
+    path: storesPath(),
+    title: 'Australian TCG Stores We Watch for Restocks',
+    description: 'Every Australian store TCGTracker watches for Pokémon and One Piece restocks: which are checked live, how often, and which are covered by member sightings.',
+    searchParams: await searchParams,
+  })
+}
 
 const BADGE: Record<CoverageStatus, string> = { live: 'badge-live', setup: 'badge-lang', sightings: 'badge-lang', blocked: 'badge-warn' }
 const ORDER: Record<CoverageStatus, number> = { live: 0, setup: 1, blocked: 2, sightings: 3 }
@@ -37,10 +45,12 @@ const FAQS = [
 ]
 
 /** Store coverage: every store we watch and how, honestly. */
-export default async function Stores() {
+export default async function Stores({ searchParams }: Props) {
   const repo = getRepo()
   const now = new Date()
   const stores = (await repo.retailers()).map((r) => ({ r, c: storeCoverage(r, now) })).sort((a, b) => ORDER[a.c.status] - ORDER[b.c.status] || a.r.name.localeCompare(b.r.name))
+  const page = pageNumber(await searchParams)
+  if (pastLastPage(page, stores.length, TABLE_PAGE_SIZE)) notFound()
   const n = (s: CoverageStatus) => stores.filter((x) => x.c.status === s).length
   return (
     <div className="container-x">
@@ -60,7 +70,7 @@ export default async function Stores() {
         </div>
       </PageIntro>
 
-      <section className="section-tight" aria-labelledby="stores-h">
+      <section className="section-tight scroll-mt-24" aria-labelledby="stores-h" id="stores">
         <h2 id="stores-h">All stores</h2>
         <div className="table-wrap mt-4">
           <table className="dt">
@@ -69,7 +79,7 @@ export default async function Stores() {
               <tr><th scope="col">Store</th><th scope="col" className="hide-sm">Type</th><th scope="col" className="hide-sm">State</th><th scope="col">Coverage</th><th scope="col" className="hide-sm">Checked</th></tr>
             </thead>
             <tbody>
-              {stores.map(({ r, c }) => (
+              {slicePage(stores, page, TABLE_PAGE_SIZE).map(({ r, c }) => (
                 <tr key={r.slug} data-coverage={c.status}>
                   <th scope="row">
                     <span className="inline-flex items-center gap-2">
@@ -86,6 +96,7 @@ export default async function Stores() {
             </tbody>
           </table>
         </div>
+        <Pagination basePath={storesPath()} page={page} total={stores.length} pageSize={TABLE_PAGE_SIZE} anchor="stores" noun="stores" />
         {repo.isDemo && <p className="provenance">Preview data.</p>}
       </section>
 

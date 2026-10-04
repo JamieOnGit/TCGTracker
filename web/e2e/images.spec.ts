@@ -30,6 +30,6 @@ test('product cards, card pages and the rankings use catalogue images; others ke
   const product = await ld(page, 'Product')
   expect(String(product?.image)).toMatch(/\/demo\/card\.webp$/)
 
-  await page.goto('/')
+  await page.goto('/?q=charizard')
   await expect(page.locator('tr[data-card-id="card-pokemon-en-199"] img.thumb')).toHaveAttribute('src', '/demo/card.webp')
 })

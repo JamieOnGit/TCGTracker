@@ -4,9 +4,11 @@ import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { fmtDate, LangBadge } from '@/components/Format'
 import { effectivePrimaryGrade, MarketCapTable, parseMarketQuery } from '@/components/MarketCapTable'
+import { Pagination } from '@/components/Pagination'
 import { CardImage, PageIntro } from '@/components/ui'
 import { getRepo } from '@/lib/data'
-import { buildMetadata, titles, type SearchParams } from '@/lib/seo/metadata'
+import { byCardNumber, GRID_PAGE_SIZE, pastLastPage, slicePage } from '@/lib/paging'
+import { buildMetadata, pageNumber, titles, type SearchParams } from '@/lib/seo/metadata'
 import { cardPath, cardsPath, GAME_NAMES, isGame, isLang, LANG_NAMES, marketCapPath, productPath, releasePath, setPath } from '@/lib/seo/urls'
 
 export const revalidate = 3600
@@ -35,7 +37,13 @@ export default async function SetPage({ params, searchParams }: Props) {
   const [cards, rules, releases, sealed] = await Promise.all([repo.listCardsInSet(set.id), repo.getRules(), repo.releases({ game: set.game }), repo.listSealedProducts({ game: set.game, lang: set.lang })])
   const products = sealed.filter((p) => p.set?.slug === set.slug)
   const release = releases.find((r) => r.set?.slug === set.slug && r.lang === set.lang)
-  const query = parseMarketQuery(await searchParams, { game: set.game, lang: set.lang, setId: set.id }, await effectivePrimaryGrade(rules.primaryGrade))
+  const sp = await searchParams
+  // ?page= pages the card list; the rankings preview is always its top 10.
+  const query = { ...parseMarketQuery(sp, { game: set.game, lang: set.lang, setId: set.id }, await effectivePrimaryGrade(rules.primaryGrade)), page: 1 }
+  const sorted = [...cards].sort(byCardNumber)
+  const page = pageNumber(sp)
+  if (pastLastPage(page, sorted.length, GRID_PAGE_SIZE)) notFound()
+  const shown = slicePage(sorted, page, GRID_PAGE_SIZE)
   return (
     <div className="container-x">
       <div className="pt-6"><Breadcrumbs items={[{ name: 'Cards', path: '/cards/' }, { name: GAME_NAMES[set.game], path: cardsPath(set.game) }, { name: LANG_NAMES[set.lang], path: cardsPath(set.game, set.lang) }, { name: set.name, path: setPath(set) }]} /></div>
@@ -53,12 +61,12 @@ export default async function SetPage({ params, searchParams }: Props) {
       )}
       <section aria-labelledby="top-h">
         <div className="flex items-baseline justify-between"><h2 id="top-h">Most valuable cards</h2><Link href={marketCapPath(set.game, set.lang, set.slug)} className="btn-ghost text-sm">Set rankings</Link></div>
-        <div className="mt-6"><MarketCapTable query={query} basePath={setPath(set)} caption={`${set.name} cards ranked by value`} showControls={false} /></div>
+        <div className="mt-6"><MarketCapTable query={query} basePath={setPath(set)} caption={`${set.name} cards ranked by value`} showControls={false} paginate={false} /></div>
       </section>
-      <section className="section" aria-labelledby="all-h">
+      <section className="section scroll-mt-24" aria-labelledby="all-h" id="cards">
         <h2 id="all-h">Card list · {cards.length} tracked</h2>
         <div className="grid-tiles cols-4 mt-6">
-          {cards.map((c) => (
+          {shown.map((c) => (
             <Link key={c.id} href={cardPath(c)} className="tile">
               <div className="well"><CardImage src={c.imageUrl} alt={`${c.name} ${c.number}`} name={c.name} /></div>
               <p className="tile-name">{c.name}</p>
@@ -66,6 +74,7 @@ export default async function SetPage({ params, searchParams }: Props) {
             </Link>
           ))}
         </div>
+        <Pagination basePath={setPath(set)} page={page} total={sorted.length} pageSize={GRID_PAGE_SIZE} anchor="cards" noun="cards" />
       </section>
     </div>
   )
