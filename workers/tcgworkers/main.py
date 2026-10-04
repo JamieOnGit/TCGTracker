@@ -13,6 +13,14 @@ GitHub Actions, because drop polling is sub-5-minute):
 * a heartbeat to HEALTHCHECK_URL every minute while all of the above are
   healthy (``<url>/fail`` with the reasons when they are not).
 
+The big batch jobs (``Job.isolated``: prices, floors, images) run in a child
+process, ``python -m tcgworkers.main --once <job>``, one at a time (a file
+lock, which a manual ``fly ssh console`` run also takes). Their memory goes
+back to the machine when they finish, they don't compete with the monitor
+threads for Python's interpreter lock, and every ``--once`` process asks the
+kernel to kill it first if memory runs out: the drop monitor and the alert
+sender keep running whatever a batch job does.
+
 ``--once <job>`` runs one job and exits; ``--once drops_runner`` runs one
 discovery cycle for every enabled retailer.
 """
@@ -20,10 +28,15 @@ discovery cycle for every enabled retailer.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import logging
+import os
 import signal
+import subprocess
 import sys
 import threading
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from types import FrameType
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -37,6 +50,8 @@ from tcgworkers.sources.population.base import SourceNotApproved
 log = logging.getLogger("tcgworkers")
 
 RUNNER_JOB = "drops_runner"
+HEAVY_LOCK = "/tmp/tcgworkers-heavy.lock"
+OOM_SCORE_ADJ = "/proc/self/oom_score_adj"
 
 
 def _run(job: Job, env: Env, heartbeat: Heartbeat | None = None) -> bool:
@@ -55,6 +70,62 @@ def _run(job: Job, env: Env, heartbeat: Heartbeat | None = None) -> bool:
     except Exception:
         log.exception("job %s failed", job.name)  # Sentry picks this up
         return False
+
+
+def prefer_oom_kill(path: str = OOM_SCORE_ADJ) -> None:
+    """If the machine runs out of memory, the kernel kills this process
+    first (a process may always raise its own score), not the long-running
+    one with the drop monitor in it."""
+    try:
+        with open(path, "w") as f:
+            f.write("1000")
+    except OSError:
+        pass  # not Linux, or no /proc: nothing to do
+
+
+@contextmanager
+def heavy_lock(path: str = HEAVY_LOCK) -> Iterator[None]:
+    """One big batch job at a time on this machine, scheduled or run by hand."""
+    with open(path, "a+") as fh:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            log.info("another big job (prices, floors or images) is running; waiting for it to finish")
+            fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+
+
+Spawn = Callable[[list[str]], int]
+
+
+def _spawn(cmd: list[str]) -> int:
+    # A batch job needs one database connection: cap the child at 2 so this
+    # process (drop monitor, alerts) always keeps its share of the pooler's 15.
+    env = {**os.environ, "DB_MAX_CONNECTIONS": "2"}
+    return subprocess.run(cmd, check=False, env=env).returncode
+
+
+def _run_isolated(job: Job, heartbeat: Heartbeat | None = None, spawn: Spawn = _spawn) -> bool:
+    """Run a big job as ``python -m tcgworkers.main --once <job>`` and wait for it."""
+    try:
+        code = spawn([sys.executable, "-m", "tcgworkers.main", "--once", job.name])
+    except OSError:
+        log.exception("job %s: could not start its process", job.name)
+        return False
+    if code != 0:
+        why = " (killed: the machine ran out of memory?)" if code in (-9, 137) else ""
+        log.error("job %s failed with exit code %s%s", job.name, code, why)
+        return False
+    if heartbeat:
+        heartbeat.beat(job.name)
+    return True
+
+
+def _scheduled(job: Job, env: Env, heartbeat: Heartbeat) -> bool:
+    return _run_isolated(job, heartbeat) if job.isolated else _run(job, env, heartbeat)
 
 
 def _wakeable(job: Job, env: Env, heartbeat: Heartbeat, stop: threading.Event) -> None:
@@ -96,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
 
     jobs = {j.name: j for j in JOBS}
     if args.once == RUNNER_JOB:
+        prefer_oom_kill()
         from tcgworkers.drops.runner import run_all_once
 
         results = run_all_once(env.database_url, user_agent=env.user_agent, admin_email=env.admin_alert_email)
@@ -103,7 +175,12 @@ def main(argv: list[str] | None = None) -> int:
             log.info("%s: %s", slug, outcome)
         return 0 if all(o.startswith("ok") for o in results.values()) else 1
     if args.once:
-        return 0 if _run(jobs[args.once], env) else 1
+        prefer_oom_kill()
+        job = jobs[args.once]
+        if job.isolated:
+            with heavy_lock():
+                return 0 if _run(job, env) else 1
+        return 0 if _run(job, env) else 1
 
     heartbeat = Heartbeat()
     stop = threading.Event()
@@ -114,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     for job in JOBS:
         if job.cron:
             scheduler.add_job(
-                _run,
+                _scheduled,
                 "cron",
                 args=(job, env, heartbeat),
                 id=job.name,
@@ -130,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
             ).start()
         elif job.every_seconds:
             scheduler.add_job(
-                _run,
+                _scheduled,
                 "interval",
                 seconds=job.every_seconds,
                 args=(job, env, heartbeat),
@@ -145,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
             if job.every_hours_setting:
                 hours = float(getattr(rules, job.every_hours_setting.replace(".", "_"), hours))
             scheduler.add_job(
-                _run,
+                _scheduled,
                 "interval",
                 hours=hours,
                 args=(job, env, heartbeat),

@@ -108,7 +108,7 @@ def normalise_name(value: str | None) -> str:
     return re.sub(r"[^a-z0-9ぁ-んァ-ン一-龥]+", " ", v).strip()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)  # slots: the import holds one per catalogue card
 class CatalogueCard:
     id: str
     game: str
