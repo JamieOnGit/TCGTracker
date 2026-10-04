@@ -520,3 +520,69 @@ export async function articles(sb: SupabaseClient) {
   const { data } = await sb.from('articles').select('id,slug,category,title,status,published_at,updated_at').order('updated_at', { ascending: false }).limit(100)
   return (data ?? []) as unknown as { id: string; slug: string; category: string; title: string; status: string; published_at: string | null; updated_at: string }[]
 }
+
+// ----------------------------------------------------------------- images
+export interface CoverageRow {
+  game: string
+  lang: string
+  total: number
+  withImage: number
+}
+export interface MissingImage {
+  id: string
+  name: string
+  detail: string
+  game: string
+  lang: string
+  href: string
+}
+
+/** Image coverage per game and language, for cards and sealed products. */
+export async function imageCoverage(sb: SupabaseClient): Promise<{ cards: CoverageRow[]; sealed: CoverageRow[] }> {
+  const combos = [
+    ['pokemon', 'en'],
+    ['pokemon', 'jp'],
+    ['one-piece', 'en'],
+    ['one-piece', 'jp'],
+  ] as const
+  const count = async (table: 'cards' | 'sealed_products', game: string, lang: string, withImage: boolean) => {
+    let q = sb.from(table).select('id', { count: 'exact', head: true }).eq('game', game).eq('lang', lang)
+    if (table === 'cards') q = q.eq('is_excluded', false)
+    if (withImage) q = q.not('image_url', 'is', null)
+    const { count: n } = await q
+    return n ?? 0
+  }
+  const rows = async (table: 'cards' | 'sealed_products') =>
+    (
+      await Promise.all(
+        combos.map(async ([game, lang]) => ({ game, lang, total: await count(table, game, lang, false), withImage: await count(table, game, lang, true) })),
+      )
+    ).filter((r) => r.total > 0)
+  const [cards, sealed] = await Promise.all([rows('cards'), rows('sealed_products')])
+  return { cards, sealed }
+}
+
+/** Products still on the default image (first 100 of each), for fixing by hand. */
+export async function missingImages(sb: SupabaseClient, kind: 'cards' | 'sealed'): Promise<MissingImage[]> {
+  if (kind === 'cards') {
+    const { data } = await sb
+      .from('cards')
+      .select('id,name,number,variant,game,lang,slug,sets(name,slug)')
+      .is('image_url', null)
+      .eq('is_excluded', false)
+      .order('name')
+      .limit(100)
+    type Row = { id: string; name: string; number: string; variant: string | null; game: string; lang: string; slug: string; sets: { name: string; slug: string } | null }
+    return ((data ?? []) as unknown as Row[]).map((c) => ({
+      id: c.id,
+      name: c.name,
+      detail: `${c.sets?.name ?? ''} · #${c.number}${c.variant && c.variant !== 'standard' ? ` · ${c.variant}` : ''}`,
+      game: c.game,
+      lang: c.lang,
+      href: `/cards/${c.game}/${c.lang}/${c.sets?.slug ?? ''}/${c.slug}/`,
+    }))
+  }
+  const { data } = await sb.from('sealed_products').select('id,name,type,game,lang,slug').is('image_url', null).order('name').limit(100)
+  type Row = { id: string; name: string; type: string; game: string; lang: string; slug: string }
+  return ((data ?? []) as unknown as Row[]).map((p) => ({ id: p.id, name: p.name, detail: p.type, game: p.game, lang: p.lang, href: `/products/${p.game}/${p.lang}/${p.slug}/` }))
+}

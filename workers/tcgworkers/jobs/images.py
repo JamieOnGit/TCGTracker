@@ -40,7 +40,19 @@ from tcgworkers.sources.images.scrydex import (
     front_image,
     lang_of,
 )
-from tcgworkers.sources.population.base import SourceNotApproved
+from tcgworkers.sources.images.tcgdex import LANGS as TCGDEX_LANGS
+from tcgworkers.sources.images.tcgdex import TcgdexClient, TcgdexError, card_image
+
+# Where an image came from decides what may replace it: Scrydex > TCGdex >
+# a store's listing photo. Anything else (an image set by hand) is never touched.
+AUTO_SOURCES = ("scrydex", "tcgdex", "retailer")
+
+
+def replaceable(source: str) -> str:
+    """SQL: rows whose image a ``source`` image may set or replace."""
+    weaker = AUTO_SOURCES[AUTO_SOURCES.index(source) :]
+    return "(image_source is null or " + " or ".join(f"image_source like '{w}:%%'" for w in weaker) + ")"
+
 
 log = logging.getLogger(__name__)
 Conn = Any
@@ -119,7 +131,9 @@ class OurCard:
     name: str
     variant: str
     set_name: str
-    managed: bool  # image unset or ours to update (from Scrydex)
+    managed: bool  # image unset or set by an automatic source (never a hand-set one)
+    set_code: str = ""
+    has_image: bool = False
 
 
 @dataclass
@@ -138,10 +152,13 @@ class ImageStats:
     expansions_synced: int = 0
     cards_seen: int = 0
     cards_updated: int = 0
-    cards_ambiguous: int = 0
+    cards_from_tcgdex: int = 0
+    cards_from_search: int = 0
     sealed_seen: int = 0
     sealed_updated: int = 0
+    sealed_from_retailers: int = 0
     requests: int = 0
+    tcgdex_requests: int = 0
     stopped: str | None = None
     errors: dict[str, str] = field(default_factory=dict)
 
@@ -149,13 +166,23 @@ class ImageStats:
 def _load_cards(conn: Conn, game: str) -> dict[tuple[str, str], list[OurCard]]:
     by_key: dict[tuple[str, str], list[OurCard]] = defaultdict(list)
     for r in conn.execute(
-        """select c.id::text as id, c.lang, c.number, c.name, c.variant, coalesce(s.name, '') as set_name,
-                  (c.image_source is null or c.image_source like 'scrydex:%%') as managed
+        f"""select c.id::text as id, c.lang, c.number, c.name, c.variant, coalesce(s.name, '') as set_name,
+                  coalesce(s.code, '') as set_code, {replaceable("scrydex")} as managed, c.image_url is not null as has_image
              from public.cards c left join public.sets s on s.id = c.set_id
-            where c.game = %s""",
+            where c.game = %s and not c.is_excluded""",
         (game,),
     ):
-        card = OurCard(r["id"], r["lang"], r["number"], r["name"], r["variant"], r["set_name"], r["managed"])
+        card = OurCard(
+            r["id"],
+            r["lang"],
+            r["number"],
+            r["name"],
+            r["variant"],
+            r["set_name"],
+            r["managed"],
+            r["set_code"],
+            r["has_image"],
+        )
         by_key[(card.lang, normalise_number(card.number))].append(card)
     return by_key
 
@@ -221,13 +248,12 @@ def alt_prints(
     return out
 
 
-def _update_card(conn: Conn, card_id: str, url: str, scx_id: str) -> int:
+def _update_card(conn: Conn, card_id: str, url: str, ref: str, source: str = SOURCE) -> int:
     return int(
         conn.execute(
-            """update public.cards set image_url = %s, image_source = %s
-            where id = %s and (image_source is null or image_source like 'scrydex:%%')
-              and image_url is distinct from %s""",
-            (url, f"{SOURCE}:{scx_id}", card_id, url),
+            f"""update public.cards set image_url = %s, image_source = %s
+                 where id = %s and {replaceable(source)} and image_url is distinct from %s""",
+            (url, f"{source}:{ref}", card_id, url),
         ).rowcount
     )
 
@@ -316,8 +342,7 @@ def _load_sealed(conn: Conn) -> list[OurSealed]:
     return [
         OurSealed(r["id"], r["game"], r["lang"], r["name"], r["type"], r["managed"])
         for r in conn.execute(
-            """select id::text as id, game, lang, name, type,
-                      (image_source is null or image_source like 'scrydex:%%') as managed
+            f"""select id::text as id, game, lang, name, type, {replaceable("scrydex")} as managed
                  from public.sealed_products"""
         )
     ]
@@ -356,50 +381,200 @@ def sync_sealed(conn: Conn, client: ScrydexClient, stats: ImageStats) -> None:
             if p is None or not p.managed:
                 continue
             stats.sealed_updated += conn.execute(
-                """update public.sealed_products set image_url = %s, image_source = %s
-                    where id = %s and (image_source is null or image_source like 'scrydex:%%')
-                      and image_url is distinct from %s""",
+                f"""update public.sealed_products set image_url = %s, image_source = %s
+                     where id = %s and {replaceable("scrydex")} and image_url is distinct from %s""",
                 (url, f"{SOURCE}:{scx.get('id')}", p.id, url),
             ).rowcount
         conn.commit()
 
 
+# ---------------------------------------------------------------- fallbacks
+def _code_of(set_name: str, set_code: str) -> set[str]:
+    """Set codes a set may go by: its own code and a 'SV2a:' style name prefix."""
+    out = {re.sub(r"[^a-z0-9.]", "", set_code.lower())}
+    m = re.match(r"^\s*([A-Za-z0-9.\-]{2,8})\s*:", set_name)
+    if m:
+        out.add(re.sub(r"[^a-z0-9.]", "", m.group(1).lower()))
+    return {c for c in out if c and not c.startswith("jt")}
+
+
+def _tcgdex_set_for(set_name: str, set_code: str, sets: list[dict[str, Any]]) -> dict[str, Any] | None:
+    codes = _code_of(set_name, set_code)
+    by_code = [t for t in sets if re.sub(r"[^a-z0-9.]", "", str(t["id"]).lower()) in codes]
+    if len(by_code) == 1:
+        return by_code[0]
+    exact = [t for t in sets if _norm_set(t.get("name")) == _norm_set(set_name)]
+    if len(exact) == 1:
+        return exact[0]
+    loose = [t for t in sets if _sets_match(t.get("name"), set_name)]
+    return loose[0] if len(loose) == 1 else None
+
+
+def fill_from_tcgdex(conn: Conn, client: TcgdexClient, stats: ImageStats) -> None:
+    """Pokémon cards still without an image: find their set on TCGdex (by set
+    code, else by name), then the card by number (and, in English, by name;
+    TCGdex's Japanese names are in Japanese, so the set code + number decide)."""
+    missing: dict[tuple[str, str, str], list[OurCard]] = defaultdict(list)
+    for cards in _load_cards(conn, "pokemon").values():
+        for c in cards:
+            if c.managed and not c.has_image and c.lang in TCGDEX_LANGS:
+                missing[(c.lang, c.set_name, c.set_code)].append(c)
+    if not missing:
+        return
+    sets_by_lang: dict[str, list[dict[str, Any]]] = {}
+    for (lang, set_name, set_code), cards in missing.items():
+        tlang = TCGDEX_LANGS[lang]
+        if tlang not in sets_by_lang:
+            sets_by_lang[tlang] = client.sets(tlang)
+        tset = _tcgdex_set_for(set_name, set_code, sets_by_lang[tlang])
+        if tset is None:
+            continue
+        by_number: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for t in client.set_cards(tlang, str(tset["id"])):
+            by_number[normalise_number(str(t.get("localId") or ""))].append(t)
+        for c in cards:
+            options = by_number.get(normalise_number(c.number), [])
+            if lang == "en":
+                options = [t for t in options if _names_match(c.name, str(t.get("name") or ""))]
+            if len(options) != 1:
+                continue
+            url = card_image(options[0])
+            if url:
+                stats.cards_from_tcgdex += _update_card(conn, c.id, url, str(options[0].get("id")), "tcgdex")
+        conn.commit()
+
+
+def search_missing(conn: Conn, client: ScrydexClient, stats: ImageStats, cap: int) -> None:
+    """Cards still without an image after the expansion sync: one Scrydex search
+    each (one credit), up to ``cap`` a run, most valuable first."""
+    rows = conn.execute(
+        f"""select c.id::text as id, c.game, c.lang, c.number, c.name, c.variant, coalesce(s.name, '') as set_name
+              from public.cards c left join public.sets s on s.id = c.set_id
+              left join lateral (select max(f.floor_aud) as v from public.floor_prices f where f.card_id = c.id) f on true
+             where c.image_url is null and not c.is_excluded and c.game in ('pokemon', 'one-piece')
+               and {replaceable("scrydex").replace("image_source", "c.image_source")}
+             order by f.v desc nulls last, c.name
+             limit %s""",
+        (cap,),
+    ).fetchall()
+    for r in rows:
+        card = OurCard(r["id"], r["lang"], r["number"], r["name"], r["variant"], r["set_name"], True)
+        index = {(card.lang, normalise_number(card.number)): [card]}
+        name = str(r["name"]).replace('"', "")
+        q = f'name:"{name}" number:"{r["number"].split("/")[0]}"'
+        for scx in client.search_cards(GAMES[r["game"]], q):
+            url = front_image(scx)
+            lang = lang_of(scx)
+            if not url or lang != card.lang:
+                continue
+            targets = [(c, url) for c in match_card(scx, lang, index, r["game"])] + alt_prints(
+                scx, lang, index, r["game"]
+            )
+            if targets:
+                stats.cards_from_search += _update_card(conn, card.id, targets[0][1], str(scx.get("id")))
+                break
+        conn.commit()
+
+
+def fill_sealed_from_retailers(conn: Conn, stats: ImageStats) -> None:
+    """Sealed products still without an image take the photo from one of their
+    own linked store listings (an exact match): an official store first, then
+    the most recently seen listing. Scrydex replaces it if it later has one."""
+    stats.sealed_from_retailers += conn.execute(
+        f"""update public.sealed_products sp set image_url = r.image_url, image_source = 'retailer:' || r.slug
+              from (select distinct on (rp.sealed_product_id) rp.sealed_product_id, rp.image_url, re.slug
+                      from public.retail_products rp join public.retailers re on re.id = rp.retailer_id
+                     where rp.sealed_product_id is not null and rp.image_url like 'https://%%'
+                       and not coalesce(rp.is_marketplace_seller, false)
+                     order by rp.sealed_product_id, (re.kind = 'official') desc, rp.last_seen_at desc nulls last) r
+             where sp.id = r.sealed_product_id and sp.image_url is null
+               and {replaceable("retailer").replace("image_source", "sp.image_source")}"""
+    ).rowcount
+    conn.commit()
+
+
+def coverage(conn: Conn) -> dict[str, Any]:
+    """How many products have an image, overall and per game and language."""
+    out: dict[str, Any] = {}
+    for table, key in (("cards", "cards"), ("sealed_products", "sealed")):
+        excluded = "where not is_excluded" if table == "cards" else ""
+        rows = conn.execute(
+            f"""select game, lang, count(*) as total, count(image_url) as with_image
+                  from public.{table} {excluded} group by game, lang order by game, lang"""
+        ).fetchall()
+        total = sum(r["total"] for r in rows)
+        done = sum(r["with_image"] for r in rows)
+        out[key] = {
+            "total": total,
+            "with_image": done,
+            "pct": round(100 * done / total, 1) if total else None,
+            "by": {f"{r['game']}/{r['lang']}": f"{r['with_image']}/{r['total']}" for r in rows},
+        }
+    return out
+
+
 def refresh_images(
-    conn: Conn, env: Env, *, client: ScrydexClient | None = None, now: datetime | None = None
+    conn: Conn,
+    env: Env,
+    *,
+    client: ScrydexClient | None = None,
+    tcgdex: TcgdexClient | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
-    if client is None and not (env.scrydex_api_key and env.scrydex_team_id):
-        raise SourceNotApproved("SCRYDEX_API_KEY and SCRYDEX_TEAM_ID are not set (Scrydex plan)")
+    """Scrydex first (when its keys are set), then the free fallbacks, then a
+    coverage report. Without Scrydex keys the free sources still run."""
     rules = load_rules(conn)
     extra = rules.extra
     now = now or datetime.now(UTC)
-    client = client or ScrydexClient(
-        env.scrydex_api_key or "",
-        env.scrydex_team_id or "",
-        user_agent=env.user_agent,
-        max_requests=int(extra.get("images.scrydex_max_requests_per_run", 1500)),
+    if client is None and env.scrydex_api_key and env.scrydex_team_id:
+        client = ScrydexClient(
+            env.scrydex_api_key,
+            env.scrydex_team_id,
+            user_agent=env.user_agent,
+            max_requests=int(extra.get("images.scrydex_max_requests_per_run", 1500)),
+        )
+    tcgdex = tcgdex or TcgdexClient(
+        user_agent=env.user_agent, max_requests=int(extra.get("images.tcgdex_max_requests_per_run", 1000))
     )
     stats = ImageStats()
     with pipeline_run(conn, "images") as out:
+        if client is not None:
+            try:
+                sync_sealed(conn, client, stats)
+                sync_cards(
+                    conn,
+                    client,
+                    stats,
+                    now=now,
+                    recent_days=int(extra.get("images.recent_days", 90)),
+                    resync_days=int(extra.get("images.resync_days", 30)),
+                )
+            except BudgetExhausted:
+                stats.stopped = "Scrydex request budget used"
+                conn.commit()
+            except ScrydexError as exc:
+                if exc.status in (401, 403):
+                    raise
+                stats.stopped = str(exc)[:300]
+                conn.commit()
+        else:
+            out["scrydex"] = "skipped: SCRYDEX_API_KEY / SCRYDEX_TEAM_ID not set"
+        # Free fallbacks: never stop the run.
         try:
-            sync_sealed(conn, client, stats)
-            sync_cards(
-                conn,
-                client,
-                stats,
-                now=now,
-                recent_days=int(extra.get("images.recent_days", 90)),
-                resync_days=int(extra.get("images.resync_days", 30)),
-            )
-        except BudgetExhausted:
-            stats.stopped = "request budget used"
-            conn.commit()
-        except ScrydexError as exc:
-            if exc.status in (401, 403):
-                raise
-            stats.stopped = str(exc)[:300]
-            conn.commit()
-        stats.requests = client.requests
+            fill_from_tcgdex(conn, tcgdex, stats)
+        except TcgdexError as exc:
+            conn.rollback()
+            stats.errors["tcgdex"] = str(exc)[:300]
+        fill_sealed_from_retailers(conn, stats)
+        if client is not None and stats.stopped is None:
+            try:
+                search_missing(conn, client, stats, int(extra.get("images.scrydex_search_max_per_run", 300)))
+            except (BudgetExhausted, ScrydexError) as exc:
+                conn.commit()
+                stats.errors["scrydex_search"] = str(exc)[:300]
+        stats.requests = client.requests if client is not None else 0
+        stats.tcgdex_requests = tcgdex.requests
         out.update({k: v for k, v in stats.__dict__.items() if v not in (None, {})})
-        out["source"] = SOURCE
+        out["coverage"] = coverage(conn)
         log.info("images: %s", out)
     return out

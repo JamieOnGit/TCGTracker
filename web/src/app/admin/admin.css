@@ -163,3 +163,6 @@ details > summary.btn::-webkit-details-marker { display: none; }
 /* Segmented filters in page headers scroll rather than widen the page on phones */
 .admin-page-tools { max-width: 100%; min-width: 0; }
 .admin-page-tools .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+
+/* Images: one product without an image, with its fix form. */
+.image-fix-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm, 10px); background: var(--surface); }

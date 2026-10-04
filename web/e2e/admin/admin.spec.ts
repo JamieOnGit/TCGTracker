@@ -108,6 +108,28 @@ test.describe('admin console', () => {
     expect(data?.enabled).toBe(false)
   })
 
+  test('admin sees image coverage and sets a missing image by hand', async ({ page, context }) => {
+    await signIn(context, admin)
+    await page.goto('/admin/images/')
+    await expect(page.getByRole('heading', { level: 1, name: 'Images' })).toBeVisible()
+    await expect(page.locator('[data-coverage="cards"]')).toHaveText(/%|—/)
+    const item = page.locator('[data-missing]').first()
+    test.skip((await item.count()) === 0, 'every product already has an image')
+    const input = item.locator('input[type="url"]')
+    const id = (await input.getAttribute('id'))!.replace('img-', '')
+    const kind = await item.getAttribute('data-missing')
+    const table = kind === 'card' ? 'cards' : 'sealed_products'
+    try {
+      await input.fill('https://images.example.com/hand-set.webp')
+      await item.getByRole('button', { name: 'Save' }).click()
+      await expect(item.getByRole('status')).toContainText('Saved')
+      const { data } = await service().from(table).select('image_url,image_source').eq('id', id).single()
+      expect(data).toEqual({ image_url: 'https://images.example.com/hand-set.webp', image_source: 'manual' })
+    } finally {
+      await service().from(table).update({ image_url: null, image_source: null }).eq('id', id)
+    }
+  })
+
   test('the audit log shows who did what', async ({ page, context }) => {
     await signIn(context, admin)
     await page.goto(`/admin/audit/?actor=${admin.id}`)

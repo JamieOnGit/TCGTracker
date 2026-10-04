@@ -455,3 +455,10 @@ details > summary { border-radius: 4px; }
 
 /* Store logos (RetailerMark): the store's own icon on a white tile. */
 .retailer-logo { display: inline-block; flex: none; border-radius: var(--radius-xs); border: 1px solid var(--line); background: #fff; object-fit: contain; }
+
+/* TCGTracker default image (ProductPlaceholder): a product we have no picture of yet. */
+.product-placeholder { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-radius: var(--radius-card); border: 1px solid var(--line); background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--accent-soft) 90%, transparent), transparent 70%), linear-gradient(160deg, var(--surface-2), var(--bg-sunken)); }
+.product-placeholder .brand-mark { opacity: .9; }
+.product-placeholder-word { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -.01em; color: var(--ink-muted); }
+.thumb.product-placeholder { gap: 0; aspect-ratio: 63 / 88; }
+.thumb-28.product-placeholder { width: 28px; } .thumb-40.product-placeholder { width: 40px; }

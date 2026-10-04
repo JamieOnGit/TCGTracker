@@ -6,6 +6,7 @@ import { GAME_NAMES, productPath } from '@/lib/seo/urls'
 import { LangBadge, fmtAud2 } from './Format'
 import { NotifyButton } from './NotifyButton'
 import { RetailerMark } from '@/components/RetailerMark'
+import { ProductPlaceholder } from '@/components/ui'
 
 /**
  * A sealed product in a stock list: lowest live price against RRP, where it is
@@ -28,7 +29,7 @@ export function ProductCard({ p, showImages = false, headingLevel = 3 }: { p: Se
           // eslint-disable-next-line @next/next/no-img-element -- catalogue images (Scrydex) or store product photos
           <img src={image} alt="" className="thumb w-full" style={{ aspectRatio: '4 / 3', objectFit: 'contain', background: '#fff' }} loading="lazy" decoding="async" />
         ) : (
-          <div className="card-placeholder" style={{ aspectRatio: '4 / 3', padding: '8%' }}>{productTypeLabel(p.type)}</div>
+          <ProductPlaceholder label={p.name} ratio="4 / 3" />
         )}
       </Link>
       <div>

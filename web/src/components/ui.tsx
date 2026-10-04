@@ -74,17 +74,31 @@ export function Notice({ tone = 'info', title, children }: { tone?: 'info' | 'wa
   )
 }
 
-/** Card image in its 63:88 frame, or a typographic placeholder (no stock scans until image rights are cleared). */
-export function CardImage({ src, alt, name, width }: { src: string | null | undefined; alt: string; name: string; width?: number }) {
+/**
+ * The TCGTracker default image, for a product we have no picture of yet:
+ * the logo mark and wordmark on a soft tile in the site's colours (light and
+ * dark). Never a "coming soon" message.
+ */
+export function ProductPlaceholder({ label, ratio = '63 / 88', compact = false }: { label: string; ratio?: string; compact?: boolean }) {
+  return (
+    <div className="product-placeholder" style={{ aspectRatio: ratio }} role="img" aria-label={label} data-placeholder="">
+      <BrandMark size={compact ? 14 : 44} />
+      {!compact && (
+        <span className="product-placeholder-word" aria-hidden="true">
+          <span className="holo-text">TCG</span>Tracker
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** Card image in its 63:88 frame, or the TCGTracker default image. */
+export function CardImage({ src, alt, width }: { src: string | null | undefined; alt: string; name?: string; width?: number }) {
   if (src) {
     // eslint-disable-next-line @next/next/no-img-element -- remote catalogue images; next/image is used where hosts are known
     return <img src={src} alt={alt} width={width} className="thumb w-full" loading="lazy" decoding="async" />
   }
-  return (
-    <div className="card-placeholder" role="img" aria-label={alt}>
-      {name}
-    </div>
-  )
+  return <ProductPlaceholder label={alt} />
 }
 
 export function Thumb({ name, src, size = 28 }: { name: string; src?: string | null; size?: 28 | 40 }) {
@@ -92,5 +106,9 @@ export function Thumb({ name, src, size = 28 }: { name: string; src?: string | n
     // eslint-disable-next-line @next/next/no-img-element -- catalogue images from Scrydex's CDN, a few KB each
     return <img src={src} alt="" className={`thumb thumb-${size}`} width={size} height={Math.round((size * 88) / 63)} loading="lazy" decoding="async" />
   }
-  return <span className={`thumb thumb-${size}`} role="img" aria-label={`${name} (image coming soon)`} />
+  return (
+    <span className={`thumb thumb-${size} product-placeholder`} role="img" aria-label={name}>
+      <BrandMark size={size === 40 ? 18 : 14} />
+    </span>
+  )
 }

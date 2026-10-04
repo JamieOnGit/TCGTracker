@@ -540,7 +540,15 @@ This powers **/deals/**: graded cards on eBay Australia listed well under market
 3. Paste it into **Admin → Settings → eBay** on the site. Deal and fallback links then earn commission.
 
 ## Step 9c · Product images: Scrydex (≈10 min) ⏭ ready
-The image import is built and waiting for your Scrydex keys. Until then, cards and sealed products show the styled placeholder.
+The image import is built. Until a product has a picture, it shows the TCGTracker default image (the logo on a soft tile), never a "coming soon" message. The free sources already run without Scrydex keys; Scrydex adds One Piece and fills the gaps.
+
+Where images come from, best first (a better source replaces a weaker one; an image you set by hand is never replaced):
+1. **Scrydex**: Pokémon (English and Japanese) and One Piece cards, and sealed products. Needs the keys below.
+2. **TCGdex** (free, no key): Pokémon cards Scrydex doesn't cover, English and Japanese.
+3. **The product's own store listing**: sealed products, from the photo on the store page we already track for that product.
+4. **A one-credit Scrydex search** for each card still missing, most valuable first (up to 300 a run).
+
+Every run reports coverage, overall and per game and language. **Admin → Images** shows the same figures and lists every product still on the default image, with a box to paste an image address and fix it by hand.
 
 What it fills in, every day:
 - **Cards**: Pokémon (English and Japanese) and One Piece. One Piece manga, parallel and alt-art prints only get an image when Scrydex has that exact print, never the base art.
@@ -561,7 +569,7 @@ Images load straight from Scrydex's image server, which Scrydex allows and which
    ```
    fly ssh console -C "python -m tcgworkers.main --once images"
    ```
-   It takes a few minutes. The last line starts `images:` and shows `cards_updated` and `sealed_updated`. Send Claude that line.
+   It takes a few minutes. The last line starts `images:`; its `coverage` part shows the percentage of cards and sealed products with an image. Send Claude that line. The aim is 95% or more.
 5. If a run stops with `request budget used`, the next daily run carries on where it stopped. The cap per run is `images.scrydex_max_requests_per_run` (1,500).
 6. Store photos stay as a fallback for sealed products Scrydex doesn't have, when **Admin → Settings → Stock → Show retailer images** is on.
 

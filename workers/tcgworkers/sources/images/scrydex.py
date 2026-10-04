@@ -149,5 +149,10 @@ class ScrydexClient:
     def cards(self, game: str, expansion_id: str) -> Iterator[dict[str, Any]]:
         return self._pages(f"/{game}/v1/expansions/{expansion_id}/cards", 100)
 
+    def search_cards(self, game: str, q: str) -> list[dict[str, Any]]:
+        """One page (one credit) of a card search, e.g. ``name:"Charizard ex" number:"199"``."""
+        body = self.get(f"/{game}/v1/cards", {"q": q, "page_size": 10})
+        return [x for x in body.get("data") or [] if isinstance(x, dict)]
+
     def sealed(self, game: str) -> Iterator[dict[str, Any]]:
         return self._pages(f"/{game}/v1/sealed", 100)

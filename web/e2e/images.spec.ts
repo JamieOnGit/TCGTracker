@@ -21,7 +21,9 @@ test('product pages show the catalogue image with credit, and Product JSON-LD ca
 test('product cards, card pages and the rankings use catalogue images; others keep the placeholder', async ({ page }) => {
   await page.goto('/drops/in-stock/')
   await expect(page.locator('article[data-product="demo-expansion-elite-trainer-box"] img.thumb')).toHaveAttribute('src', '/demo/sealed.webp')
-  await expect(page.locator('article[data-product="demo-premium-booster-box"] .card-placeholder')).toBeVisible()
+  await expect(page.locator('article[data-product="demo-premium-booster-box"] [data-placeholder]')).toBeVisible()
+  // The default image is the TCGTracker mark, never a 'coming soon' message.
+  await expect(page.getByText(/coming soon/i)).toHaveCount(0)
 
   await page.goto('/cards/pokemon/en/151/199-charizard-ex/')
   await expect(page.locator('img[src="/demo/card.webp"]').first()).toBeVisible()

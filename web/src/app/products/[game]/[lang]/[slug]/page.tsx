@@ -8,7 +8,7 @@ import { Faq } from '@/components/DropsCopy'
 import { fmtAud2, fmtDate } from '@/components/Format'
 import { JsonLd } from '@/components/JsonLd'
 import { NotifyButton } from '@/components/NotifyButton'
-import { PageIntro } from '@/components/ui'
+import { PageIntro, ProductPlaceholder } from '@/components/ui'
 import { getRepo } from '@/lib/data'
 import { isInStock } from '@/lib/data/drops'
 import type { OfferRow, SealedProductRow } from '@/lib/data/types'
@@ -79,7 +79,7 @@ export default async function ProductPage({ params }: Props) {
               <figcaption className="subtle mt-2 text-xs">Image © {p.game === 'pokemon' ? 'The Pokémon Company' : 'Bandai'}</figcaption>
             </figure>
           ) : (
-            <div className="card-placeholder" style={{ aspectRatio: '1 / 1' }} role="img" aria-label={`${heading} (image coming soon)`}>{productTypeLabel(p.type)}</div>
+            <ProductPlaceholder label={heading} ratio="1 / 1" />
           )}
         </div>
       </div>
