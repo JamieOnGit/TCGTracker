@@ -59,3 +59,22 @@ test('drops pages have no horizontal scroll at phone width', async ({ page }, in
     expect(await page.evaluate(() => window.innerWidth), path).toBeLessThanOrEqual(page.viewportSize()!.width)
   }
 })
+
+test('the drops page carries a compact Australian release calendar', async ({ page }) => {
+  await page.goto('/drops/')
+  const cal = page.getByTestId('upcoming-releases')
+  await expect(cal.getByRole('heading', { name: 'Release calendar' })).toBeVisible()
+  await expect(cal).toContainText('Australian release dates')
+  await expect(cal.getByRole('link', { name: 'Full release calendar' })).toHaveAttribute('href', '/releases/')
+  await expect(cal.getByRole('link', { name: /Add to your calendar/ })).toHaveAttribute('href', /\.ics$/)
+  // Every listed release links to its own page, and that page exists.
+  const rows = cal.locator('ol li a')
+  const n = await rows.count()
+  expect(n).toBeLessThanOrEqual(6)
+  if (n > 0) {
+    const href = await rows.first().getAttribute('href')
+    expect(href).toMatch(/^\/releases\/(pokemon|one-piece)\/[a-z0-9-]+\/$/)
+    const res = await page.goto(href!)
+    expect(res?.status()).toBe(200)
+  }
+})

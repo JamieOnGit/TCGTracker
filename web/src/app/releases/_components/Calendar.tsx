@@ -5,13 +5,13 @@ import { getRepo } from '@/lib/data'
 import { addDays, groupReleases, periodEnd, todayAu } from '@/lib/releases'
 import { itemList } from '@/lib/seo/jsonld'
 import { dropsPath, releasePath, type Game } from '@/lib/seo/urls'
-import { Collapsed, ReleaseTable, SetDateTable } from './ReleaseTable'
+import { Collapsed, ReleaseTable } from './ReleaseTable'
 
 /**
  * The calendar body shared by /releases/ and /releases/{game}/: upcoming by
  * month (Australian dates), then the last 60 days, then TBC; game pages also
- * list earlier releases so past detail pages stay linked. While the
- * release table is empty it falls back to set release dates from the catalogue.
+ * list earlier releases so past detail pages stay linked. Australian dates
+ * only: Bandai (Oceania), Australian retailers and editors.
  */
 export async function Calendar({ game }: { game?: Game }) {
   const repo = getRepo()
@@ -22,16 +22,8 @@ export async function Calendar({ game }: { game?: Game }) {
   const earlier = game ? rows.filter((r) => (periodEnd(r) ?? '9999') < since).reverse() : []
   const showGame = !game
   if (rows.length === 0) {
-    // Newest first; sets without a date sort last.
-    const sets = (await repo.listSets(game ? { game } : undefined)).sort((a, b) => (b.releaseDate ?? '').localeCompare(a.releaseDate ?? ''))
-    return sets.length > 0 ? (
-      <section className="section-tight" aria-labelledby="sets-h">
-        <h2 id="sets-h">Set release dates</h2>
-        <Collapsed rows={sets} noun="sets" render={(part) => <SetDateTable sets={part} caption="Set release dates, newest first" showGame={showGame} />} />
-      </section>
-    ) : (
-      <EmptyState title="No release dates yet" body="Dates are added as soon as they are announced." />
-    )
+    // Australian dates only: no fallback to overseas set dates from the card catalogue.
+    return <EmptyState title="No release dates yet" body="Australian dates are added as soon as Bandai or an Australian retailer publishes them." />
   }
   const listed = [...upcoming.flatMap((g) => g.rows), ...recent, ...tbc]
   return (

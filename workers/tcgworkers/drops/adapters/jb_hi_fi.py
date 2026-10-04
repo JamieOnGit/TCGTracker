@@ -34,10 +34,11 @@ import re
 import time
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from tcgworkers.drops.base import RetailerAdapter, register
 from tcgworkers.drops.http import PoliteClient
@@ -132,6 +133,26 @@ def jb_cart_url(hit: dict[str, Any]) -> str | None:
     return CART_URL.format(variant=variant)
 
 
+AU_TZ = ZoneInfo("Australia/Sydney")
+
+
+def jb_release_date(value: Any) -> date | None:
+    """JB's ``release_date``: a Unix timestamp (midnight Sydney time, stored as
+    UTC) or a ``YYYY/MM/DD`` / ``YYYY-MM-DD`` string. The Australian day."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        if value <= 0:
+            return None
+        return datetime.fromtimestamp(value, UTC).astimezone(AU_TZ).date()
+    if isinstance(value, str) and (m := re.fullmatch(r"\s*(\d{4})[/-](\d{1,2})[/-](\d{1,2})", value[:10])):
+        try:
+            return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            return None
+    return None
+
+
 def parse_hits(payload: dict[str, Any], *, observed_at: datetime) -> list[Observation]:
     out: list[Observation] = []
     for hit in payload.get("hits", []):
@@ -155,6 +176,7 @@ def parse_hits(payload: dict[str, Any], *, observed_at: datetime) -> list[Observ
                     for k in ("sku", "handle", "availability", "release_date", "updated_at", "variant_id")
                 },
                 cart_url=jb_cart_url(hit),
+                release_date=jb_release_date(hit.get("release_date")),
             )
         )
     return out

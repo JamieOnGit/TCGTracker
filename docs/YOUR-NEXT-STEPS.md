@@ -46,6 +46,7 @@ The website is complete, but these parts are switched off until their services a
 | **9d** | **Every card in every set** | ⏭ After the full-catalogue PR is merged: **Actions → Deploy database**, refresh all sets, run prices (5 min). Move Supabase to Pro before launch. |
 | **9e** | **Drop alerts: interests only, instant, one-tap checkout** | ⏭ After the drop-alerts PR is merged: **Actions → Deploy database**, `fly deploy` the workers, then set your own interests (5 min) |
 | **9f** | **Workers stay within 512 MB** | ⏭ After the worker-memory PR is merged: `fly deploy` the workers (2 min). No database step. |
+| **9g** | **Australian release calendar (automatic) on the Drops page** | ⏭ After the release-calendar PR is merged: **Actions → Deploy database**, `fly deploy` the workers (3 min) |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -645,6 +646,37 @@ cd workers
 fly deploy
 ```
 A manual run (`fly ssh console -C "python -m tcgworkers.main --once prices"`) still works the same. If a scheduled big job is already running, it prints "another big job ... is running; waiting for it to finish" and starts straight after.
+
+## Step 9g · Australian release calendar, filled automatically (≈3 min) ⏭ after the release-calendar PR is merged
+**What you get:** the **Drops** page shows a small **Release calendar** with the next six Australian release dates. Each one links to its release page, and there's a link to the full calendar (`/releases/`) and the calendar feed (.ics). Dates are Australian calendar days.
+
+**Where the dates come from (every 6 hours):**
+- **One Piece:** Bandai's official English site, edition NA/EU/**OC** (Oceania). These are official Australian dates. Accessories (sleeves, playmats, storage boxes) and Premium Bandai web-store items are left out.
+- **Pokémon:** the release date **JB Hi-Fi** publishes on its pre-orders. Products of one set out on the same day become one release, listing each product with its Australian RRP. These are marked **Retailer listing**, because retailers can move dates; when JB moves a date, the calendar moves with it.
+- **pokemon.com** blocks automated access, so official Pokémon dates still need an editor. Add them in **Admin → Releases**. Once a set has your release, JB's dates for that set aren't added again.
+- Overseas dates are never shown. The calendar no longer falls back to card-catalogue set dates, which are US dates.
+
+**You stay in charge (Admin → Releases):**
+- Automatic entries say "Automatic: Bandai …" or "Automatic: JB Hi-Fi".
+- If you **edit** one, it's locked and never overwritten.
+- If you **delete** one, it never comes back.
+- To switch the automatic fill off: **Admin → Settings → Drops → Fill the release calendar automatically**.
+
+**After merging:**
+1. **GitHub → Actions → Deploy database.**
+2. Then deploy the workers. Do it in this order: database first, then workers.
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+3. Fill the calendar now instead of waiting up to 6 hours:
+   ```
+   fly ssh console -C "python -m tcgworkers.main --once releases"
+   ```
+   The last line shows how many releases were added. JB Hi-Fi's dates appear after the drop monitor has seen each product once more (within minutes), so run it again after about 30 minutes for the full Pokémon list.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

@@ -7,6 +7,7 @@
 | prices      | market.floor_refresh_hours (4h)     | JustTCG (needs JUSTTCG_API_KEY)          |
 | floors      | market.floor_refresh_hours (4h)     | ready; needs price data                 |
 | snapshots   | daily                               | ready; needs population + floors        |
+| releases    | every 6h                            | release calendar: Bandai OC + AU retailer dates |
 | images      | daily                               | Scrydex (SCRYDEX_API_KEY + SCRYDEX_TEAM_ID) |
 | expiry      | hourly                              | ready                                   |
 | listing_expiring | hourly                         | renewal reminders (listings.expiry_warning_days) |
@@ -365,6 +366,12 @@ def images_job(conn: Conn, env: Env) -> None:
     refresh_images(conn, env)
 
 
+def releases_job(conn: Conn, env: Env) -> None:
+    from tcgworkers.jobs.releases import refresh_releases
+
+    refresh_releases(conn, env)
+
+
 def not_approved(what: str) -> Callable[[Conn, Env], None]:
     def run(conn: Conn, env: Env) -> None:
         raise SourceNotApproved(f"{what} source not approved yet - see docs/research")
@@ -386,6 +393,8 @@ JOBS: tuple[Job, ...] = (
     Job("floors", "market.floor_refresh_hours", 4, _ua(refresh_floors), isolated=True),
     Job("images", None, 24, images_job, isolated=True),
     Job("snapshots", None, 24, _ua(snapshot_market_caps)),
+    # Release calendar: Bandai (One Piece, Oceania) + Australian retailer street dates.
+    Job("releases", None, 6, releases_job),
     Job("expiry", None, 1, _ua(expire_listings)),
     Job("listing_expiring", None, 1, _ua(warn_expiring_listings)),
     Job("email", None, 0, send_emails, every_seconds=20, heartbeat_max_age=300),

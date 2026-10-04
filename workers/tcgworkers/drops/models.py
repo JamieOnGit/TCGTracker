@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
@@ -63,6 +63,9 @@ class Observation:
     # and opens checkout (Shopify cart permalink /cart/{variant}:1). Only
     # when it is unambiguous which item it adds.
     cart_url: str | None = None
+    # The store's own release date for the item (Australian calendar day),
+    # e.g. a pre-order's street date. Feeds the release calendar.
+    release_date: date | None = None
 
 
 @dataclass(frozen=True)

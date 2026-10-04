@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import type { ReleaseRow, SetRow } from '@/lib/data/types'
+import type { ReleaseRow } from '@/lib/data/types'
 import { TABLE_PAGE_SIZE } from '@/lib/paging'
 import { CONFIDENCE_LABEL, formatReleaseDateShort, KIND_LABEL } from '@/lib/releases'
-import { GAME_NAMES, releasePath, setPath } from '@/lib/seo/urls'
+import { GAME_NAMES, releasePath } from '@/lib/seo/urls'
 
 const CONFIDENCE_BADGE: Record<ReleaseRow['confidence'], string> = { official: 'badge badge-live', retailer: 'badge badge-lang', unconfirmed: 'badge badge-warn' }
 
@@ -37,35 +37,6 @@ export function ReleaseTable({ rows, caption, showGame }: { rows: ReleaseRow[]; 
               {showGame && <td>{GAME_NAMES[r.game]}</td>}
               <td><span className="badge badge-lang">{r.lang.toUpperCase()}</span></td>
               <td><ConfidenceBadge confidence={r.confidence} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/** Fallback while the release calendar is empty: set release dates from the catalogue. */
-export function SetDateTable({ sets, caption, showGame }: { sets: SetRow[]; caption: string; showGame?: boolean }) {
-  return (
-    <div className="table-wrap mt-4">
-      <table className="dt">
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Set</th>
-            {showGame && <th scope="col">Game</th>}
-            <th scope="col">Lang</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sets.map((s) => (
-            <tr key={s.id}>
-              <td className="num whitespace-nowrap">{s.releaseDate ? <time dateTime={s.releaseDate.slice(0, 10)}>{formatReleaseDateShort({ releaseDate: s.releaseDate.slice(0, 10), datePrecision: 'day' })}</time> : 'TBC'}</td>
-              <th scope="row"><Link href={setPath(s)} className="prose-link">{s.name}</Link></th>
-              {showGame && <td>{GAME_NAMES[s.game]}</td>}
-              <td><span className="badge badge-lang">{s.lang.toUpperCase()}</span></td>
             </tr>
           ))}
         </tbody>
