@@ -34,6 +34,7 @@ The owner is not a developer. Explanations are plain English, commands are copy-
   - Never use `export const dynamicParams = false`. There's no OpenNext page cache, so build-time-only pages are 404 in production.
   - Don't rely on `revalidate` (ISR) caching for correctness. Every request renders today.
   - CI runs the real worker (`wrangler dev`). Its SEO crawl and browser scan must pass.
+- **Store stock is live for members only:** visitors (and Google) read each listing's delayed copy (`public_*`, `stock.public_delay_minutes`), members `current_*`. Stock pages call `isSignedIn()` (it's free for visitors without a session cookie) and pass `{ live }` to the repo. New stock UI must do the same, and show `<StockFreshness>` where stock is the page's main content.
 - **Realtime connections are scarce** (~200 on the free plan). Only signed-in members subscribe, with their own token (`sb.realtime.setAuth`). Never subscribe on a page view for an anonymous visitor.
 - **Deploy order:**
   1. The web app deploys on merge, *before* the owner runs Deploy database. So web code must keep working until a new migration lands; fall back when an RPC or column is missing.

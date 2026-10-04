@@ -66,6 +66,7 @@ export const SETTING_GROUPS: SettingGroup[] = [
     fields: [
       { key: 'drops.public_delay_minutes', label: 'Public history delay', kind: { type: 'int', min: 0, max: 10080, unit: 'minutes' } },
       { key: 'drops.free_delay_minutes', label: 'Free member alert delay', kind: { type: 'int', min: 0, max: 10080, unit: 'minutes' } },
+      { key: 'stock.public_delay_minutes', label: 'Visitors see store stock after', hint: 'Signed-in members (Free and Premium) see stock live; visitors and search engines see it this much later.', kind: { type: 'int', min: 0, max: 1440, unit: 'minutes' } },
       { key: 'drops.free_delayed_alerts', label: 'Send Free members delayed alerts', kind: { type: 'bool' } },
       { key: 'drops.price_drop_pct', label: 'Price-drop alerts from', hint: 'Only alert when a store cuts the price by at least this much.', kind: { type: 'int', min: 1, max: 90, unit: '%' } },
       { key: 'drops.suppress_above_rrp_pct', label: 'Suppress marketplace sellers above RRP by', kind: { type: 'num', step: 1, unit: '%' } },

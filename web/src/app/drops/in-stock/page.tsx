@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Pagination } from '@/components/Pagination'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { StockFreshness } from '@/components/StockFreshness'
+import { isSignedIn } from '@/lib/supabase/server'
 import { JsonLd } from '@/components/JsonLd'
 import { ProductCard } from '@/components/ProductCard'
 import { FilterBar } from '@/components/FilterBar'
@@ -42,7 +44,9 @@ export default async function InStock({ searchParams }: Props) {
   const tier = parseTier(sp.type)
   const sort = parseProductSort(sp.sort)
   const repo = getRepo()
-  const [all, rules] = await Promise.all([repo.inStock({ game, limit: 300 }), repo.getRules()])
+  // Members (signed in, Free or Premium) see stock live; visitors see it stock.public_delay_minutes later.
+  const liveStock = await isSignedIn()
+  const [all, rules] = await Promise.all([repo.inStock({ game, limit: 300, live: liveStock }), repo.getRules()])
   // Store options: every store with something live in this view.
   const stores = new Map<string, string>()
   for (const p of all) for (const o of p.offers) if (live(o)) stores.set(o.retailerSlug, o.retailerName)
@@ -66,6 +70,7 @@ export default async function InStock({ searchParams }: Props) {
         title="In stock now"
         lead="Pokémon and One Piece sealed product that Australian stores list as in stock or on pre-order right now, grouped by product, with the lowest price we see against RRP. Tap Notify me and we’ll alert you the next time a product comes back anywhere."
       >
+        <StockFreshness live={liveStock} delayMinutes={rules.stockPublicDelayMinutes} next={inStockPath()} />
         <div className="mt-6">
           <FilterBar
             action={inStockPath()}

@@ -48,6 +48,7 @@ The website is complete, but these parts are switched off until their services a
 | **9f** | **Workers stay within 512 MB** | ⏭ After the worker-memory PR is merged: `fly deploy` the workers (2 min). No database step. |
 | **9g** | **Australian release calendar (automatic) on the Drops page** | ⏭ After the release-calendar PR is merged: **Actions → Deploy database**, `fly deploy` the workers (3 min) |
 | **9h** | **Site scan fixes (guides, live connections, sitemap speed)** | ⏭ After the site-scan PR is merged: **Actions → Deploy database** (1 min). Optional later: page cache (below) |
+| **9i** | **Live stock for members, 10 minutes behind for visitors** | ⏭ After the stock-timing PR is merged: **Actions → Deploy database**, then `fly deploy` the workers (3 min) |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -700,6 +701,29 @@ BASE_URL=https://tcgtracker.com.au npm run seo:check
 ```
 
 **Optional, later: page cache (faster pages, less database load).** Pages are meant to refresh every 5 minutes, but on Cloudflare every visit currently rebuilds the page from the database. That's fine at today's traffic. Before a big launch, ask Claude to "set up the OpenNext R2 page cache". It needs a free Cloudflare R2 bucket, which you create in Cloudflare (**R2 → Create bucket**, about 2 minutes).
+
+## Step 9i · Live stock for members, 10 minutes behind for visitors (≈3 min) ⏭ after the stock-timing PR is merged
+**What changes:**
+
+| Who | Store stock (`/stock/`, store pages, In stock now, product pages) | Drop alerts |
+|---|---|---|
+| Visitor (not signed in), and Google | Every page, complete, but **10 minutes behind**, with a **"Sign up free for live stock"** button | — |
+| **Free member** | **Live** | 5 minutes after the drop |
+| **Premium member** | **Live** | **Instant** (push, email, Discord, live feed) |
+
+The pages still rank: Google sees full stock pages (10 minutes behind), so nothing is hidden from search. Signing up is free and is what unlocks live stock. The delay is exactly what each listing was 10 minutes ago, worked out from the stock history; nothing is guessed. Change it in **Admin → Settings → Drops → Visitors see store stock after**.
+
+**After merging (order matters):**
+1. **GitHub → Actions → Deploy database.** Until you do, everyone keeps seeing live stock: nothing breaks.
+2. Deploy the workers. They keep the visitors' copy up to date every minute.
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+3. **Check:** open `/stock/` in a private window. You should see "You're seeing stock as it was 10 minutes ago". Signed in, you should see a green **Live** badge instead.
 
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.

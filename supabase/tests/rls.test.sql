@@ -804,4 +804,29 @@ select tests.ok((select any_last from jb_last) > coalesce((select public_last fr
   'drop_page_last_events: the test has a fresh event the public must not see yet');
 reset role;
 
+-- Stock: members read live (current_*), visitors read the delayed copy (public_*), refreshed from history.
+reset role;
+insert into public.retail_products (retailer_id, sku, url, title, game)
+select id, 'PUB-DELAY', 'https://www.jbhifi.com.au/products/pub-delay', 'Delay test ETB', 'pokemon' from public.retailers where slug = 'jb-hi-fi';
+insert into public.retail_product_states (retail_product_id, availability, price_aud, observed_at)
+select id, 'in_stock_online', 89.95, now() - interval '20 minutes' from public.retail_products where sku = 'PUB-DELAY';
+insert into public.retail_product_states (retail_product_id, availability, price_aud, observed_at)
+select id, 'out_of_stock', 89.95, now() - interval '2 minutes' from public.retail_products where sku = 'PUB-DELAY';
+select public.refresh_public_stock();
+select tests.ok((select current_availability = 'out_of_stock' and public_availability = 'in_stock_online'
+                   and public_change_at < now() - interval '10 minutes' from public.retail_products where sku = 'PUB-DELAY'),
+  'stock: visitors see the state as of 10 minutes ago, members the live one');
+select tests.ok(public.refresh_public_stock() = 0, 'stock: a second refresh with nothing new changes nothing');
+update public.retail_product_states set observed_at = now() - interval '11 minutes'
+ where retail_product_id = (select id from public.retail_products where sku = 'PUB-DELAY') and availability = 'out_of_stock';
+select public.refresh_public_stock();
+select tests.ok((select public_availability = 'out_of_stock' from public.retail_products where sku = 'PUB-DELAY'),
+  'stock: once the change is 10 minutes old, visitors see it too');
+set role anon;
+select set_config('request.jwt.claims', '', false);
+select tests.ok((select listings >= 1 from public.stock_overview_public() where slug = 'jb-hi-fi'),
+  'stock: visitors can read the delayed hub counts');
+reset role;
+delete from public.retail_products where sku = 'PUB-DELAY';
+
 \echo 'All database tests passed'

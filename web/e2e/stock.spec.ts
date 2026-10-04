@@ -180,3 +180,23 @@ test('store stock page: every listing with status, price and a facet that is noi
   const res = await page.goto('/stock/no-such-store/')
   expect(res?.status()).toBe(404)
 })
+
+test('visitors see stock 10 minutes behind, with the free sign-up for live stock', async ({ page }) => {
+  for (const path of ['/stock/', '/stock/jb-hi-fi/', '/drops/in-stock/']) {
+    await page.goto(path)
+    const note = page.getByTestId('stock-delayed')
+    await expect(note).toContainText('You’re seeing stock as it was 10 minutes ago')
+    const cta = note.getByRole('link', { name: 'Sign up free for live stock' })
+    await expect(cta).toHaveAttribute('href', `/login/?next=${encodeURIComponent(path)}`)
+    await expect(cta).toHaveAttribute('rel', 'nofollow')
+    await expect(page.getByTestId('stock-live')).toHaveCount(0)
+  }
+  // The pages stay complete and indexable for search engines.
+  await page.goto('/stock/')
+  await expect(page.locator('meta[name="robots"]')).not.toHaveAttribute('content', /noindex/)
+})
+
+test('a product page tells visitors how fresh its stock is', async ({ page }) => {
+  await page.goto(PRODUCT)
+  await expect(page.getByTestId('stock-delayed')).toBeVisible()
+})

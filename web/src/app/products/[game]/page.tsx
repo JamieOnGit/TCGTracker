@@ -6,11 +6,12 @@ import { getRepo } from '@/lib/data'
 import { GRID_PAGE_SIZE, pastLastPage } from '@/lib/paging'
 import { buildMetadata, pageNumber, type SearchParams } from '@/lib/seo/metadata'
 import { GAME_NAMES, isGame, productsPath, type Game } from '@/lib/seo/urls'
+import { isSignedIn } from '@/lib/supabase/server'
 
 export const revalidate = 600
 type Props = { params: Promise<{ game: string }>; searchParams: Promise<SearchParams> }
 
-const load = cache((game: Game) => getRepo().listSealedProducts({ game, limit: 500 }))
+const load = cache((game: Game, live = false) => getRepo().listSealedProducts({ game, limit: 500, live }))
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { game } = await params
@@ -30,7 +31,7 @@ export default async function GameProducts({ params, searchParams }: Props) {
   const { game } = await params
   if (!isGame(game)) notFound()
   const repo = getRepo()
-  const [rows, rules] = await Promise.all([load(game), repo.getRules()])
+  const [rows, rules] = await Promise.all([load(game, await isSignedIn()), repo.getRules()])
   const page = pageNumber(await searchParams)
   if (pastLastPage(page, rows.length, GRID_PAGE_SIZE)) notFound()
   return <ProductIndex game={game} rows={rows} page={page} showImages={rules.stockShowRetailerImages} isDemo={repo.isDemo} />

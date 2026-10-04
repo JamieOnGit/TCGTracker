@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { StockFreshness } from '@/components/StockFreshness'
+import { isSignedIn } from '@/lib/supabase/server'
 import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
 import { fmtAud2, fmtDate } from '@/components/Format'
@@ -38,7 +40,9 @@ type Props = { params: Promise<{ game: string; lang: string; slug: string }> }
 
 const BRAND = { pokemon: 'Pokémon TCG', 'one-piece': 'One Piece Card Game' } as const
 
-const load = cache(async (game: string, lang: string, slug: string) => (isGame(game) && isLang(lang) ? getRepo().getSealedProduct(game, lang, slug) : null))
+const load = cache(async (game: string, lang: string, slug: string, live = false) =>
+  isGame(game) && isLang(lang) ? getRepo().getSealedProduct(game, lang, slug, { live }) : null,
+)
 
 // A product no store lists yet is thin: noindex,follow (and left out of the sitemap).
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -50,7 +54,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { game, lang, slug } = await params
-  const p = await load(game, lang, slug)
+  // Members (signed in, Free or Premium) see each store's stock live; visitors see it stock.public_delay_minutes later.
+  const live = await isSignedIn()
+  const p = await load(game, lang, slug, live)
   if (!p) notFound()
   const repo = getRepo()
   const path = productPath(p)
@@ -72,6 +78,7 @@ export default async function ProductPage({ params }: Props) {
             <NotifyButton productId={p.id} productName={p.name} nextPath={path} watchers={watchers} size="md" />
             <p className="muted mt-2 max-w-[var(--measure)] text-xs">Notify me alerts you when this product is back in stock, opens for pre-order or drops in price at any store we watch: instantly with Premium, 5 minutes later on Free.</p>
           </div>
+          <StockFreshness live={live} delayMinutes={rules.stockPublicDelayMinutes} next={path} />
         </PageIntro>
         <div className={image ? 'mx-auto w-full max-w-[280px] pb-6 md:max-w-none md:pt-16' : 'hidden md:block md:pt-16'}>
           {image ? (

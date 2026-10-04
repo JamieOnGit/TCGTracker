@@ -24,6 +24,20 @@ export async function supabaseForRequest(): Promise<SupabaseClient> {
   })
 }
 
+/**
+ * Is the visitor signed in (any tier)? Used to show members live stock.
+ * Visitors without a Supabase session cookie cost nothing (no network call);
+ * a cookie is verified with Supabase, so a stale or forged one counts as signed out.
+ */
+export async function isSignedIn(): Promise<boolean> {
+  if (!supabaseConfigured()) return false
+  const store = await cookies()
+  if (!store.getAll().some((c) => c.name.startsWith('sb-') && c.name.includes('-auth-token'))) return false
+  const sb = await supabaseForRequest()
+  const { data } = await sb.auth.getUser()
+  return Boolean(data.user)
+}
+
 /** Anonymous client for cacheable public reads (no cookies, so pages can be ISR'd). */
 export function supabasePublic(): SupabaseClient {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {

@@ -26,6 +26,8 @@ export interface Rules {
   freeDelayedDropAlerts: boolean
   primaryGrade: string
   freeDropDelayMinutes: number
+  /** Visitors who aren't signed in see store stock this late; members see it live. */
+  stockPublicDelayMinutes: number
   rankByPriceUntilPopulation: boolean
   ebay: EbaySettings
   sightings: SightingRules
@@ -114,6 +116,7 @@ export const DEFAULT_RULES: Rules = {
   freeDelayedDropAlerts: true,
   primaryGrade: 'raw',
   freeDropDelayMinutes: 5,
+  stockPublicDelayMinutes: 10,
   rankByPriceUntilPopulation: true,
   ebay: DEFAULT_EBAY,
   sightings: DEFAULT_SIGHTING_RULES,
@@ -138,6 +141,7 @@ const KEY_MAP: Record<string, keyof Rules> = {
   'drops.free_delayed_alerts': 'freeDelayedDropAlerts',
   'market.primary_grade': 'primaryGrade',
   'drops.free_delay_minutes': 'freeDropDelayMinutes',
+  'stock.public_delay_minutes': 'stockPublicDelayMinutes',
   'market.rank_by_price_until_population': 'rankByPriceUntilPopulation',
 }
 
