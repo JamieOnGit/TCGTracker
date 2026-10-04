@@ -28,7 +28,7 @@ import httpx
 
 from tcgworkers.drops.base import AdapterBlocked, RetailerAdapter
 from tcgworkers.drops.filters import _norm, game_in_text, non_sealed_reason
-from tcgworkers.drops.http import Disallowed, PoliteClient
+from tcgworkers.drops.http import Disallowed, PoliteClient, RobotsUnreadable
 from tcgworkers.drops.models import Observation
 
 BLOCK_COOLDOWN = 6 * 3600.0
@@ -139,6 +139,8 @@ class CatalogueAdapter(RetailerAdapter):
         a config problem, reported as a failed cycle) or ValueError."""
         try:
             r = client.get(url, pass_statuses=(401, 403, 404, 410), headers={"Accept": "application/json"})
+        except RobotsUnreadable as exc:
+            raise AdapterBlocked(str(exc)) from exc
         except Disallowed as exc:
             raise AdapterBlocked(f"robots: robots.txt disallows {urlsplit(url).path}") from exc
         if r.status_code in (401, 403):

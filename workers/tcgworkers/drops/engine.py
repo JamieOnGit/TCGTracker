@@ -94,6 +94,7 @@ class CycleResult:
     health: Health
     alert_admin: bool
     error: str | None = None
+    blocked: bool = False  # the store refused us (robots, 403, challenge): retry slowly
 
 
 def run_cycle(

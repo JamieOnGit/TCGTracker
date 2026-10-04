@@ -29,6 +29,12 @@ class Disallowed(RuntimeError):
     """robots.txt disallows this URL for our user agent."""
 
 
+class RobotsUnreadable(Disallowed):
+    """The host refused or failed to serve robots.txt itself (e.g. HTTP 403 to
+    cloud servers). We stay out, as if everything were disallowed, but the
+    reason is the refusal, not a robots.txt rule."""
+
+
 class BackingOff(RuntimeError):
     """The host told us to slow down; we're waiting before trying again."""
 
@@ -47,6 +53,7 @@ class _Host:
     last_request_at: float = 0.0
     backoff_until: float = 0.0
     strikes: int = 0
+    robots_problem: str | None = None  # why robots.txt couldn't be read
 
 
 @dataclass
@@ -95,7 +102,7 @@ class SharedGate:
             self.min_interval = max(self.floor if self.floor is not None else 0.0, self.min_interval * 0.97)
 
     def back_off(self, until: float, host: str = "") -> None:
-        """A 429 from ``host``. One shop refusing is that shop's own limit (it
+        """A 429 (or 503) from ``host``. One shop refusing is that shop's own limit (it
         backs off alone) and everyone slows down a little; two different shops
         refusing in a row is the platform's limit, so every shop pauses."""
         with self._lock:
@@ -141,19 +148,22 @@ class PoliteClient:
         origin, host = self._host(url)
         now = self.clock()
         if host.robots is None or now - host.robots_fetched_at > self.robots_ttl:
+            problem = None
             try:
                 if self.gate is not None:
                     self.gate.wait()
                 r = self._http.get(f"{origin}/robots.txt")
                 if r.status_code in (401, 403):
                     parser = Robots.disallow_all()  # blocked from robots.txt itself: stay out
+                    problem = f"{origin} refused robots.txt (HTTP {r.status_code})"
                 elif r.status_code >= 400:
                     parser = Robots.allow_all()  # no robots.txt: everything allowed
                 else:
                     parser = Robots.parse(r.text)
-            except httpx.HTTPError:
+            except httpx.HTTPError as exc:
                 parser = Robots.disallow_all()  # can't read it: be conservative
-            host.robots, host.robots_fetched_at = parser, now
+                problem = f"{origin} did not serve robots.txt ({type(exc).__name__})"
+            host.robots, host.robots_fetched_at, host.robots_problem = parser, now, problem
         return host.robots.can_fetch(self.user_agent, url)
 
     def crawl_delay(self, url: str) -> float | None:
@@ -175,7 +185,8 @@ class PoliteClient:
         instead of triggering back-off / raising (e.g. an API's 403 "invalid
         key", which means "re-read the credentials", not "slow down")."""
         if not self.allowed(url):
-            raise Disallowed(url)
+            _, host = self._host(url)
+            raise RobotsUnreadable(host.robots_problem) if host.robots_problem else Disallowed(url)
         origin, host = self._host(url)
         now = self.clock()
         if now < host.backoff_until:
@@ -213,7 +224,8 @@ class PoliteClient:
                 float(retry_after) if retry_after.isdigit() else self.base_backoff * 2 ** (host.strikes - 1)
             )
             host.backoff_until = host.last_request_at + min(delay, self.max_backoff)
-            if self.gate is not None and response.status_code == 429:
+            if self.gate is not None and response.status_code in (429, 503):
+                # Shopify throttles with 429 and sometimes 503: both slow everyone down.
                 self.gate.back_off(host.backoff_until, origin)
             raise BackingOff(origin, host.backoff_until, response.status_code)
         host.strikes = 0

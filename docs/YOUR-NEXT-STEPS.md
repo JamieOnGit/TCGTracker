@@ -786,6 +786,36 @@ The pages still rank: Google sees full stock pages (10 minutes behind), so nothi
    ```
 3. That's it. Within minutes the overdue price import, price job, pictures and value history start by themselves, one after another. To watch: `fly logs` (look for `job prices ok`, `job floors ok`, `job images ok`). Card counts and pictures grow over the next day.
 
+## Step 9l · Faster restock detection at Shopify stores (≈5 min) ⏭ after the faster-detection PR is merged
+**Why it was slow:**
+- About 40 of our stores run on Shopify, and Shopify limits how often one computer may ask.
+- All Shopify stores therefore share one queue of requests from our server, spaced 3–10 seconds apart.
+- One round of every store took **3–6 minutes**. So when Trainer Town restocked at 11:29, we didn't look again until 11:35.
+
+**Now:**
+- **Shared queue:** requests to *different* shops go 1–2 seconds apart. Tested: Shopify accepts this. It only refuses two quick requests to the *same* shop, and each shop is still asked at most about once a minute.
+- **Self-adjusting:** if Shopify ever pushes back (429/503), every store slows down by itself.
+- **Each minute:** a quick check of the first page of every store's Pokémon and One Piece collections, where stores list new, featured and best-selling stock.
+- **Every 5 minutes:** a full read of every page.
+- **Result:** a Shopify restock should normally show within **about 1–2 minutes** instead of up to 6.
+
+**Also fixed: the "Drop monitor for Target Australia needs attention" emails.**
+- Target's robots.txt allows our pages, but Target won't send its robots.txt to our server at all (it blocks cloud servers).
+- We stay out in that case, as the rules require. The error now says this plainly instead of blaming robots.txt.
+- A store that refuses us is now retried every 6 hours instead of every 2 minutes, and you get at most one email a week about it.
+- Members' in-store sightings still cover Target.
+
+**After merging:**
+1. **GitHub → Actions → Deploy database** (type `deploy`). This sets the Shopify stores to check every 60 seconds.
+2. Deploy the workers:
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.
 

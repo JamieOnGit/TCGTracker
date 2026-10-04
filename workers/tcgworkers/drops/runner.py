@@ -35,7 +35,7 @@ import random
 import threading
 import time
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -46,7 +46,7 @@ from tcgworkers.drops.adapters.shopify import ShopifyAdapter
 from tcgworkers.drops.adapters.woocommerce import WooCommerceAdapter
 from tcgworkers.drops.base import REGISTRY, AdapterBlocked, RetailerAdapter
 from tcgworkers.drops.engine import CycleResult, run_cycle
-from tcgworkers.drops.http import BackingOff, Disallowed, PoliteClient, SharedGate
+from tcgworkers.drops.http import BackingOff, Disallowed, PoliteClient, RobotsUnreadable, SharedGate
 from tcgworkers.drops.kick import wake_dispatcher
 from tcgworkers.drops.models import Observation
 from tcgworkers.drops.products import Catalogue, load_catalogue
@@ -64,16 +64,24 @@ log = logging.getLogger(__name__)
 RELOAD_SECONDS = 300.0
 CATALOGUE_TTL = 600.0
 ALERT_WINDOW = timedelta(hours=6)
+# A store that refuses us (robots.txt, 403, challenge) is never worked around:
+# it is retried every 6 hours, and the admin is told at most once a week.
+BLOCKED_RETRY_SECONDS = 6 * 3600.0
+BLOCKED_ALERT_WINDOW = timedelta(days=7)
 GENERIC: dict[str, type[CatalogueAdapter]] = {"shopify": ShopifyAdapter, "woocommerce": WooCommerceAdapter}
 # Generic stores: at most one request per ~5 s per host (robots Crawl-delay can raise it).
 GENERIC_MIN_DELAY = 5.0
 GENERIC_MAX_DELAY = 8.0
-# All Shopify stores share one request budget: Shopify's edge limits per IP
-# across every shop, so 40 stores must not look like 40 separate crawlers.
-# Starts at 10 s between requests (measured on a shared cloud IP: 15-30 s
-# spacing was always accepted) and tunes itself between 3 s and 60 s.
-SHOPIFY_GATE_SECONDS = 10.0
-SHOPIFY_GATE = SharedGate("shopify", SHOPIFY_GATE_SECONDS, floor=3.0, ceiling=60.0)
+# All Shopify stores share one request budget from our one IP, so 40 stores
+# never look like 40 separate crawlers. Measured (Oct 2026): Shopify refuses a
+# second request to the SAME shop within ~3 s (each shop is paced 5-8 s
+# apart below), but requests to different shops 1-2 s apart are accepted.
+# So the shared spacing starts at 2 s and tunes itself between 1 s and 60 s
+# (x1.5 on every 429/503, 3% faster per success). Each shop still sees about
+# one request a minute: a full round of every store's first pages takes
+# ~1.5 minutes instead of ~5 at the old 3-10 s spacing.
+SHOPIFY_GATE_SECONDS = 2.0
+SHOPIFY_GATE = SharedGate("shopify", SHOPIFY_GATE_SECONDS, floor=1.0, ceiling=60.0)
 
 
 @dataclass(frozen=True)
@@ -137,6 +145,8 @@ def blocked_reason(observations: list[Observation] | Exception) -> object:
     """What retailers.blocked_reason should become after this cycle."""
     if isinstance(observations, AdapterBlocked):
         return str(observations) or "blocked"
+    if isinstance(observations, RobotsUnreadable):
+        return f"blocked: {observations}"
     if isinstance(observations, Disallowed):
         return f"robots: robots.txt disallows {observations}"
     if isinstance(observations, Exception):
@@ -259,8 +269,11 @@ class PostgresCycle:
                     health.needs_alert(rules.drops_zero_product_alert_cycles),
                     str(exc),
                 )
+            reason = blocked_reason(observations)
+            if reason is not None and reason is not KEEP:
+                result = replace(result, blocked=True)
             try:
-                mark_checked(conn, cfg.id, at=now, blocked_reason=blocked_reason(observations))
+                mark_checked(conn, cfg.id, at=now, blocked_reason=reason)
                 conn.commit()
             except Exception:
                 conn.rollback()
@@ -272,6 +285,11 @@ class PostgresCycle:
                     if h.consecutive_errors
                     else f"{h.zero_product_cycles} cycles with zero TCG products"
                 )
+                if result.blocked:
+                    why = (
+                        f"the store refuses our bot ({reason}). We stay out and retry every "
+                        "6 hours; members' sightings cover it meanwhile"
+                    )
                 queue_admin_alert(
                     conn,
                     self.admin_email,
@@ -285,7 +303,7 @@ class PostgresCycle:
                         "zero_product_cycles": h.zero_product_cycles,
                         "last_error": result.error or "",
                     },
-                    window=ALERT_WINDOW,
+                    window=BLOCKED_ALERT_WINDOW if result.blocked else ALERT_WINDOW,
                 )
             return result
 
@@ -341,14 +359,17 @@ class RetailerWorker:
         next_watch = next_discovery + self._jittered(self.cfg.watch_interval)
         while not self.stop_event.is_set():
             now = self.clock()
+            result = None
             if now >= next_discovery:
-                self.run_once("discovery")
+                result = self.run_once("discovery")
                 done = self.clock()
                 next_discovery = done + self._jittered(self.cfg.discovery_interval)
                 next_watch = done + self._jittered(self.cfg.watch_interval)  # discovery covered the watchlist
             elif now >= next_watch:
-                self.run_once("watch")
+                result = self.run_once("watch")
                 next_watch = self.clock() + self._jittered(self.cfg.watch_interval)
+            if result is not None and result.blocked:
+                next_discovery = next_watch = self.clock() + BLOCKED_RETRY_SECONDS
             wait = min(next_watch, next_discovery) - self.clock()
             self.stop_event.wait(max(0.01, min(wait, 5.0)))
 

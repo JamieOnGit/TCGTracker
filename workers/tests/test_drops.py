@@ -346,3 +346,16 @@ def test_jb_hi_fi_checkout_links_for_items_jb_sells():
     payload = {"hits": [{**hit, "title": "ETB", "price": 89.0, "availability": {"canBuyOnline": True}}]}
     [obs] = parse_hits(payload, observed_at=T0)
     assert obs.cart_url == "https://www.jbhifi.com.au/cart/40427672174793:1"
+
+
+def test_a_refused_robots_txt_is_reported_as_a_refusal_not_a_robots_rule():
+    from tcgworkers.drops.http import RobotsUnreadable
+    from tcgworkers.drops.runner import blocked_reason
+
+    def handler(req):
+        return httpx.Response(403, text="Access Denied")
+
+    with pytest.raises(RobotsUnreadable) as exc:
+        make_client(handler, FakeClock()).get("https://blocked.test/c/pokemon")
+    assert "refused robots.txt (HTTP 403)" in str(exc.value)
+    assert blocked_reason(exc.value) == "blocked: https://blocked.test refused robots.txt (HTTP 403)"
