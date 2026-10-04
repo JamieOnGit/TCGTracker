@@ -48,10 +48,12 @@ from tcgworkers.config import Rules
 from tcgworkers.matching.matcher import (
     CatalogueCard,
     ExternalRecord,
+    MatchDecision,
     Matcher,
     Status,
     normalise_name,
     normalise_number,
+    normalise_variant,
 )
 from tcgworkers.sources.pricing.pricecharting import (
     PRICE_FIELDS,
@@ -158,6 +160,7 @@ class CatalogueIngestor:
                 (self.source,),
             )
         }
+        self.own_cards: set[str] = set(self.mapped.values())  # cards this source already links to
         self.queue: dict[str, str] = {
             r["external_id"]: r["status"]
             for r in c.execute(
@@ -246,6 +249,27 @@ class CatalogueIngestor:
         )
 
         if decision.status is Status.AUTO and decision.card_id:
+            # Name only weighs 10%: same set, number and printing must not link
+            # a clearly different card (a 'Raichu' record to our 'Pikachu').
+            best = next(c for c in candidates.values() if c.id == decision.card_id)
+            if not _same_name(best.name, name):
+                decision = MatchDecision(
+                    record,
+                    Status.REVIEW,
+                    decision.card_id,
+                    decision.confidence,
+                    (*decision.reasons, "names differ"),
+                )
+
+        if decision.status is Status.REVIEW:
+            # The card's other printings in the same set (standard and reverse
+            # holo) score close together; an exact one (same set, number,
+            # variant, near-identical name) is still a match.
+            exact = self._exact(set_id, number, name, variant)
+            if exact is not None:
+                decision = MatchDecision(record, Status.AUTO, exact.id, decision.confidence, decision.reasons)
+
+        if decision.status is Status.AUTO and decision.card_id:
             self._link(ext_id, decision.card_id, lang, variant, decision.confidence, "auto")
             if status == "pending":
                 self.conn.execute(
@@ -260,20 +284,37 @@ class CatalogueIngestor:
             self.stats.not_linked += 1
             return None
 
-        suggested, reasons = decision.card_id, list(decision.reasons)
-        if decision.status is Status.UNMATCHED:
-            # Sources name sets their own way ("Scarlet & Violet 151" vs our
-            # "151"), so a set miss alone must not create a duplicate card:
-            # same number + near-identical name goes to an admin instead.
-            twin = _lookalike(candidates.values(), number, name)
-            if twin:
-                suggested = twin.id
+        # Sources name sets their own way ("Scarlet & Violet 151" vs our
+        # "151"), so a set miss alone must not create a duplicate card: a
+        # twin (same number, near-identical name, no conflicting set size)
+        # goes to an admin instead. Anything else is a card we don't have
+        # yet (a new set's cards share numbers with every other set's), so
+        # it is created.
+        twin = self._twin(candidates.values(), set_id=set_id, number=number, name=name, variant=variant)
+        if twin is not None:
+            reasons = list(decision.reasons)
+            if decision.status is Status.UNMATCHED or twin.id != decision.card_id:
                 reasons.append(
                     f"same number and name as {twin.set_code} {twin.number}: check the set mapping"
                 )
+            self._queue(ext_id, payload, game, lang, twin.id, decision.confidence, reasons, "pending", None)
+            self.stats.queued_for_review += 1
+            return None
 
-        if decision.status is Status.REVIEW or suggested:
-            self._queue(ext_id, payload, game, lang, suggested, decision.confidence, reasons, "pending", None)
+        # One card per number and printing in a set: a differently named card
+        # already there is a data problem for an admin, never a silent merge.
+        clash = next(
+            (
+                c
+                for c in self.by_set.get(set_id, [])
+                if normalise_number(c.number) == normalise_number(number)
+                and normalise_variant(c.variant) == normalise_variant(variant)
+            ),
+            None,
+        )
+        if clash is not None:
+            reasons = [*decision.reasons, f"{clash.name!r} already has number {clash.number} in this set"]
+            self._queue(ext_id, payload, game, lang, clash.id, decision.confidence, reasons, "pending", None)
             self.stats.queued_for_review += 1
             return None
 
@@ -294,6 +335,37 @@ class CatalogueIngestor:
         self.stats.auto_created_cards += 1
         return card_id
 
+    def _exact(self, set_id: str, number: str, name: str, variant: str) -> CatalogueCard | None:
+        hits = [
+            c
+            for c in _lookalikes(self.by_set.get(set_id, []), number, name)
+            if normalise_variant(c.variant) == normalise_variant(variant)
+        ]
+        return hits[0] if len(hits) == 1 else None
+
+    def _twin(
+        self, cards: Iterable[CatalogueCard], *, set_id: str, number: str, name: str, variant: str
+    ) -> CatalogueCard | None:
+        """A card that may be this record under another name or set: same
+        number, near-identical name, and no printed set size against it
+        ('034/103' is not '34/102'). This source's own other printing in the
+        same set (the reverse holo of a card it created) is a different card,
+        not a twin."""
+        same_set = {c.id for c in self.by_set.get(set_id, [])}
+        want_total = _slash_total(number)
+        for c in _lookalikes(cards, number, name):
+            total = _slash_total(c.number)
+            if want_total is not None and total is not None and total != want_total:
+                continue
+            if (
+                c.id in same_set
+                and c.id in self.own_cards
+                and normalise_variant(c.variant) != normalise_variant(variant)
+            ):
+                continue
+            return c
+        return None
+
     def _link(
         self, ext_id: str, card_id: str, lang: str, variant: str, confidence: Decimal | None, method: str
     ) -> None:
@@ -303,6 +375,7 @@ class CatalogueIngestor:
             (card_id, self.source, ext_id, lang, variant, confidence, method),
         )
         self.mapped[ext_id] = card_id
+        self.own_cards.add(card_id)
 
     def _queue(
         self,
@@ -322,7 +395,8 @@ class CatalogueIngestor:
                values (%s, %s, %s::jsonb, %s, %s, %s, %s, %s::jsonb, %s::public.mapping_status, %s)
                on conflict (source, external_id) do update set
                  payload = excluded.payload, suggested_card_id = excluded.suggested_card_id,
-                 confidence = excluded.confidence, reasons = excluded.reasons
+                 confidence = excluded.confidence, reasons = excluded.reasons,
+                 status = excluded.status, resolved_card_id = excluded.resolved_card_id
                where mapping_queue.status = 'pending'""",
             (
                 self.source,
@@ -531,14 +605,33 @@ class PcIngestor(CatalogueIngestor):
         return self.stats
 
 
-def _lookalike(cards: Iterable[CatalogueCard], number: str, name: str) -> CatalogueCard | None:
+def _lookalikes(cards: Iterable[CatalogueCard], number: str, name: str) -> list[CatalogueCard]:
+    """Cards with the same number and a near-identical name (most similar first)."""
     want_number, want_name = normalise_number(number), normalise_name(name)
+    scored = []
     for c in cards:
         if normalise_number(c.number) != want_number:
             continue
-        if SequenceMatcher(None, normalise_name(c.name), want_name).ratio() >= 0.8:
-            return c
-    return None
+        ratio = SequenceMatcher(None, normalise_name(c.name), want_name).ratio()
+        if ratio >= 0.8:
+            scored.append((ratio, c))
+    return [c for _, c in sorted(scored, key=lambda x: -x[0])]
+
+
+def _same_name(a: str, b: str) -> bool:
+    """'Mew' / 'Mew ex' and near-identical spellings: yes. 'Raichu' / 'Pikachu': no."""
+    x, y = normalise_name(a), normalise_name(b)
+    if x == y or x.startswith(y + " ") or y.startswith(x + " "):
+        return True
+    return SequenceMatcher(None, x, y).ratio() >= 0.8
+
+
+def _slash_total(number: str) -> int | None:
+    """The printed set size after a slash: '034/103' -> 103; '199', 'SV107/SV122' -> 122."""
+    if "/" not in number:
+        return None
+    m = re.search(r"(\d+)\s*$", number.split("/", 1)[1])
+    return int(m.group(1)) if m else None
 
 
 def stats_dict(stats: IngestStats) -> dict[str, int]:

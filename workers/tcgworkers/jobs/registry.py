@@ -27,13 +27,14 @@ import logging
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 import httpx
 import psycopg
 
 from tcgworkers.config import Env
-from tcgworkers.db import pipeline_run
+from tcgworkers.db import load_rules, pipeline_run
 from tcgworkers.drops import kick
 from tcgworkers.drops.push import PushSender, sender_from_env
 from tcgworkers.email.providers import EmailProvider, provider_from_env
@@ -153,10 +154,19 @@ def refresh_floors(conn: Conn, user_agent: str) -> None:
 
 
 def snapshot_market_caps(conn: Conn, user_agent: str) -> None:
-    """Daily snapshot of every floor price, with market cap = population x
-    floor where a population is known. Cards without population keep
-    population/market_cap_aud null and rank by value (rank_value) while
-    market.rank_by_price_until_population is on."""
+    """Daily snapshot of floor prices (value charts and 24h/7d/30d change),
+    with market cap = population x floor where a population is known.
+
+    Rankings read the current floors directly, so every priced card is
+    ranked; snapshots are kept only for cards worth at least
+    ``market.snapshot_min_aud`` (A$5), and snapshots older than 60 days are
+    thinned to one a week (Mondays), so the table stays small however many
+    cards the catalogue has."""
+    extra = load_rules(conn).extra
+    try:
+        min_aud = Decimal(str(extra.get("market.snapshot_min_aud", 5)))
+    except ArithmeticError:
+        min_aud = Decimal(5)
     with pipeline_run(conn, "snapshots") as stats:
         cur = conn.execute(
             """insert into public.market_cap_snapshots
@@ -166,11 +176,19 @@ def snapshot_market_caps(conn: Conn, user_agent: str) -> None:
                       (select max(date) from public.fx_rates)
                  from public.floor_prices f
                  left join public.population_current p on p.card_id = f.card_id and p.grade_key = f.grade_key
+                where f.floor_aud >= %s
                on conflict (card_id, grade_key, date) do update set population = excluded.population,
                  floor_aud = excluded.floor_aud, basis = excluded.basis,
-                 market_cap_aud = excluded.market_cap_aud, fx_date = excluded.fx_date"""
+                 market_cap_aud = excluded.market_cap_aud, fx_date = excluded.fx_date""",
+            (min_aud,),
         )
         stats["rows"] = cur.rowcount
+        cur = conn.execute(
+            """delete from public.market_cap_snapshots
+                where date < (now() at time zone 'Australia/Melbourne')::date - 60
+                  and extract(isodow from date) <> 1"""
+        )
+        stats["thinned"] = cur.rowcount
         conn.execute("refresh materialized view concurrently public.market_cap_rankings")
 
 

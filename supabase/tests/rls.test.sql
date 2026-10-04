@@ -381,10 +381,25 @@ reset role;
 -- game/language combinations: an external price record, via
 -- card_external_ids, lands on the same card_id + grade as the market-cap row
 -- and the Buy-button stats.
+insert into public.floor_prices (card_id, grade_key, floor_aud, basis, source, observed_at)
+select c.id, 'psa-10', 1000, 'external_ask', 'test', now() from public.cards c;
+insert into public.population_snapshots (card_id, grader, grade, population, source)
+select c.id, 'PSA', 10, 100 + row_number() over (), 'test' from public.cards c;
+-- Yesterday's value, for the change columns.
 insert into public.market_cap_snapshots (card_id, grade_key, date, population, floor_aud, basis, market_cap_aud)
-select c.id, 'psa-10', current_date, 100 + row_number() over (), 1000, 'external_ask', (100 + row_number() over ()) * 1000
+select c.id, 'psa-10', (now() at time zone 'Australia/Melbourne')::date - 1, null, 800, 'external_ask', null
 from public.cards c;
 refresh materialized view public.market_cap_rankings;
+select tests.ok(
+  (select count(*) from public.market_cap_rankings where grade_key = 'psa-10') = (select count(*) from public.cards where not is_excluded),
+  'every priced card is ranked from its current floor (no snapshot needed)');
+select tests.ok(
+  (select bool_and(floor_1d_ago = 800 and market_cap_aud = population * 1000) from public.market_cap_rankings),
+  'rankings carry market cap from the current population and yesterday''s value from the snapshots');
+select tests.ok(
+  (select json_array_length(public.sitemap_cards(0, 25000))) = public.sitemap_card_count()
+  and (select json_array_length(public.sitemap_cards(1, 1))) = 1,
+  'sitemap_cards pages through every card');
 
 do $$
 declare

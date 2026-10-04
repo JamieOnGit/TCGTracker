@@ -349,6 +349,17 @@ export interface Paged<T> {
   pageSize: number
 }
 
+/** A card's sitemap entry: page address parts, last change, and whether it has active listings. */
+export interface SitemapCard {
+  id: string
+  game: Game
+  lang: Lang
+  setSlug: string
+  slug: string
+  updatedAt: string | null
+  listed: boolean
+}
+
 /** Everything a page needs to read. Implemented by the Supabase repo (RLS
  * applies: anon key + the user's session) and by the demo fixture repo. */
 export interface Repository {
@@ -357,6 +368,9 @@ export interface Repository {
   listSets(filter?: { game?: Game; lang?: Lang }): Promise<SetRow[]>
   getSet(game: Game, lang: Lang, slug: string): Promise<SetRow | null>
   listCardsInSet(setId: string): Promise<CardRow[]>
+  /** Every card (not excluded), for the sitemap: the count, and one file's slice ordered by id. */
+  sitemapCardCount(): Promise<number>
+  sitemapCards(offset: number, limit: number): Promise<SitemapCard[]>
   getCard(game: Game, lang: Lang, setSlug: string, cardSlug: string): Promise<CardRow | null>
   getCardsByIds(ids: string[]): Promise<CardRow[]>
   searchCards(q: string, limit: number): Promise<CardRow[]>

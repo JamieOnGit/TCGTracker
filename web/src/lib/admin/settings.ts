@@ -55,6 +55,9 @@ export const SETTING_GROUPS: SettingGroup[] = [
     fields: [
       { key: 'market.outlier_min_ratio', label: 'Outlier ratio', hint: 'Asks below this fraction of the 30-day sold median are ignored (0–1).', kind: { type: 'num', step: 0.05 } },
       { key: 'market.floor_refresh_hours', label: 'Floor refresh', kind: { type: 'num', step: 1, unit: 'hours' } },
+      { key: 'justtcg.raw_discover', label: 'Add every card in a set', hint: 'Cards with only ungraded prices are added too (most of a new set). Off: only cards with graded sales.', kind: { type: 'bool' } },
+      { key: 'market.snapshot_min_aud', label: 'Daily value history from', hint: 'Cheaper cards are still ranked, without charts or % change. Keeps the database small.', kind: { type: 'num', step: 1, unit: 'A$' } },
+      { key: 'justtcg.history_min_aud', label: 'Backfill a year of history from', hint: 'Only for new cards worth at least this.', kind: { type: 'num', step: 1, unit: 'A$' } },
     ],
   },
   {
