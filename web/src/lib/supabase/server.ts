@@ -24,6 +24,24 @@ export async function supabaseForRequest(): Promise<SupabaseClient> {
   })
 }
 
+export type ViewerTier = 'anon' | 'free' | 'premium'
+
+/**
+ * Who is viewing: a visitor (no session), a Free member or a Premium member.
+ * Visitors without a Supabase session cookie cost nothing; a cookie is checked
+ * with Supabase, and Premium is decided by the database (is_premium).
+ */
+export async function viewerTier(): Promise<ViewerTier> {
+  if (!supabaseConfigured()) return 'anon'
+  const store = await cookies()
+  if (!store.getAll().some((c) => c.name.startsWith('sb-') && c.name.includes('-auth-token'))) return 'anon'
+  const sb = await supabaseForRequest()
+  const { data } = await sb.auth.getUser()
+  if (!data.user) return 'anon'
+  const { data: premium } = await sb.rpc('is_premium', { p_user: data.user.id })
+  return premium ? 'premium' : 'free'
+}
+
 /**
  * Is the visitor signed in (any tier)? Used to show members live stock.
  * Visitors without a Supabase session cookie cost nothing (no network call);

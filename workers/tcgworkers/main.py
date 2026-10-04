@@ -37,7 +37,9 @@ import sys
 import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
 from types import FrameType
+from typing import Any
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -128,6 +130,46 @@ def _scheduled(job: Job, env: Env, heartbeat: Heartbeat) -> bool:
     return _run_isolated(job, heartbeat) if job.isolated else _run(job, env, heartbeat)
 
 
+def last_successes(conn: Any) -> dict[str, datetime]:
+    """When each job last succeeded (pipeline_runs)."""
+    rows = conn.execute(
+        """select job, max(finished_at) as finished_at from public.pipeline_runs
+            where status = 'succeeded' and finished_at is not null group by job"""
+    ).fetchall()
+    return {r["job"]: r["finished_at"] for r in rows}
+
+
+def job_hours(job: Job, rules: Any) -> float:
+    hours = job.every_hours_default
+    if job.every_hours_setting:
+        hours = float(getattr(rules, job.every_hours_setting.replace(".", "_"), hours))
+    return hours
+
+
+CATCH_UP_START = timedelta(minutes=2)
+CATCH_UP_GAP = timedelta(minutes=3)
+
+
+def first_runs(
+    hours_of: dict[str, float], last_ok: dict[str, datetime], now: datetime
+) -> dict[str, datetime]:
+    """Each interval job's first run: its last success plus its interval. A job
+    that is overdue (or never succeeded) runs a couple of minutes after start,
+    overdue jobs a few minutes apart in their registry order (prices before
+    floors before snapshots), so a restart never delays them by a whole interval."""
+    out: dict[str, datetime] = {}
+    overdue = 0
+    for name, hours in hours_of.items():
+        last = last_ok.get(name)
+        due = last + timedelta(hours=hours) if last else None
+        if due is None or due <= now + CATCH_UP_START:
+            out[name] = now + CATCH_UP_START + overdue * CATCH_UP_GAP
+            overdue += 1
+        else:
+            out[name] = due
+    return out
+
+
 def _wakeable(job: Job, env: Env, heartbeat: Heartbeat, stop: threading.Event) -> None:
     """A job that runs the moment its event is set, else every ``every_seconds``."""
     assert job.wake is not None
@@ -187,6 +229,12 @@ def main(argv: list[str] | None = None) -> int:
 
     with connect(env.database_url) as conn:
         rules = load_rules(conn)
+        last_ok = last_successes(conn)
+    now = datetime.now(UTC)
+    hours_of = {
+        j.name: job_hours(j, rules) for j in JOBS if not j.cron and not j.wake and not j.every_seconds
+    }
+    starts = first_runs(hours_of, last_ok, now)
     scheduler = BlockingScheduler(timezone="Australia/Melbourne")
     for job in JOBS:
         if job.cron:
@@ -218,19 +266,19 @@ def main(argv: list[str] | None = None) -> int:
                 misfire_grace_time=int(job.every_seconds * 2),
             )
         else:
-            hours = job.every_hours_default
-            if job.every_hours_setting:
-                hours = float(getattr(rules, job.every_hours_setting.replace(".", "_"), hours))
             scheduler.add_job(
                 _scheduled,
                 "interval",
-                hours=hours,
+                hours=hours_of[job.name],
                 args=(job, env, heartbeat),
                 id=job.name,
                 name=job.name,
                 max_instances=1,
                 coalesce=True,
                 jitter=60,
+                # From its last success, not from this restart: frequent deploys
+                # must not keep pushing a 4-hourly or daily job back forever.
+                next_run_time=starts[job.name],
             )
         if job.heartbeat_max_age:
             heartbeat.expect(job.name, job.heartbeat_max_age)

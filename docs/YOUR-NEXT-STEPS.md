@@ -50,6 +50,7 @@ The website is complete, but these parts are switched off until their services a
 | **9h** | **Site scan fixes (guides, live connections, sitemap speed)** | ⏭ After the site-scan PR is merged: **Actions → Deploy database** (1 min). Optional later: page cache (below) |
 | **9i** | **Live stock for members, 10 minutes behind for visitors** | ⏭ After the stock-timing PR is merged: **Actions → Deploy database**, then `fly deploy` the workers (3 min) |
 | **9j** | **Pokémon release dates from every Australian store** | ⏭ After the store-release-dates PR is merged: **Actions → Deploy database**, `fly deploy`, then fill the calendar (5 min) |
+| **9k** | **Full catalogue priced and pictured; live Drops table for Premium** | ⏭ After the PR is merged: **Actions → Deploy database**, `fly deploy` (3 min), then it catches up by itself over about a day |
 | 10 | Discord Premium channel | ☐ Optional at launch |
 | 11 | Monitoring (Sentry, healthchecks.io) | ☐ |
 | 12 | Community set-up before announcing | ☐ |
@@ -755,6 +756,35 @@ The pages still rank: Google sees full stock pages (10 minutes behind), so nothi
    fly ssh console -C "python -m tcgworkers.main --once releases"
    ```
    After that it updates by itself every 6 hours.
+
+## Step 9k · Full catalogue priced and pictured; live Drops table for Premium (≈3 min) ⏭ after the PR is merged
+**Why only 64 cards showed:** about 16,000 cards were imported, but the jobs that price them, rank them and add pictures hadn't run since 2 October. The workers started each job's timer from zero on every restart: the price import and price job every 4 hours, the value history and pictures daily. Every `fly deploy` today pushed them back again. So the new cards had no current price and didn't appear in the rankings. (The home page's "Cards tracked" counts cards with a PSA 10 price.)
+
+**Now:**
+- After a restart, any job that's overdue runs **within minutes**, a few minutes apart. Every other job keeps its normal schedule, counted from its last success.
+- The 4-hourly price job also refreshes the rankings, so new prices show within hours, not the next day.
+- Pictures: the images job runs **every 6 hours** and checks up to 12,000 pictures a run, so the whole catalogue is covered in about a day.
+  - Pokémon (English and Japanese): TCGdex and pokemontcg.io.
+  - One Piece: Bandai's official images.
+  - Anything left: TCGplayer's image.
+- The price import keeps adding sets every 4 hours until every English and Japanese Pokémon and One Piece set from JustTCG is in.
+
+**Drops page for Premium members:**
+- The page is the live feed itself: one table with all the filters and pages, showing every drop the moment it happens.
+- It updates in place without reloading, and your filters, sort and page stay put.
+- There's no separate panel and no delayed copy. Everyone else still sees the delayed history and the upgrade prompt.
+
+**After merging:**
+1. **GitHub → Actions → Deploy database.**
+2. Deploy the workers:
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+3. That's it. Within minutes the overdue price import, price job, pictures and value history start by themselves, one after another. To watch: `fly logs` (look for `job prices ok`, `job floors ok`, `job images ok`). Card counts and pictures grow over the next day.
 
 ## Step 9l · Faster restock detection at Shopify stores (≈5 min) ⏭ after the faster-detection PR is merged
 **Why it was slow:**
