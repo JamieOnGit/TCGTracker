@@ -769,6 +769,12 @@ The pages still rank: Google sees full stock pages (10 minutes behind), so nothi
 - **Every 5 minutes:** a full read of every page.
 - **Result:** a Shopify restock should normally show within **about 1–2 minutes** instead of up to 6.
 
+**Also fixed: the "Drop monitor for Target Australia needs attention" emails.**
+- Target's robots.txt allows our pages, but Target won't send its robots.txt to our server at all (it blocks cloud servers).
+- We stay out in that case, as the rules require. The error now says this plainly instead of blaming robots.txt.
+- A store that refuses us is now retried every 6 hours instead of every 2 minutes, and you get at most one email a week about it.
+- Members' in-store sightings still cover Target.
+
 **After merging:**
 1. **GitHub → Actions → Deploy database** (type `deploy`). This sets the Shopify stores to check every 60 seconds.
 2. Deploy the workers:

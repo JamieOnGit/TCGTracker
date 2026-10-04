@@ -251,3 +251,23 @@ def test_heartbeat_pings_only_when_healthy():
     hb.add_check("drops_runner", lambda: "worker threads not running: jb-hi-fi")
     assert not ping_once("https://hc.example/abc", hb, send=lambda u, b: sent.append((u, b)))
     assert "jb-hi-fi" in (sent[-1][1] or "")
+
+
+def test_a_store_that_refuses_us_is_retried_hours_later_not_every_cycle():
+    from tcgworkers.drops.engine import Health
+
+    calls: list[str] = []
+
+    def refused(
+        cfg: RetailerConfig, mode: str, adapter: RetailerAdapter, client: PoliteClient
+    ) -> CycleResult:
+        calls.append(mode)
+        return CycleResult(cfg.slug, 0, 0, [], Health(), False, "blocked: robots.txt refused", blocked=True)
+
+    stop = threading.Event()
+    worker = RetailerWorker(GOOD, GoodAdapter(), _client(GOOD), refused, stop)
+    worker.start()
+    _wait_for(lambda: len(calls) == 1)
+    time.sleep(0.6)  # many watch intervals (0.05 s) and discovery intervals (0.2 s)
+    stop.set()
+    assert calls == ["discovery"]
