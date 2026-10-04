@@ -4,7 +4,7 @@ import { AccountHead, DemoNotice } from '@/components/account/bits'
 import { DropSetupWizard, type DropSetupInitial } from '@/components/account/DropSetupWizard'
 import { db, getAccount } from '@/lib/account/data'
 import { requireMember } from '@/lib/account/gate'
-import { DROP_CHANNELS } from '@/lib/account/sightings'
+import { DROP_CHANNELS, groupsForTypes } from '@/lib/account/sightings'
 import { getRepo } from '@/lib/data'
 import { AU_STATES } from '@/lib/data/types'
 import { accountDropAlertsPath, accountSightingsPath } from '@/lib/seo/urls'
@@ -34,7 +34,7 @@ export default async function DropAlertSetup() {
   if (!acct) redirect(`/login/?next=${encodeURIComponent(accountDropAlertsPath())}`)
   const sb = await db()
   const [filters, prefs, retailers, sets] = await Promise.all([
-    sb.from('drop_alert_filters').select('games,retailer_slugs,states,keywords,max_price_aud,only_at_or_below_rrp,include_sightings,onboarded_at').maybeSingle(),
+    sb.from('drop_alert_filters').select('mode,product_types,games,retailer_slugs,states,keywords,max_price_aud,only_at_or_below_rrp,include_sightings,onboarded_at').maybeSingle(),
     sb.from('notification_preferences').select('channel,enabled').eq('alert_type', 'drop'),
     getRepo().retailers(),
     setSuggestions(),
@@ -45,6 +45,8 @@ export default async function DropAlertSetup() {
   // Default states: the member's own state until they've been through setup, else what they saved (null = all).
   const home = acct.locationState && (AU_STATES as readonly string[]).includes(acct.locationState) ? [acct.locationState] : null
   const initial: DropSetupInitial = {
+    mode: f?.mode === 'everything' ? 'everything' : 'interests',
+    productTypes: groupsForTypes(f?.product_types as string[] | null),
     games: (f?.games as string[] | null) ?? ['pokemon', 'one-piece'],
     retailerSlugs: (f?.retailer_slugs as string[] | null) ?? null,
     states: (f?.states as string[] | null) ?? (onboarded ? null : home),
@@ -62,7 +64,7 @@ export default async function DropAlertSetup() {
       <AccountHead
         eyebrow="Alerts · retail drops"
         title={onboarded ? 'Your drop alerts' : 'Set up drop alerts'}
-        lead="Tell us what you collect and where you shop. We’ll alert you when retailers restock or members spot it on the shelf — and nothing else."
+        lead="Follow the sets and products you collect. We’ll alert you when they restock or members spot them on the shelf — and nothing else."
         actions={
           <>
             <Link href="/account/alerts/" className="btn btn-ghost">All alerts</Link>

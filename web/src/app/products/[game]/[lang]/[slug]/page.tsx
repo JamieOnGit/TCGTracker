@@ -28,6 +28,8 @@ import {
 } from '@/lib/domain/stock'
 import { sealedProductLd } from '@/lib/seo/jsonld'
 import { buildMetadata } from '@/lib/seo/metadata'
+import { CheckoutButton } from '@/components/CheckoutButton'
+import { checkoutUrl } from '@/lib/data/drops'
 import { dropsPath, GAME_NAMES, inStockPath, isGame, isLang, LANG_NAMES, productPath, productsPath, releasePath, setPath } from '@/lib/seo/urls'
 import { RetailerMark } from '@/components/RetailerMark'
 
@@ -183,9 +185,12 @@ function StoreTable({ offers, rrpAud, name }: { offers: OfferRow[]; rrpAud: numb
               <td className="hide-sm">{rrpDeltaLabel(o.priceAud, rrpAud) ?? '—'}</td>
               <td className="hide-sm">{o.lastChangeAt ? <time dateTime={o.lastChangeAt} title={absoluteTime(o.lastChangeAt)}>{relativeTime(o.lastChangeAt)}</time> : '—'}</td>
               <td>
-                <a href={o.url} rel="nofollow noopener" target="_blank" className="btn btn-secondary btn-sm">
-                  <span className="sm:hidden">View</span><span className="hidden sm:inline">View at store</span><span className="sr-only"> at {o.retailerName} (opens in a new tab)</span>
-                </a>
+                <span className="inline-flex flex-wrap justify-end gap-2">
+                  {checkoutUrl(o.availability, o.cartUrl) && <CheckoutButton href={checkoutUrl(o.availability, o.cartUrl)!} store={o.retailerName} title={o.title} compact />}
+                  <a href={o.url} rel="nofollow noopener" target="_blank" className="btn btn-secondary btn-sm">
+                    <span className="sm:hidden">View</span><span className="hidden sm:inline">View at store</span><span className="sr-only"> at {o.retailerName} (opens in a new tab)</span>
+                  </a>
+                </span>
               </td>
             </tr>
           ))}

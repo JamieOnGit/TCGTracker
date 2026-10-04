@@ -59,6 +59,10 @@ class Observation:
     # e.g. "Stellar Crown Mini Tin" in a store's Pokémon collection.
     game_hint: str | None = None
     lang_hint: str | None = None
+    # One-tap checkout: the store's own link that puts this item in the cart
+    # and opens checkout (Shopify cart permalink /cart/{variant}:1). Only
+    # when it is unambiguous which item it adds.
+    cart_url: str | None = None
 
 
 @dataclass(frozen=True)

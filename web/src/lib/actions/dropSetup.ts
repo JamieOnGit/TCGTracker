@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { supabaseForRequest, supabaseService } from '@/lib/supabase/server'
 import { parseAud } from '@/lib/account/format'
-import { DROP_CHANNELS, dropSetupSchema, parseKeywords } from '@/lib/account/sightings'
+import { DROP_CHANNELS, dropSetupSchema, parseKeywords, typesForGroups } from '@/lib/account/sightings'
 import { friendlyError, type ActionResult } from './result'
 
 /**
@@ -21,6 +21,8 @@ export async function saveDropSetup(_prev: ActionResult | null, form: FormData):
   const maxPrice = maxRaw ? parseAud(maxRaw) : null
   if (maxRaw && maxPrice === null) return { ok: false, error: 'Enter a maximum price in dollars, or leave it blank.', field: 'max_price' }
   const parsed = dropSetupSchema.safeParse({
+    mode: form.get('mode') === 'everything' ? 'everything' : 'interests',
+    productTypes: strings('product_type'),
     games: strings('game'),
     retailerSlugs: form.get('all_retailers') === 'on' ? null : strings('retailer'),
     states: form.get('all_states') === 'on' ? null : strings('state'),
@@ -43,6 +45,8 @@ export async function saveDropSetup(_prev: ActionResult | null, form: FormData):
   const now = new Date().toISOString()
   const { error } = await sb.from('drop_alert_filters').upsert({
     user_id: id,
+    mode: v.mode,
+    product_types: v.productTypes.length ? typesForGroups(v.productTypes) : null,
     games: v.games,
     retailer_slugs: v.retailerSlugs,
     states: v.states,
@@ -63,7 +67,14 @@ export async function saveDropSetup(_prev: ActionResult | null, form: FormData):
   revalidatePath('/account/alerts/')
   revalidatePath('/account/')
   if (prefErr) return { ok: false, error: friendlyError(prefErr.message) }
-  return { ok: true, message: 'Drop alerts saved. We’ll let you know when stock matching this turns up.' }
+  const following = v.keywords.length > 0 || v.productTypes.length > 0
+  return {
+    ok: true,
+    message:
+      v.mode === 'interests' && !following
+        ? 'Saved. You’re not following any sets or product types yet, so you’ll only hear about products you tap “Notify me” on.'
+        : 'Drop alerts saved. We’ll let you know when stock matching this turns up.',
+  }
 }
 
 /**

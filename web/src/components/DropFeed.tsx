@@ -6,6 +6,8 @@ import { dropsPath, GAME_NAMES, productPath } from '@/lib/seo/urls'
 import { fmtAud2 } from './Format'
 import { NotifyButton } from './NotifyButton'
 import { RetailerMark } from '@/components/RetailerMark'
+import { CheckoutButton } from './CheckoutButton'
+import { dropCheckoutUrl } from '@/lib/data/drops'
 
 export const EVENT_LABEL: Record<DropRow['eventType'], string> = {
   NEW_LISTING: 'New listing',
@@ -32,6 +34,8 @@ const dayTimeFmt = new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'sh
  * against RRP, when, and Notify me. Member sightings add where, how many, the
  * limit and confirmations; in-store sightings have no outbound link.
  */
+const CHECKOUT_FRESH_MS = 6 * 3_600_000
+
 export function DropItem({ d, withDay = false, now }: { d: DropRow; withDay?: boolean; now?: Date }) {
   const s = d.sighting
   const gone = Boolean(s?.goneAt)
@@ -39,6 +43,8 @@ export function DropItem({ d, withDay = false, now }: { d: DropRow; withDay?: bo
   const status = dropStatus(d)
   const facts = s ? [s.quantity ? QUANTITY_LABEL[s.quantity] : null, purchaseLimitLabel(s.purchaseLimit), confirmationsLabel(s.confirmations)].filter((f): f is string => Boolean(f)) : []
   const wasPrice = status.key === 'price-drop' ? d.previousPriceAud : null
+  // A checkout link only while the drop is fresh: older stock has likely sold out.
+  const checkout = (now ?? new Date()).getTime() - new Date(d.occurredAt).getTime() < CHECKOUT_FRESH_MS ? dropCheckoutUrl(d) : null
   return (
     <li className="grid grid-cols-[60px_minmax(0,1fr)] items-start gap-x-3 gap-y-2 border-b py-4 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:gap-x-4" style={{ borderColor: 'var(--line)' }} data-source={d.source} data-status={status.key} data-gone={gone || undefined}>
       <div className="pt-0.5 text-sm">
@@ -68,6 +74,7 @@ export function DropItem({ d, withDay = false, now }: { d: DropRow; withDay?: bo
             </span>
             {s?.storeName && <span>{s.storeName}</span>}
             {d.product && d.url && <a href={d.url} rel="nofollow noopener" target="_blank" className="prose-link">View at store<span className="sr-only"> (opens {d.retailerName})</span></a>}
+            {checkout && <CheckoutButton href={checkout} store={d.retailerName} title={d.title} compact />}
           </div>
           {facts.length > 0 && <div className="card-meta">{facts.map((f) => <span key={f}>{f}</span>)}</div>}
           {s?.note && <p className="muted mt-1 text-sm">&ldquo;{s.note}&rdquo;</p>}

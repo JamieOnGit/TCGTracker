@@ -544,3 +544,23 @@ def test_shopify_stores_share_one_gate_and_woocommerce_does_not() -> None:
     woo = client_for(_cfg("c", "woocommerce", "woocommerce", {"categories": ["z"]}), "ua")
     assert shop_a.gate is SHOPIFY_GATE and shop_b.gate is SHOPIFY_GATE
     assert woo.gate is None
+
+
+# ------------------------------------------------------------ one-tap checkout
+def test_shopify_cart_links_only_when_it_is_clear_which_item_they_add() -> None:
+    base = "https://shop.example"
+    one = [{"id": 111, "available": True}]
+    assert shopify.cart_url(base, one) == "https://shop.example/cart/111:1"
+    # One variant, sold out now: kept (shown only once it is buyable again).
+    assert shopify.cart_url(base, [{"id": 111, "available": False}]) == "https://shop.example/cart/111:1"
+    # Pack or box: the only buyable one is the link.
+    assert (
+        shopify.cart_url(base, [{"id": 1, "available": False}, {"id": 2, "available": True}])
+        == "https://shop.example/cart/2:1"
+    )
+    # Two buyable choices, or every choice sold out: no guessing.
+    assert shopify.cart_url(base, [{"id": 1, "available": True}, {"id": 2, "available": True}]) is None
+    assert shopify.cart_url(base, [{"id": 1, "available": False}, {"id": 2, "available": False}]) is None
+    assert shopify.cart_url(base, []) is None
+    assert shopify.cart_url("http://shop.example", one) is None
+    assert shopify.cart_url(base, [{"id": "12a", "available": True}]) is None

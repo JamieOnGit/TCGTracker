@@ -495,3 +495,23 @@ def test_push_turned_off_by_member_is_skipped() -> None:
     store.people["prem"] = Recipient("prem", "premium", "p@example.com", wants={"push": False})
     dispatch_due(store, push_sender=lambda s, p: None, now=NOW)
     assert store.status[1] == ("skipped", "member turned off drop alerts by push")
+
+
+def test_restock_alerts_lead_with_the_checkout_link() -> None:
+    from dataclasses import replace
+
+    cart = "https://www.jbhifi.com.au/cart/40429703233737:1"
+    event = replace(EVENT, cart_url=cart)
+    assert event.checkout_url == cart
+    assert push_message(event, "premium")["url"] == cart  # the tap opens checkout
+    assert email_data(event, "premium")["checkout_url"] == cart
+    card = discord_payload(event)
+    assert card["embeds"][0]["url"] == cart
+    assert card["embeds"][0]["fields"][0]["value"] == f"[Add to cart & check out]({cart})"
+    mail = render("drop", email_data(event, "premium"), RenderContext(site_url="https://tcgtracker.com.au"))
+    assert cart in mail.html and cart in mail.text and "check out" in mail.text
+    # Not for a queue, a member sighting, or a non-https link.
+    assert replace(event, event_type="QUEUE_LIVE").checkout_url is None
+    assert replace(SIGHTING, cart_url=cart).checkout_url is None
+    assert replace(EVENT, cart_url="http://x/cart/1:1").checkout_url is None
+    assert push_message(EVENT, "premium")["url"] == EVENT.site_path  # no link: the site, as before

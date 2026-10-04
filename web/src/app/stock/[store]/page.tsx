@@ -5,7 +5,9 @@ import { cache } from 'react'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { DropFeed } from '@/components/DropFeed'
 import { Faq } from '@/components/DropsCopy'
+import { CheckoutButton } from '@/components/CheckoutButton'
 import { JsonLd } from '@/components/JsonLd'
+import { checkoutUrl } from '@/lib/data/drops'
 import { FilterBar } from '@/components/FilterBar'
 import { Notice, PageIntro, Stat, StatStrip } from '@/components/ui'
 import { getRepo } from '@/lib/data'
@@ -215,9 +217,12 @@ export default async function StoreStock({ params, searchParams }: Props) {
                       </td>
                       <td className="hide-sm">{r.lastChangeAt ? <time dateTime={r.lastChangeAt} title={absoluteTime(r.lastChangeAt)}>{relativeTime(r.lastChangeAt, now)}</time> : '—'}</td>
                       <td>
-                        <a href={r.url} rel="nofollow noopener" target="_blank" className="btn btn-secondary btn-sm" style={{ whiteSpace: 'nowrap' }}>
-                          View<span className="sr-only"> {r.title} at {retailer.name} (opens in a new tab)</span>
-                        </a>
+                        <span className="inline-flex flex-wrap justify-end gap-2">
+                          {checkoutUrl(r.availability, r.cartUrl) && <CheckoutButton href={checkoutUrl(r.availability, r.cartUrl)!} store={retailer.name} title={r.title} compact />}
+                          <a href={r.url} rel="nofollow noopener" target="_blank" className="btn btn-secondary btn-sm" style={{ whiteSpace: 'nowrap' }}>
+                            View<span className="sr-only"> {r.title} at {retailer.name} (opens in a new tab)</span>
+                          </a>
+                        </span>
                       </td>
                     </tr>
                   )

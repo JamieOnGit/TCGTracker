@@ -57,6 +57,17 @@ def _run(job: Job, env: Env, heartbeat: Heartbeat | None = None) -> bool:
         return False
 
 
+def _wakeable(job: Job, env: Env, heartbeat: Heartbeat, stop: threading.Event) -> None:
+    """A job that runs the moment its event is set, else every ``every_seconds``."""
+    assert job.wake is not None
+    while not stop.is_set():
+        job.wake.wait(timeout=job.every_seconds or 15)
+        job.wake.clear()  # a wake-up during this run triggers the next one at once
+        if stop.is_set():
+            return
+        _run(job, env, heartbeat)
+
+
 def job_names() -> list[str]:
     return [j.name for j in JOBS] + [RUNNER_JOB]
 
@@ -113,6 +124,10 @@ def main(argv: list[str] | None = None) -> int:
                 misfire_grace_time=3600,
                 **job.cron,
             )
+        elif job.wake is not None:
+            threading.Thread(
+                target=_wakeable, args=(job, env, heartbeat, stop), name=job.name, daemon=True
+            ).start()
         elif job.every_seconds:
             scheduler.add_job(
                 _run,

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -33,6 +34,7 @@ import psycopg
 
 from tcgworkers.config import Env
 from tcgworkers.db import pipeline_run
+from tcgworkers.drops import kick
 from tcgworkers.drops.push import PushSender, sender_from_env
 from tcgworkers.email.providers import EmailProvider, provider_from_env
 from tcgworkers.sources.ebay_deals import RUN_EVERY_MINUTES, BrowseClient, DealFinder
@@ -55,6 +57,8 @@ class Job:
     # Fixed time of day instead of an interval: APScheduler cron fields, e.g.
     # {"hour": 8, "minute": 0, "timezone": "Australia/Sydney"}.
     cron: dict[str, Any] | None = None
+    # Run as soon as this is set (and at least every ``every_seconds``), on its own thread.
+    wake: threading.Event | None = None
 
 
 def refresh_fx(conn: Conn, user_agent: str) -> None:
@@ -328,7 +332,10 @@ JOBS: tuple[Job, ...] = (
     Job("expiry", None, 1, _ua(expire_listings)),
     Job("listing_expiring", None, 1, _ua(warn_expiring_listings)),
     Job("email", None, 0, send_emails, every_seconds=20, heartbeat_max_age=300),
-    Job("drops_dispatch", None, 0, dispatch_drops, every_seconds=15, heartbeat_max_age=300),
+    # Woken by the monitor the moment it saves a drop; polls every 5 s for everything else.
+    Job(
+        "drops_dispatch", None, 0, dispatch_drops, every_seconds=5, heartbeat_max_age=300, wake=kick.DISPATCH
+    ),
     Job("expire_sightings", None, 0, expire_sightings, every_seconds=300),
     Job(
         "release_reminders",

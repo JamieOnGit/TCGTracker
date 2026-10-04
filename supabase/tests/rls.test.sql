@@ -332,6 +332,9 @@ $$, 'blocked', 'a blocked user cannot keep messaging');
 reset role;
 
 -- --------------------------------------------------------------- drops
+-- These tests cover delivery timing and filters with members on 'everything'
+-- (every drop matching their filters); 'interests' mode is tested at the end.
+update public.drop_alert_filters set mode = 'everything';
 insert into public.retail_products (retailer_id, sku, url, title, game)
 select id, 'OP09-BOX', 'https://example.test/op09', 'One Piece Card Game OP-09 Booster Box', 'one-piece'
 from public.retailers where slug = 'jb-hi-fi';
@@ -723,5 +726,51 @@ select tests.ok((select in_stock from public.stock_overview('one-piece') where s
                 <= (select listings from public.stock_overview('one-piece') where slug = 'jb-hi-fi'),
   'stock_overview filters by game');
 select tests.ok(has_function_privilege('anon', 'public.stock_overview(text)', 'execute'), 'anon can read the stock overview');
+
+-- ------------------------------------- drop alerts follow interests (2026-10-04)
+-- The default: a member hears only about what they follow.
+select tests.ok((select column_default from information_schema.columns
+                  where table_schema = 'public' and table_name = 'drop_alert_filters' and column_name = 'mode') like '%interests%',
+  'new members start on interests, not every drop');
+create temp table filters_before as select * from public.drop_alert_filters;
+update public.drop_alert_filters set mode = 'interests', keywords = null, product_types = null, games = array['pokemon', 'one-piece'],
+       retailer_slugs = null, states = null, include_sightings = true, max_price_aud = null;
+update public.drop_alert_filters set product_types = array['booster-box'] where user_id = '00000000-0000-0000-0000-00000000000b';
+update public.drop_alert_filters set keywords = array['prismatic'] where user_id = '00000000-0000-0000-0000-00000000000e';
+update public.drop_alert_filters set mode = 'everything' where user_id = '00000000-0000-0000-0000-00000000000d';
+insert into public.retail_products (retailer_id, sku, url, title, game, product_type, cart_url)
+select id, 'INT-ETB', 'https://www.jbhifi.com.au/products/int-etb', 'Pokemon TCG Prismatic Evolutions Elite Trainer Box', 'pokemon', 'etb',
+       'https://www.jbhifi.com.au/cart/40429703233737:1'
+from public.retailers where slug = 'jb-hi-fi';
+insert into public.retail_products (retailer_id, sku, url, title, game, product_type)
+select id, 'INT-BOX', 'https://www.jbhifi.com.au/products/int-box', 'Pokemon TCG Surging Sparks Booster Box', 'pokemon', 'booster-box'
+from public.retailers where slug = 'jb-hi-fi';
+insert into public.drop_events (retail_product_id, event_type, price_aud, dedupe_key)
+select id, 'IN_STOCK', 89.95, 'jb-hi-fi:' || sku || ':IN_STOCK:int' from public.retail_products where sku in ('INT-ETB', 'INT-BOX');
+create temp view int_got as
+  select distinct d.user_id::text as user_id, p.sku
+    from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+    join public.retail_products p on p.id = e.retail_product_id where p.sku in ('INT-ETB', 'INT-BOX');
+select tests.ok(not exists (select 1 from int_got where user_id = '00000000-0000-0000-0000-00000000000c'),
+  'a member who follows nothing gets no drop alerts');
+select tests.ok((select array_agg(sku order by sku) from int_got where user_id = '00000000-0000-0000-0000-00000000000b') = array['INT-BOX'],
+  'following booster boxes alerts booster boxes only');
+select tests.ok((select array_agg(sku order by sku) from int_got where user_id = '00000000-0000-0000-0000-00000000000e') = array['INT-ETB'],
+  'following a set (keyword) alerts that set only');
+select tests.ok((select array_agg(sku order by sku) from int_got where user_id = '00000000-0000-0000-0000-00000000000d') = array['INT-BOX', 'INT-ETB'],
+  '"every drop" still alerts everything');
+-- Filters still narrow interests.
+update public.drop_alert_filters set retailer_slugs = array['big-w'] where user_id = '00000000-0000-0000-0000-00000000000b';
+insert into public.drop_events (retail_product_id, event_type, price_aud, dedupe_key)
+select id, 'PRICE_CHANGE', 79.95, 'jb-hi-fi:INT-BOX:PRICE_CHANGE:int' from public.retail_products where sku = 'INT-BOX';
+select tests.ok(not exists (select 1 from public.drop_alert_deliveries d join public.drop_events e on e.id = d.drop_event_id
+                             where e.dedupe_key = 'jb-hi-fi:INT-BOX:PRICE_CHANGE:int' and d.user_id = '00000000-0000-0000-0000-00000000000b'),
+  'store filters still narrow what a member follows');
+select tests.throws($$update public.retail_products set cart_url = 'http://example.test/cart/1:1' where sku = 'INT-ETB'$$,
+  'check constraint', 'checkout links must be https');
+-- Leave the members' filters as they were for the worker suites that reuse this database.
+update public.drop_alert_filters f set mode = b.mode, keywords = b.keywords, product_types = b.product_types, games = b.games,
+       retailer_slugs = b.retailer_slugs, states = b.states, include_sightings = b.include_sightings, max_price_aud = b.max_price_aud
+  from filters_before b where b.user_id = f.user_id;
 
 \echo 'All database tests passed'

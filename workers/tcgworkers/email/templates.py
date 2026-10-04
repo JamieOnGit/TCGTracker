@@ -617,12 +617,18 @@ def _drop(data: Mapping[str, Any], ctx: RenderContext) -> Built:
     if data.get("occurred_at"):
         rows.append(("Detected", format_when(data.get("occurred_at"))))
     retailer_url = absolute_url(ctx.site_url, data.get("url"), "/drops/")
+    checkout = data.get("checkout_url")
     blocks: list[Block] = [
         ("tags", tags),
         ("h", product),
         ("rows", rows),
-        ("button", f"Go to {retailer}", retailer_url),
     ]
+    if isinstance(checkout, str) and checkout.startswith("https://"):
+        # The store's own link: puts the item in the cart and opens checkout.
+        blocks.append(("button", f"Add to cart & check out at {retailer}", checkout))
+        blocks.append(("button", f"View it at {retailer} first", retailer_url))
+    else:
+        blocks.append(("button", f"Go to {retailer}", retailer_url))
     if str(data.get("tier") or "free") != "premium":
         blocks.append(("quote", FREE_DELAY_LINE.format(url=absolute_url(ctx.site_url, PREMIUM_PATH))))
     blocks.append(

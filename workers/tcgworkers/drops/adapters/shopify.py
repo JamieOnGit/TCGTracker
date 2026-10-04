@@ -126,7 +126,22 @@ def parse_product(
         image_url=https_image(images[0].get("src")) if images else None,
         game_hint=hint_game(category_text, vendor) or hint_game(collection),
         lang_hint=lang_in_text(category_text) or lang_in_text(collection),
+        cart_url=cart_url(base_url, variants),
     )
+
+
+def cart_url(base_url: str, variants: list[dict[str, Any]]) -> str | None:
+    """The store's cart permalink (/cart/{variant}:1 adds one and opens
+    checkout), only when it is clear which item it adds: the one variant, or
+    the only one that can be bought. A pack/box choice gets no link."""
+    if not base_url.startswith("https://"):
+        return None
+    buyable = [v for v in variants if v.get("available") is True]
+    pick = buyable if buyable else variants
+    if len(pick) != 1 or (len(variants) > 1 and not buyable):
+        return None
+    vid = str(pick[0].get("id") or "")
+    return f"{base_url.rstrip('/')}/cart/{vid}:1" if re.fullmatch(r"[0-9]{1,20}", vid) else None
 
 
 def parse_page(

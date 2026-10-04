@@ -178,7 +178,36 @@ export function parseKeywords(...inputs: (string | string[] | null | undefined)[
 export const DROP_CHANNELS = ['email', 'onsite', 'push', 'discord'] as const
 export type DropChannel = (typeof DROP_CHANNELS)[number]
 
+/** Product types a member can follow, each covering the catalogue's own type names. */
+export const PRODUCT_TYPE_GROUPS = [
+  { key: 'booster-box', label: 'Booster boxes', types: ['booster-box'] },
+  { key: 'etb', label: 'Elite Trainer Boxes', types: ['etb'] },
+  { key: 'premium', label: 'Premium & Ultra-Premium collections', types: ['ultra-premium-collection', 'super-premium-collection', 'premium-collection'] },
+  { key: 'bundle', label: 'Booster bundles', types: ['booster-bundle'] },
+  { key: 'packs', label: 'Packs & blisters', types: ['blister', 'double-pack', 'booster-pack'] },
+  { key: 'tins', label: 'Tins & mini tins', types: ['tin', 'mini-tin'] },
+  { key: 'decks', label: 'Decks & other collections', types: ['starter-deck', 'battle-deck', 'build-and-battle-stadium', 'collection'] },
+] as const
+export type ProductTypeGroup = (typeof PRODUCT_TYPE_GROUPS)[number]['key']
+
+/** Group keys -> the catalogue type names stored on drop_alert_filters.product_types. */
+export function typesForGroups(keys: string[]): string[] {
+  return PRODUCT_TYPE_GROUPS.filter((g) => keys.includes(g.key)).flatMap((g) => [...g.types])
+}
+
+/** Stored type names -> the groups to show ticked (a group counts once any of its types is followed). */
+export function groupsForTypes(types: string[] | null | undefined): ProductTypeGroup[] {
+  const set = new Set(types ?? [])
+  return PRODUCT_TYPE_GROUPS.filter((g) => g.types.some((t) => set.has(t))).map((g) => g.key)
+}
+
+/** 'interests': only what the member follows (the default); 'everything': every drop matching the filters. */
+export const ALERT_MODES = ['interests', 'everything'] as const
+export type AlertMode = (typeof ALERT_MODES)[number]
+
 export const dropSetupSchema = z.object({
+  mode: z.enum(ALERT_MODES),
+  productTypes: z.array(z.enum(PRODUCT_TYPE_GROUPS.map((g) => g.key) as [ProductTypeGroup, ...ProductTypeGroup[]])).max(PRODUCT_TYPE_GROUPS.length),
   games: z.array(z.enum(['pokemon', 'one-piece'])).min(1, 'Pick at least one game.'),
   retailerSlugs: z.array(z.string().max(40)).min(1, 'Pick at least one retailer, or choose all retailers.').nullable(),
   states: z.array(z.enum(AU_STATES)).min(1, 'Pick at least one state, or choose all states.').nullable(),

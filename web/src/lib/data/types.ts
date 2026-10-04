@@ -175,6 +175,7 @@ export interface StoreListingRow {
   lastChangeAt: string | null
   lastSeenAt: string | null
   imageUrl: string | null
+  cartUrl: string | null // the store's one-tap checkout link
   game: Game | null
   product: (SealedProductRef & { rrpAud: number | null }) | null
 }
@@ -200,6 +201,7 @@ export interface OfferRow {
   priceAud: number | null
   lastChangeAt: string | null
   imageUrl: string | null
+  cartUrl: string | null // the store's one-tap checkout link (adds the item, opens checkout)
 }
 
 export interface SealedProductRow extends SealedProductRef {
@@ -281,6 +283,7 @@ export interface DropRow {
   previousPriceAud: number | null // PRICE_CHANGE: below priceAud means a price drop
   product: SealedProductRef | null // the product page this event belongs to (Notify me watches this)
   imageUrl: string | null
+  cartUrl: string | null // the store's one-tap checkout link (monitor events)
 }
 
 export interface DropFilter {
