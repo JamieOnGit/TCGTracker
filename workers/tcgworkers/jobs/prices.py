@@ -226,16 +226,21 @@ def _due_sets(
             r["excluded"],
         )
     epoch = datetime.min.replace(tzinfo=UTC)
-    due: list[tuple[datetime, JtGame, dict[str, Any], bool]] = []
+    due: list[tuple[datetime, int, JtGame, dict[str, Any], bool]] = []
     for game in games:
+        turn = 0
         for s in listed.get(game.api_id, []):
             refreshed, backfilled, excluded = known.get((game.api_id, s["id"]), (None, None, False))
             if excluded:
                 continue
             if refreshed is None or now - refreshed >= timedelta(hours=refresh_hours):
-                due.append((refreshed or epoch, game, s, backfilled is None))
-    due.sort(key=lambda x: x[0])
-    return [(g, s, b) for _, g, s, b in due]
+                due.append((refreshed or epoch, turn, game, s, backfilled is None))
+                turn += 1
+    # Equally stale sets take turns between games (English Pokémon, Japanese
+    # Pokémon, One Piece), so one big game can't use a whole run's budget
+    # while another game's never-fetched sets wait.
+    due.sort(key=lambda x: (x[0], x[1]))
+    return [(g, s, b) for _, _, g, s, b in due]
 
 
 def _mark_refreshed(conn: Conn, game: JtGame, s: dict[str, Any], *, backfilled: bool, now: datetime) -> None:
