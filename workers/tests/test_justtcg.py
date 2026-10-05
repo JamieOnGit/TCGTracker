@@ -176,3 +176,35 @@ def test_the_probe_summarises_what_came_back(fixtures):
     assert out["cards"] == 2 and out["variants_by_type"] == {"graded": 8}
     assert out["graded_companies"]["PSA"] == 4 and out["first_priced"]["number"] == "199/165"
     assert summarise({"data": [], "meta": {"has_more": False}})["cards"] == 0
+
+
+def test_equally_stale_sets_take_turns_between_games():
+    from datetime import UTC, datetime
+
+    from tcgworkers.jobs.prices import _due_sets
+    from tcgworkers.sources.pricing.justtcg import DEFAULT_GAMES
+
+    class Rows:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def fetchone(self):
+            return self.rows[0]
+
+        def __iter__(self):
+            return iter(self.rows)
+
+    class Conn:
+        def execute(self, sql, *args):
+            if "exists" in sql:
+                return Rows([{"e": True}])  # prices stored before: the normal path
+            return Rows([])  # no set fetched yet
+
+    listed = {
+        "pokemon": [{"id": f"en-{i}"} for i in range(3)],
+        "pokemon-japan": [{"id": f"jp-{i}"} for i in range(2)],
+        "one-piece-card-game": [{"id": f"op-{i}"} for i in range(2)],
+    }
+    due = _due_sets(Conn(), DEFAULT_GAMES, listed, 20, datetime(2026, 10, 5, tzinfo=UTC))
+    # English Pokémon no longer goes first in full: Japanese and One Piece get turns.
+    assert [s["id"] for _, s, _ in due] == ["en-0", "jp-0", "op-0", "en-1", "jp-1", "op-1", "en-2"]

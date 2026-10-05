@@ -2,6 +2,7 @@
 
     fly ssh console -C "python -m tcgworkers.sources.pricing.justtcg_probe"
     fly ssh console -C "python -m tcgworkers.sources.pricing.justtcg_probe sv-scarlet-violet-151-pokemon pokemon"
+    fly ssh console -C "python -m tcgworkers.sources.pricing.justtcg_probe pokemon-japan"
 
 Makes 4 requests (one set list, then one card page each with graded=only,
 graded=include and no graded param) and prints a summary of each response:
@@ -19,8 +20,9 @@ from typing import Any
 import httpx
 
 from tcgworkers.config import Env
-from tcgworkers.sources.pricing.justtcg import BASE_URL
+from tcgworkers.sources.pricing.justtcg import BASE_URL, DEFAULT_GAMES
 
+GAME_IDS = {g.api_id for g in DEFAULT_GAMES}
 HEADERS = ("ratelimit", "ratelimit-policy", "link", "x-total-count", "x-ratelimit-remaining", "warning")
 
 
@@ -75,6 +77,8 @@ def main(argv: list[str]) -> int:
     if not key:
         print("JUSTTCG_API_KEY is not set on this machine")
         return 1
+    if len(argv) == 1 and argv[0] in GAME_IDS:
+        argv = ["", argv[0]]  # just a game: probe its biggest set
     game = argv[1] if len(argv) > 1 else "pokemon"
     http = httpx.Client(
         base_url=BASE_URL,

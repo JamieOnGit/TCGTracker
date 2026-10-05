@@ -816,6 +816,35 @@ The pages still rank: Google sees full stock pages (10 minutes behind), so nothi
    fly deploy
    ```
 
+## Step 9m · Japanese Pokémon and One Piece in the catalogue (≈10 min) ⏭ after the catalogue-balance PR is merged
+**Where things stand (5 Oct):**
+- The market page now ranks about **34,000 cards** by price.
+- Pictures for about 31,000 Pokémon cards come from TCGdex. The pictures job adds them once the price job finishes (they run one at a time).
+- **Only 53 Japanese Pokémon and 39 One Piece cards are in so far.** Every English Pokémon card is in.
+
+**Fix in this PR:** sets waiting for their first price import now take turns between games (English Pokémon, Japanese Pokémon, One Piece). English Pokémon can no longer use up a whole run.
+
+**After merging:**
+1. Deploy the workers:
+   ```
+   cd ~/TCGTracker
+   git checkout main
+   git pull
+   cd workers
+   fly deploy
+   ```
+2. Ask JustTCG what it returns for Japanese Pokémon and One Piece. These run read-only checks of 4 requests each and never print your key:
+   ```
+   fly ssh console -C "python -m tcgworkers.sources.pricing.justtcg_probe pokemon-japan"
+   fly ssh console -C "python -m tcgworkers.sources.pricing.justtcg_probe one-piece-card-game"
+   ```
+   Paste both outputs to Claude. They show whether JustTCG has prices for those games on your plan, and in what form.
+
+**Market cap (population × price) needs PSA's population counts.**
+- PSA's public terms only allow personal, non-commercial use, so this stays off until PSA agrees in writing.
+- Until then the market page ranks by price and the market-cap column shows "—". That's honest and fine for launch.
+- To ask PSA: email **webcs@psacard.com**, subject "Commercial licence for PSA Population data – TCGTracker (Australia)". Say what the site does, that you'd show PSA 10 counts with attribution and a link to PSA, and ask what licence and fee apply. Forward the reply to Claude.
+
 ## Step 10 · Discord Premium alerts channel (≈10 min, optional at launch)
 Every drop is posted instantly to a private Discord channel for Premium members. No Admin switch is needed: it starts as soon as the secret is set.
 
