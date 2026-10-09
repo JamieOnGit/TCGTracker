@@ -283,6 +283,12 @@ def test_a_bad_key_fails_the_run_and_an_unknown_game_is_skipped(conn, fixtures):
 def test_the_scheduled_job_prefers_justtcg_and_needs_a_key(conn, fixtures):
     with pytest.raises(SourceNotApproved):
         refresh_prices(conn, Env.from_environ({}))
+    # The scheduled job runs at the real "now": give it a current USD rate.
+    conn.execute(
+        "insert into public.fx_rates (currency, date, rate_to_aud, source) values ('USD', current_date, 1.5, 'test')"
+        " on conflict (currency, date) do nothing"
+    )
+    conn.commit()
     client, _ = _mock(fixtures)
     stats = refresh_prices(conn, Env.from_environ({}), client=client)
     assert stats["source"] == "justtcg"

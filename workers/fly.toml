@@ -34,10 +34,11 @@ swap_size_mb = 512
   EMAIL_PROVIDER = "resend"
   TZ = "Australia/Melbourne"
 
-# Restart the process whenever it exits, for any reason.
+# Shut down (Oct 2026): the process exits straight away and must stay stopped,
+# so a stopped machine runs nothing and costs no CPU or memory. To bring the
+# workers back, set policy = "always" and SHUT_DOWN = False in main.py.
 [[restart]]
-  policy = "always"
-  retries = 10
+  policy = "never"
 
 [[vm]]
   size = "shared-cpu-1x"
