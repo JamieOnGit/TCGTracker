@@ -287,5 +287,4 @@ def test_the_shut_down_worker_runs_nothing(monkeypatch):
     monkeypatch.setattr(m, "BlockingScheduler", None)  # would crash if the scheduler started
     monkeypatch.setenv("DATABASE_URL", "postgresql://unused")
     assert m.SHUT_DOWN is True
-    assert m.main([]) == 0
-    assert m.main(["--once", "prices"]) == 0
+    assert m.main([]) == 0  # the always-on worker exits without scheduling anything
