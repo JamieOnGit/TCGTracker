@@ -52,6 +52,10 @@ from tcgworkers.sources.population.base import SourceNotApproved
 log = logging.getLogger("tcgworkers")
 
 RUNNER_JOB = "drops_runner"
+# The project is shut down (Oct 2026): no job, monitor or alert runs, so no
+# outside service is called and nothing is billed per use. Set to False (and
+# redeploy) to bring everything back exactly as it was.
+SHUT_DOWN = True
 HEAVY_LOCK = "/tmp/tcgworkers-heavy.lock"
 OOM_SCORE_ADJ = "/proc/self/oom_score_adj"
 
@@ -195,6 +199,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    if SHUT_DOWN:
+        log.info("TCGTracker is shut down: no jobs or drop monitors run (tcgworkers.main.SHUT_DOWN)")
+        return 0
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("apscheduler.executors.default").setLevel(logging.WARNING)
 
