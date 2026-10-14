@@ -279,3 +279,12 @@ def test_interval_jobs_start_from_their_last_success_not_from_the_restart() -> N
     assert runs["fx"] == now + CATCH_UP_START + 3 * CATCH_UP_GAP
     # A restart five minutes later changes nothing for a job that isn't due.
     assert first_runs(hours, last, now + timedelta(minutes=5))["prices"] == runs["prices"]
+
+
+def test_the_shut_down_worker_runs_nothing(monkeypatch):
+    import tcgworkers.main as m
+
+    monkeypatch.setattr(m, "BlockingScheduler", None)  # would crash if the scheduler started
+    monkeypatch.setenv("DATABASE_URL", "postgresql://unused")
+    assert m.SHUT_DOWN is True
+    assert m.main([]) == 0  # the always-on worker exits without scheduling anything

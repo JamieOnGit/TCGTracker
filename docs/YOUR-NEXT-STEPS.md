@@ -1,5 +1,7 @@
 # TCGTracker: your next steps
 
+> **The project is shut down (Oct 2026).** Follow [`SHUTDOWN.md`](SHUTDOWN.md) to switch off every paid service. The steps below are kept for bringing it back.
+
 Last updated **1 October 2026**. Work top to bottom. Each step says **which website or app to open**, **where to click**, **what to copy where**, and **what to tell Claude**. Menu names were checked against each service's current help pages on 1 Oct 2026. If a screen looks different, send Claude a screenshot (cover any keys first).
 
 > Claude updates this guide as you go. Updates arrive as small pull requests in the repo. Merge them once their checks are green, and the latest version is always on `main`.
